@@ -3,7 +3,6 @@ import orderController from '../controller/orderController.js'
 const {placeOrder,placeOrderRazorpay,placeOrderCashfree,allOrders,userOrders,updateStatus,verifyCashfree}=orderController
 import adminAuth from '../middleware/adminAuth.js'
 import authUser from '../middleware/auth.js'
-import { verify } from 'jsonwebtoken'
 
 const orderRouter=express.Router()
 
@@ -20,6 +19,6 @@ orderRouter.post('/razorpay',authUser,placeOrderRazorpay)
 orderRouter.post('/userorders',authUser,userOrders)
 
 //verify payment
-orderRouter.post('verifyCashfree',authUser,verifyCashfree)
+orderRouter.post('/verifyCashfree',authUser,verifyCashfree)
 
 export default orderRouter
