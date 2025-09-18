@@ -30,4 +30,6 @@ app.use('/api/order',orderRouter)
 app.get('/', (req, res) => {
     res.send("Api working"); 
 });
+
+export default app;
 //This is fine check at 6:28:47
