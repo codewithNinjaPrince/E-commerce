@@ -3,9 +3,6 @@ import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 import { backendUrl } from '../App';
 
-
-
-
 const Login = ({ setToken }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,8 +19,6 @@ const Login = ({ setToken }) => {
     } catch (error) {
       console.log(error);
       toast.error(error.message);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -53,15 +48,19 @@ const Login = ({ setToken }) => {
             />
           </div>
           <button
-            disabled={loading}
             className='mt-2 w-full py-2 px-4 rounded-md text-white bg-black cursor-pointer'
             type="submit"
           >
-            {loading ? "Logging in..." : "Login"}
+            Login
           </button>
         </form>
       </div>
     </div>
+  );
+};
+
+export default Login;
+
   );
 };
 
