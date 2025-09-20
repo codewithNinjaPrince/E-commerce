@@ -3,9 +3,6 @@ import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 import { backendUrl } from '../App';
 
-
-
-
 const Login = ({ setToken }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,9 +19,6 @@ const Login = ({ setToken }) => {
     } catch (error) {
       console.log(error);
       toast.error(error.message);
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (

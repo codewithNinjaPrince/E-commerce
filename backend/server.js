@@ -31,8 +31,5 @@ app.get('/', (req, res) => {
     res.send("Api working"); 
 });
 
-// Start the server
-app.listen(port, () => console.log('server started on PORT :' + port));
-
 
 //This is fine check at 6:28:47
