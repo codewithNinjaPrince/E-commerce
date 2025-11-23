@@ -8,7 +8,7 @@ const LatestCollection = () => {
   const [latestProducts, setLatestProducts] = useState([]); 
 
   useEffect(() => {
-    setLatestProducts(products.slice(0, 10));
+    setLatestProducts(products.slice(0, 15));
   }, [products]); // ✅ Added products as a dependency to avoid stale closure
 
   return (
@@ -16,10 +16,7 @@ const LatestCollection = () => {
       <div className="text-center py-8 text-3xl">
         <Title text1={"Latest"} text2={"Collection"} />
         <p className="w-3/4 m-auto text-xs sm:text-sm md:text-base text-gray-600">
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Porro
-          voluptatum ipsam suscipit! In iusto cupiditate doloribus, ullam minus,
-          repellat voluptas maxime architecto soluta quis expedita quaerat
-          voluptatem consequuntur eveniet? Animi.
+          Our latest collection brings together handpicked products from hardworking local shop owners in your neighbourhood. Each item reflects their effort, quality, and trust. When you shop here, you enjoy fresh arrivals and great prices while supporting real families behind the stores. Browse the newest additions and make every purchase meaningful.
         </p>
       </div>
 

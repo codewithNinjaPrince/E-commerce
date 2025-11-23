@@ -10,8 +10,8 @@ const OurPolicy = () => {
           className="w-12 m-auto mb-5"
           alt="Exchange icon"
         />
-        <p className="font-semibold">Easy Exchange Policy</p>
-        <p className="text-gray-400">We offer hassle free Exchange Policy</p>
+        <p className="font-semibold">Quick & Easy Exchange</p>
+        <p className="text-gray-400">Hassle-free size and product exchanges within 48 hours.</p>
       </div>
 
       <div className="cursor-pointer hover:scale-105 duration-300">
@@ -21,7 +21,7 @@ const OurPolicy = () => {
           alt="Exchange icon"
         />
         <p className="font-semibold">7 days return Policy</p>
-        <p className="text-gray-400">We provice 7 days free return policy</p>
+        <p className="text-gray-400">Returns accepted only for unused, undamaged product with all tags.</p>
       </div>
 
       <div className="cursor-pointer hover:scale-105 duration-300">
@@ -30,8 +30,8 @@ const OurPolicy = () => {
           className="w-12 m-auto mb-5"
           alt="Exchange icon"
         />
-        <p className="font-semibold">Best Customer Support</p>
-        <p className="text-gray-400">We provide 24/7 customer support</p>
+        <p className="font-semibold">Dedicated Customer Support</p>
+        <p className="text-gray-400">We are here to help you with any order or issue, anytime.</p>
       </div>
     </div>
   );
