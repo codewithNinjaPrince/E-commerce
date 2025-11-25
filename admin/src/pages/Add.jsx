@@ -131,9 +131,13 @@ const Add = ({ token }) => {
       const response = await axios.post(
         backendUrl + "/api/product/add",
         formData,
-        { headers: { token } }
+        {
+          headers:{
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
-
+      
       if (response.data.success) {
         toast.success(response.data.message);
       } else {
@@ -239,12 +243,12 @@ const Add = ({ token }) => {
         </div>
 
         {/* ---------------- CATEGORY INFO ---------------- */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 cursor-pointer">
           <div>
             <p className="mb-2 font-medium">Category</p>
             <select
               onChange={(e) => setCategory(e.target.value)}
-              className="input-box w-full"
+              className="input-box w-full cursor-pointer"
               value={category}
             >
               <option value="Men">Men</option>
@@ -257,7 +261,7 @@ const Add = ({ token }) => {
             <p className="mb-2 font-medium">Sub Category</p>
             <select
               onChange={(e) => setSubCategory(e.target.value)}
-              className="input-box w-full"
+              className="input-box w-full cursor-pointer"
               value={subCategory}
             >
               <option value="Topwear">Topwear</option>
@@ -375,7 +379,7 @@ const Add = ({ token }) => {
         {/* SUBMIT */}
         <button
           disabled={loading}
-          className="bg-black text-white py-3 rounded-lg hover:scale-105 transition"
+          className="bg-black text-white py-3 rounded-lg hover:scale-105 transition cursor-pointer"
         >
           {loading ? "Uploading..." : "Add Product"}
         </button>
