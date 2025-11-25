@@ -134,14 +134,16 @@ const addProduct = async (req, res) => {
 
 // Function for listing product
 const listProducts = async (req, res) => {
-   try {
-      let products;
-      if (req.user.role === "admin") {
-      // Admin sees ALL products
+  try {
+    let products;
+
+    if (req.user && req.user.role === "admin") {
       products = await productModel.find({});
-    } else {
-      // Seller sees ONLY their products
+    } else if (req.user && req.user.role === "seller") {
       products = await productModel.find({ shopId: req.user.shopId });
+    } else {
+      // Public → show all active products
+      products = await productModel.find({});
     }
 
     res.json({ success: true, products });
@@ -151,6 +153,7 @@ const listProducts = async (req, res) => {
     res.json({ success: false, message: error.message });
   }
 };
+
 // Function for removing product
 const removeProduct = async (req, res) => {
   try {
