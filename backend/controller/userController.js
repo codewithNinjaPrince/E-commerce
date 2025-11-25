@@ -95,7 +95,7 @@ const adminLogin = async (req, res) => {
       // 🔹 If role is customer OR invalid
     return res.json({ success: false, message: "Invalid credentials" });
       
-   } (error) {
+   } catch (error) {
       console.log(error); // Log error to console
       res.json({ success: false, message: error.message }); 
    }
