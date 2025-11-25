@@ -39,6 +39,10 @@ const addProduct = async (req, res) => {
       return res.json({ success: false, message: "Prices must be greater than 0" });
     }
 
+    if(actual<discounted){
+      return res.json({success:false, message:"Actual Price should be more than Discounted price"});
+    }
+
     // ======================== OFFER CODE VALIDATION ========================
     // Pattern: BrandName + number 10–80 (e.g Prince20)
      const offerRegex = /^[A-Za-z]+(1[0-9]|[2-7][0-9]|80)$/;
@@ -79,10 +83,8 @@ const addProduct = async (req, res) => {
     // ======================== UPLOAD TO CLOUDINARY ========================
 
     const imagesUrl = await Promise.all(
-      images.map(async (item) => {
-        const result = await cloudinary.uploader.upload(item.path, {
-          resource_type: "image",
-        });
+      imageFiles.map(async (item) => {
+        const result = await cloudinary.uploader.upload(file.path, { resource_type: "image" });
         return result.secure_url;
       })
     );
@@ -100,13 +102,15 @@ const addProduct = async (req, res) => {
     // ======================== FINAL PRODUCT DATA ========================
 
     const productData = {
+      sellerId: req.user.role === "admin" ? "admin" : req.user.id,
+      shopId: req.user.role === "admin" ? "admin_shop" : req.user.shopId,
       review: rating,
       noOfPeopleReviewed: totalPeople,
       brandName,
       name,
       actualPrice: actual,
       discountedPrice: discounted,
-      offerCode: (offerCode && offerCode.trim() !== "") ? offerCode : null,
+      offerCode: offerCode?.trim() || "",
       description,
       category,
       subCategory,
@@ -130,36 +134,78 @@ const addProduct = async (req, res) => {
 
 // Function for listing product
 const listProducts = async (req, res) => {
-     try {
-        const products =await productModel.find({});
-        res.json({success:true,products})
-     } catch (error) {
-        console.log(error);
-        res.json({ success: false, message: error.message });
-     }
-};
+   try {
+      let products;
+      if (req.user.role === "admin") {
+      // Admin sees ALL products
+      products = await productModel.find({});
+    } else {
+      // Seller sees ONLY their products
+      products = await productModel.find({ shopId: req.user.shopId });
+    }
 
+    res.json({ success: true, products });
+
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
 // Function for removing product
 const removeProduct = async (req, res) => {
   try {
-        await productModel.findByIdAndDelete(req.body.id);
-        res.json({success:true,message:"Product removed"})
-      } catch (error) {
-        console.log(error);
-        res.json({ success: false, message: error.message });
-     }
+    const product = await productModel.findById(req.body.id);
+
+    if (!product) {
+      return res.json({ success: false, message: "Product not found" });
+    }
+
+    // Admin can remove ANY product
+    if (req.user.role === "admin") {
+      await productModel.findByIdAndDelete(req.body.id);
+      return res.json({ success: true, message: "Product removed" });
+    }
+
+    // Seller can remove ONLY their own product
+    if (product.shopId !== req.user.shopId) {
+      return res.json({ success: false, message: "Not authorized to remove this product" });
+    }
+
+    await productModel.findByIdAndDelete(req.body.id);
+    res.json({ success: true, message: "Product removed" });
+
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
 };
 
 // Function for single product info
 const singleProduct = async (req, res) => {
-     try {
-        const {productId}=req.body
-        const product = await productModel.findById(productId)
-        res.json({success:true,product})
-     } catch (error) {
-        console.log(error);
-        res.json({ success: false, message: error.message });
-     }
+  try {
+    const { productId } = req.body;
+    const product = await productModel.findById(productId);
+
+    if (!product) {
+      return res.json({ success: false, message: "Product not found" });
+    }
+
+    // Admin can view ANY product
+    if (req.user.role === "admin") {
+      return res.json({ success: true, product });
+    }
+
+    // Seller can view ONLY their product
+    if (product.shopId !== req.user.shopId) {
+      return res.json({ success: false, message: "Not authorized to view this product" });
+    }
+
+    res.json({ success: true, product });
+
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
 };
 export { addProduct, listProducts, removeProduct, singleProduct };
 
