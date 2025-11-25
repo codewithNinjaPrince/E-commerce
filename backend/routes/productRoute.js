@@ -18,8 +18,8 @@ productRouter.post("/add",adminAuth,upload.fields([
   ]), addProduct);
 
 productRouter.post("/remove", adminAuth, removeProduct);
-productRouter.post("/list", listProducts);
-productRouter.post("/single", singleProduct);
+productRouter.post("/list",adminAuth, listProducts);
+productRouter.post("/single",adminAuth, singleProduct);
 
 export default productRouter;
 
