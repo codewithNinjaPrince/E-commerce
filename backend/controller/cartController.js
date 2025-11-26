@@ -51,10 +51,16 @@ const getUserCart=async(req,res)=>{
    try {
       const{userId}=req.body
 
-      const userData=await userModel.findById(userId)
-      let cartData= await userData.cartData
+      if (!userId) {
+      return res.json({ success:false, message:"User not authorized" });
+      }
 
-      res.json({success:true,cartData})
+      const userData=await userModel.findById(userId)
+      if (!userData) {
+      return res.json({ success:false, message:"User not found" });
+      }
+
+      return res.json({ success:true, cartData:userData.cartData });
 
    } catch (error) {
       console.log(error)
