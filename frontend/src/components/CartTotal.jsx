@@ -1,35 +1,136 @@
-import React from 'react'
-import { useContext } from 'react'  
-import { ShopContext } from '../context/ShopContext'
-import Title from './Title'
+// export default CartTotal;
+import React, { useContext } from "react";
+import { ShopContext } from "../context/ShopContext";
+import Title from "./Title";
 
 const CartTotal = () => {
-   const {currency,delivery_fee,getCartAmount} =useContext(ShopContext)
+  const {
+    currency = "₹",
+    delivery_fee,
+    getCartAmount,
+    cartItems,
+    products,
+  } = useContext(ShopContext);
+
+  // Find product
+  const findProduct = (id) =>
+    products.find((p) => String(p._id) === String(id));
+
+  // ---- FIXED TOTAL CALCULATION ----
+  const computeTotals = () => {
+    let actualTotal = 0;
+    let discountedTotal = 0;
+
+    for (const productId in cartItems) {
+      const prod = findProduct(productId);
+      if (!prod) continue;
+
+      const actual = Number(prod.actualPrice) || 0;
+      const discounted = Number(prod.discountedPrice) || actual;
+
+      // loop inside S / M / L sizes
+      for (const size in cartItems[productId]) {
+        const qty = cartItems[productId][size];
+        if (qty > 0) {
+          actualTotal += actual * qty;
+          discountedTotal += discounted * qty;
+        }
+      }
+    }
+
+    return { actualTotal, discountedTotal };
+  };
+
+  const { actualTotal, discountedTotal } = computeTotals();
+
+  const discountAmount = actualTotal - discountedTotal;
+  const discountPercentage =
+    actualTotal > 0
+      ? Math.round((discountAmount / actualTotal) * 100)
+      : 0;
+
+  // Free shipping rule
+  const FREE_LIMIT = 1000;
+  const shippingFee = discountedTotal >= FREE_LIMIT ? 0 : delivery_fee;
+
+  const finalTotal = discountedTotal + shippingFee;
+
+  const fmt = (n) => (Number.isInteger(n) ? n : n.toFixed(2));
+
   return (
-    <div className='w-full'>
-      <div className='text-2xl'>
-         <Title text1={'Cart'}  text2={'totals'}/>
+    <div className="w-full bg-[#111111] text-gray-300 p-6 rounded-2xl shadow-xl border border-white/10 cursor-pointer">
+      <div className="text-2xl mb-4">
+        <Title text1="Cart" text2="Totals" />
       </div>
-      <div className='flex flex-col gap-2 mt-2 gext-sm'>
-         <div className='flex justify-between'>
-            <p>Subtotal</p>
-            <p>{currency} {getCartAmount()}.00</p>
-         </div>
-         <hr />
-         <div className='flex justify-between'>
-            <p>Shipping fee</p>
-            <p>{currency} {delivery_fee}.00</p>
-         </div>
-         <hr />
-         <div className='flex justify-between'>
-            <b>Total</b>
-            <p>{currency} {getCartAmount()===0? 0:getCartAmount()+delivery_fee}.00</p>
-         </div>
 
+      {/* Actual price */}
+      <div className="flex justify-between items-center">
+        <p className="text-gray-400">Actual Price</p>
+        <p className="line-through text-gray-500">
+          {currency} {fmt(actualTotal)}
+        </p>
       </div>
-      
+
+      {/* Discounted price */}
+      <div className="flex justify-between items-center">
+        <p className="text-gray-400 flex items-center gap-2">
+          Discounted Price
+          {discountPercentage > 0 && (
+            <span className="bg-green-700/20 text-green-300 px-2 py-0.5 text-[11px] rounded-full">
+              -{discountPercentage}%
+            </span>
+          )}
+        </p>
+        <p className="text-white font-semibold">
+          {currency} {fmt(discountedTotal)}
+        </p>
+      </div>
+
+      {/* Savings */}
+      {discountAmount > 0 && (
+        <div className="flex justify-between items-center">
+          <p className="text-gray-500">You save</p>
+          <p className="text-green-400 flex items-center gap-2">
+            {currency} {fmt(discountAmount)} <span className="text-lg">↓</span>
+          </p>
+        </div>
+      )}
+
+      <hr className="border-gray-800 my-3" />
+
+      {/* Shipping */}
+      <div className="flex justify-between">
+        <p className="text-gray-400">Shipping</p>
+        {shippingFee === 0 ? (
+          <div className="flex items-center gap-2">
+            <p className="text-green-300">Free Shipping</p>
+            <p className="text-gray-600 line-through">{currency} {delivery_fee}</p>
+          </div>
+        ) : (
+          <p>{currency} {delivery_fee}</p>
+        )}
+      </div>
+
+      <hr className="border-gray-800 my-3" />
+
+      {/* Total */}
+      <div className="flex justify-between items-center">
+        <p className="text-white text-lg font-semibold">Total</p>
+        <p className="text-xl font-bold text-white">
+          {currency} {fmt(finalTotal)}
+        </p>
+      </div>
+
+      {discountedTotal < FREE_LIMIT && (
+        <p className="text-xs text-gray-400 mt-1">
+          Add {currency} {fmt(FREE_LIMIT - discountedTotal)} more to get
+          <span className="text-white font-medium"> free shipping</span>.
+        </p>
+      )}
     </div>
-  )
-}
+  );
+};
 
-export default CartTotal
+export default CartTotal;
+
+

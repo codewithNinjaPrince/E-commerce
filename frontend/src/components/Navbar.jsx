@@ -42,37 +42,60 @@ const Navbar = () => {
 
   return (
     <>
-      <div className="fixed top-0 left-0 w-full z-50 bg-white shadow-md px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw] flex justify-between py-5 font-medium">
+      <div className="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-black via-[#0d0d0d] to-[#1a1a1a] px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw] flex justify-between items-center py-4 border-b border-white/10 backdrop-blur-lg shadow-[0_5px_25px_rgba(255,255,255,0.06)]">
         <Link to="/">
-          <img src={assets.logo} className="w-36" alt="Logo" />
+          <img src={assets.logo} className="w-36 invert brightness-100" alt="Logo" />
         </Link>
 
-        <ul className="hidden sm:flex gap-5 text-lg text-gray-700">
-          <NavLink to="/" className="flex flex-col items-center gap-1">
-            <p>Home</p>
-          </NavLink>
-          <NavLink
-            to="/collections"
-            className="flex flex-col items-center gap-1"
-          >
-            <p>Collection</p>
-          </NavLink>
-          <NavLink to="/about" className="flex flex-col items-center gap-1">
-            <p>About</p>
-          </NavLink>
-          <NavLink to="/contact" className="flex flex-col items-center gap-1">
-            <p>Contact</p>
-          </NavLink>
+        {/* DESKTOP MENU */}
+        <ul className="hidden sm:flex gap-8 text-white text-[17px] font-light">
+          {[
+            { name: "Home", path: "/" },
+            { name: "Collection", path: "/collections" },
+            { name: "About", path: "/about" },
+            { name: "Contact", path: "/contact" },
+          ].map((item, index) => (
+            <NavLink
+              key={index}
+              to={item.path}
+              className="relative pb-1 group transition"
+            >
+              {({ isActive }) => (
+                <>
+                  <span
+                    className={`${
+                      isActive ? "text-white" : "text-gray-300 hover:text-white"
+                    } transition`}
+                  >
+                    {item.name}
+                  </span>
+
+                  {/* UNDERLINE ANIMATION */}
+                  <span
+                    className={`
+                      absolute left-0 bottom-[-4px] h-[2px] bg-white rounded-full 
+                      transition-all duration-200 ease-out
+                      ${
+                        isActive
+                          ? "w-full opacity-100"
+                          : "w-0 opacity-0 group-hover:w-full group-hover:opacity-100"
+                      }
+                    `}
+                  ></span>
+                </>
+              )}
+            </NavLink>
+          ))}
         </ul>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-6 text-white">
           <img
             onClick={() => {
               setShowSearch(true);
               navigate("/collections");
             }}
             src={assets.search_icon}
-            className="w-5 cursor-pointer"
+            className="w-5 invert brightness-50 cursor-pointer"
             alt="Search icon"
           />
 
@@ -83,7 +106,7 @@ const Navbar = () => {
           >
             <img
               src={assets.profile_icon}
-              className="w-5 cursor-pointer"
+              className="w-5 cursor-pointer invert brightness-50"
               alt="profile"
               onClick={(e) => {
                 e.stopPropagation(); // prevent document click from immediately closing dropdown
@@ -105,17 +128,17 @@ const Navbar = () => {
 
             {/* Dropdown - Renders always. Visibility is controlled by CSS/State */}
             <div
-              className={`absolute right-0 pt-4 z-30 ${
+              className={`absolute right-0 pt-4 z-30  ${
                 // Mobile click dropdownOpen is only relevant when logged in
                 dropdownOpen && token ? "block" : "hidden"
               } sm:group-hover:block`}
             >
-              <div className="flex flex-col gap-2 w-36 py-3 px-5 bg-slate-100 text-gray-600 rounded shadow-md">
+              <div className="flex flex-col gap-2 w-36 py-3 px-5 bg-black text-white rounded shadow-md">
                 {token ? (
                   // === LOGGED IN STATE ===
                   <>
                     <p
-                      className="cursor-pointer hover:text-black"
+                      className="cursor-pointer hover:text-gray-300"
                       onClick={() => {
                         navigate("/profile");
                         setDropdownOpen(false);
@@ -128,12 +151,12 @@ const Navbar = () => {
                         navigate("/orders");
                         setDropdownOpen(false);
                       }}
-                      className="cursor-pointer hover:text-black"
+                      className="cursor-pointer hover:text-gray-300"
                     >
                       Orders
                     </p>
                     <p
-                      className="cursor-pointer hover:text-red-600"
+                      className="cursor-pointer hover:text-red-400"
                       onClick={() => {
                         setShowLogoutConfirm(true);
                         setDropdownOpen(false);
@@ -146,7 +169,7 @@ const Navbar = () => {
                   // === LOGGED OUT STATE (Desktop Hover or Mobile Click) ===
                   <>
                     <p
-                      className="w-40 cursor-pointer text-base font-semibold hover:text-black"
+                      className="w-40 cursor-pointer hover:text-gray-300"
                       onClick={() => {
                         navigate("/login");
                         setDropdownOpen(false);
@@ -161,8 +184,8 @@ const Navbar = () => {
           </div>
 
           <Link to="/cart" className="relative">
-            <img src={assets.cart_icon} className="w-5 min-w-5" alt="Cart" />
-            <p className="absolute right-[-5px] bottom-[-5px] w-4 text-center leading-4 bg-black text-white aspect-square rounded-full text-[8px]">
+            <img src={assets.cart_icon} className="w-5 min-w-5 invert brightness-50" alt="Cart" />
+            <p className="absolute right-[-5px] bottom-[-5px] w-4 text-center leading-4 bg-white text-black aspect-square rounded-full text-[8px]">
               {getCartCount()}
             </p>
           </Link>
@@ -170,7 +193,7 @@ const Navbar = () => {
           <img
             onClick={() => setVisible(true)}
             src={assets.menu_icon}
-            className="w-5 cursor-pointer sm:hidden"
+            className="w-5 cursor-pointer invert brightness-50 sm:hidden"
             alt="menu icon"
           />
         </div>
@@ -287,18 +310,18 @@ const Navbar = () => {
       {/* LOGOUT CONFIRMATION MODAL */}
       {showLogoutConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-xl shadow-lg w-[90%] max-w-sm text-center">
-            <h2 className="text-lg font-semibold text-gray-800 mb-3">
+          <div className="bg-gray-700 p-6 rounded-xl shadow-lg w-[90%] max-w-sm text-center">
+            <h2 className="text-lg font-semibold text-white mb-3">
               Are you sure you want to logout?
             </h2>
-            <p className="text-gray-500 text-sm mb-6">
+            <p className="text-white text-sm mb-6">
               You will need to login again to access your account.
             </p>
 
             <div className="flex justify-center gap-6">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="px-5 py-2 border rounded-md hover:bg-gray-100 transition cursor-pointer"
+                className="px-5 py-2 border bg-black text-white rounded-md hover:bg-white hover:text-black transition cursor-pointer"
               >
                 No
               </button>

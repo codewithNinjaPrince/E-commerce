@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Prata&display=swap');
+/* @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Prata&display=swap');
 @import "tailwindcss";
 
 a.active hr{
@@ -30,5 +30,133 @@ a.active hr{
 @keyframes fadeOut {
   from { opacity: 1; }
   to { opacity: 0; }
+} */
+
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Prata&display=swap');
+@import "tailwindcss";
+
+/* Active nav underline */
+a.active hr {
+  display: block;
+}
+
+/* Global font */
+* {
+  font-family: Outfit, sans-serif;
+}
+
+/* Prata headings */
+.prata-regular {
+  font-family: "Prata", serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* Hide scrollbar for clean modern look */
+::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+/* Better smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Mobile active state */
+@media (max-width: 640px) {
+  a.active {
+    background-color: black;
+    color: white !important;
+  }
+}
+
+/* Modern fade-out animation */
+@keyframes fadeOut {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.98); }
+}
+
+/* Modern fade-in animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Smooth card hover (premium look) */
+.product-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0px 10px 30px rgba(0,0,0,0.08);
+}
+
+/* Premium button style */
+.modern-btn {
+  transition: all 0.25s ease;
+}
+
+.modern-btn:hover {
+  opacity: 0.85;
+  transform: translateY(-2px);
+}
+
+/* Soft container shadow */
+.soft-shadow {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+}
+
+/* Smooth image hover zoom */
+.img-hover {
+  transition: transform 0.35s ease;
+}
+
+.img-hover:hover {
+  transform: scale(1.06);
+}
+
+.input-box {
+  background: #000;
+  border: 1px solid #444;
+  padding: 12px;
+  border-radius: 10px;
+  width: 100%;
+  color: white;
+  outline: none;
+}
+
+.pay-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #333;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #111;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.pay-box:hover {
+  border-color: #777;
+}
+
+.active-pay {
+  border-color: #4ade80 !important;
+  background: #1a1a1a !important;
+}
+
+.radio-dot {
+  width: 14px;
+  height: 14px;
+  border: 2px solid white;
+  border-radius: 999px;
+}
+
+.active-pay .radio-dot {
+  background: #4ade80;
 }
 

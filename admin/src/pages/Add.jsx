@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 const Add = ({ token }) => {
   const [loading, setLoading] = useState(false);
 
+  // -------- ALL 10 image states ----------
   const [image1, setImage1] = useState(false);
   const [image2, setImage2] = useState(false);
   const [image3, setImage3] = useState(false);
@@ -17,22 +18,6 @@ const Add = ({ token }) => {
   const [image8, setImage8] = useState(false);
   const [image9, setImage9] = useState(false);
   const [image10, setImage10] = useState(false);
-
-  const [brandName, setBrandName] = useState("");
-  const [name, setName] = useState("");
-  const [actualPrice, setActualPrice] = useState("");
-  const [discountedPrice, setDiscountedPrice] = useState("");
-  const [offerCode, setOfferCode] = useState("");
-  const [review, setReview] = useState(0);
-  const [noOfPeopleReviewed, setNoOfPeopleReviewed] = useState(0);
-  const [description, setDescription] = useState("");
-  const [price, setPrice] = useState("");
-  const [category, setCategory] = useState("Men");
-  const [subCategory, setSubCategory] = useState("Topwear");
-  const [bestseller, setBestseller] = useState(false);
-  const [sizes, setSizes] = useState([]);
-
-  const [dragIndex, setDragIndex] = useState(null);
 
   const imageStates = [
     image1,
@@ -60,13 +45,29 @@ const Add = ({ token }) => {
     setImage10,
   ];
 
-  // ===== MULTI IMAGE UPLOAD =====
+  // -------- OTHER FIELDS --------
+  const [brandName, setBrandName] = useState("");
+  const [name, setName] = useState("");
+  const [actualPrice, setActualPrice] = useState("");
+  const [discountedPrice, setDiscountedPrice] = useState("");
+  const [offerCode, setOfferCode] = useState("");
+  const [review, setReview] = useState(0);
+  const [noOfPeopleReviewed, setNoOfPeopleReviewed] = useState(0);
+  const [description, setDescription] = useState("");
+  const [price, setPrice] = useState("");
+  const [category, setCategory] = useState("Men");
+  const [subCategory, setSubCategory] = useState("Topwear");
+  const [bestseller, setBestseller] = useState(false);
+  const [sizes, setSizes] = useState([]);
+
+  const [dragIndex, setDragIndex] = useState(null);
+
+  // ================= MULTIPLE IMAGE UPLOAD ================
   const handleMultiUpload = (e, startIndex) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
 
     let current = startIndex;
-
     files.forEach((file) => {
       if (current < 10) {
         setImageStates[current](file);
@@ -75,27 +76,48 @@ const Add = ({ token }) => {
     });
   };
 
-  // ===== DRAG REORDER =====
+  // ================= DRAG AND DROP REORDER =================
   const handleReorder = (from, to) => {
     if (from === null || from === to) return;
 
     const temp = [...imageStates];
-    const tempImage = temp[from];
+    const swap = temp[from];
     temp[from] = temp[to];
-    temp[to] = tempImage;
+    temp[to] = swap;
 
-    temp.forEach((img, index) => {
-      setImageStates[index](img);
-    });
-
+    temp.forEach((img, i) => setImageStates[i](img));
     setDragIndex(null);
   };
 
-  const removeImage = (index) => {
-    setImageStates[index](false);
+  const removeImage = (i) => {
+    setImageStates[i](false);
   };
 
-  // ===== DO NOT TOUCH YOUR MAIN FUNCTION =====
+  // =========================================================
+  //               RESET FORM (AFTER SUCCESS)
+  // =========================================================
+  const resetForm = () => {
+    setBrandName("");
+    setName("");
+    setActualPrice("");
+    setDiscountedPrice("");
+    setOfferCode("");
+    setReview(0);
+    setNoOfPeopleReviewed(0);
+    setDescription("");
+    setPrice("");
+    setCategory("Men");
+    setSubCategory("Topwear");
+    setBestseller(false);
+    setSizes([]);
+
+    // Reset all images
+    setImageStates.forEach((fn) => fn(false));
+  };
+
+  // =========================================================
+  //                 SUBMIT HANDLER
+  // =========================================================
   const onSubmitHandler = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -111,22 +133,16 @@ const Add = ({ token }) => {
       formData.append("review", review);
       formData.append("noOfPeopleReviewed", noOfPeopleReviewed);
       formData.append("description", description);
-      formData.append("bestseller", bestseller.toString());
       formData.append("sizes", JSON.stringify(sizes));
       formData.append("price", price);
       formData.append("category", category);
       formData.append("subCategory", subCategory);
+      formData.append("bestseller", bestseller.toString());
 
-      image1 && formData.append("image1", image1);
-      image2 && formData.append("image2", image2);
-      image3 && formData.append("image3", image3);
-      image4 && formData.append("image4", image4);
-      image5 && formData.append("image5", image5);
-      image6 && formData.append("image6", image6);
-      image7 && formData.append("image7", image7);
-      image8 && formData.append("image8", image8);
-      image9 && formData.append("image9", image9);
-      image10 && formData.append("image10", image10);
+      // append all images
+      imageStates.forEach((img, i) => {
+        if (img) formData.append(`image${i + 1}`, img);
+      });
 
       const response = await axios.post(
         backendUrl + "/api/product/add",
@@ -135,17 +151,21 @@ const Add = ({ token }) => {
       );
 
       if (response.data.success) {
-        toast.success(response.data.message);
+        toast.success("Product Added Successfully!");
+
+        resetForm(); // <<< CLEAR EVERYTHING
       } else {
         toast.error(response.data.message);
       }
     } catch (error) {
       console.log(error);
-      alert(error.response?.data?.message || "Something went wrong");
+      toast.error(error.response?.data?.message || "Error uploading product");
     }
 
     setLoading(false);
   };
+
+  // =========================================================
 
   return (
     <div className="w-full flex justify-center px-4 py-8">
@@ -153,7 +173,7 @@ const Add = ({ token }) => {
         onSubmit={onSubmitHandler}
         className="w-full max-w-5xl bg-white rounded-xl shadow-md p-6 md:p-10 flex flex-col gap-6"
       >
-        {/* IMAGE UPLOAD GRID */}
+        {/* ================= IMAGE UPLOAD GRID ================= */}
         <div>
           <h2 className="text-lg font-semibold mb-3">Upload Product Images</h2>
 
@@ -173,7 +193,7 @@ const Add = ({ token }) => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <label className="w-full h-full flex flex-col justify-center items-center text-sm cursor-pointer">
+                  <label className="w-full h-full flex flex-col justify-center items-center text-xs cursor-pointer">
                     Image {index + 1}
                     <input
                       hidden
@@ -199,53 +219,51 @@ const Add = ({ token }) => {
           </div>
         </div>
 
-        {/* ---------------- BASIC INFO ---------------- */}
+        {/* ================= BASIC INFO ================= */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
-            <p className="mb-2 font-medium">Brand Name</p>
+            <p className="mb-1 font-medium">Brand Name</p>
             <input
-              onChange={(e) => setBrandName(e.target.value)}
               value={brandName}
+              onChange={(e) => setBrandName(e.target.value)}
               className="input-box w-full"
-              type="text"
               placeholder="Your Brand / Shop Name"
               required
             />
           </div>
 
           <div>
-            <p className="mb-2 font-medium">Product Name</p>
+            <p className="mb-1 font-medium">Product Name</p>
             <input
-              onChange={(e) => setName(e.target.value)}
               value={name}
+              onChange={(e) => setName(e.target.value)}
               className="input-box w-full"
-              type="text"
-              placeholder="Product name"
+              placeholder="Product Name"
               required
             />
           </div>
         </div>
 
-        {/* ---------------- DESCRIPTION ---------------- */}
+        {/* ================= DESCRIPTION ================= */}
         <div>
-          <p className="mb-2 font-medium">Product Description</p>
+          <p className="mb-1 font-medium">Product Description</p>
           <textarea
-            onChange={(e) => setDescription(e.target.value)}
             value={description}
+            onChange={(e) => setDescription(e.target.value)}
             className="input-box min-h-[120px]"
-            placeholder="Write product description here..."
+            placeholder="Write product description..."
             required
           />
         </div>
 
-        {/* ---------------- CATEGORY INFO ---------------- */}
+        {/* ================= CATEGORY ================= */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           <div>
-            <p className="mb-2 font-medium">Category</p>
+            <p className="mb-1 font-medium">Category</p>
             <select
-              onChange={(e) => setCategory(e.target.value)}
-              className="input-box w-full"
               value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="input-box w-full cursor-pointer"
             >
               <option value="Men">Men</option>
               <option value="Women">Women</option>
@@ -254,11 +272,11 @@ const Add = ({ token }) => {
           </div>
 
           <div>
-            <p className="mb-2 font-medium">Sub Category</p>
+            <p className="mb-1 font-medium">Sub Category</p>
             <select
-              onChange={(e) => setSubCategory(e.target.value)}
-              className="input-box w-full"
               value={subCategory}
+              onChange={(e) => setSubCategory(e.target.value)}
+              className="input-box w-full cursor-pointer"
             >
               <option value="Topwear">Topwear</option>
               <option value="Bottomwear">Bottomwear</option>
@@ -267,73 +285,72 @@ const Add = ({ token }) => {
           </div>
 
           <div>
-            <p className="mb-2 font-medium">Rating</p>
+            <p className="mb-1 font-medium">Rating</p>
             <input
-              onChange={(e) => setReview(e.target.value)}
-              value={review}
-              className="input-box w-full"
               type="number"
               step="0.1"
-              placeholder="e.g. 4.5"
+              value={review}
+              onChange={(e) => setReview(e.target.value)}
+              className="input-box w-full"
+              placeholder="4.5"
               required
             />
           </div>
         </div>
 
-        {/* ---------------- PRICE SECTION ---------------- */}
+        {/* ================= PRICE SECTION ================= */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           <div>
-            <p className="mb-2 font-medium">Actual Price</p>
+            <p className="mb-1 font-medium">Actual Price</p>
             <input
-              onChange={(e) => setActualPrice(e.target.value)}
-              value={actualPrice}
-              className="input-box w-full"
               type="number"
+              value={actualPrice}
+              onChange={(e) => setActualPrice(e.target.value)}
+              className="input-box w-full"
               placeholder="Original Price"
               required
             />
           </div>
 
           <div>
-            <p className="mb-2 font-medium">Discounted Price</p>
+            <p className="mb-1 font-medium">Discounted Price</p>
             <input
-              onChange={(e) => setDiscountedPrice(e.target.value)}
-              value={discountedPrice}
-              className="input-box w-full"
               type="number"
+              value={discountedPrice}
+              onChange={(e) => setDiscountedPrice(e.target.value)}
+              className="input-box w-full"
               placeholder="Discounted Price"
               required
             />
           </div>
 
           <div>
-            <p className="mb-2 font-medium">Offer Code</p>
+            <p className="mb-1 font-medium">Offer Code</p>
             <input
-              onChange={(e) => setOfferCode(e.target.value)}
               value={offerCode}
+              onChange={(e) => setOfferCode(e.target.value)}
               className="input-box w-full"
-              type="text"
-              placeholder="Brawvly20"
+              placeholder="EXAMPLE20"
             />
           </div>
         </div>
 
-        {/* ---------------- REVIEW COUNT ---------------- */}
+        {/* ================= PEOPLE REVIEWED ================= */}
         <div>
-          <p className="mb-2 font-medium">No. of People Reviewed</p>
+          <p className="mb-1 font-medium">No. of People Reviewed</p>
           <input
-            onChange={(e) => setNoOfPeopleReviewed(e.target.value)}
-            value={noOfPeopleReviewed}
-            className="input-box w-full max-w-md"
             type="number"
-            placeholder="e.g. 40"
+            value={noOfPeopleReviewed}
+            onChange={(e) => setNoOfPeopleReviewed(e.target.value)}
+            className="input-box w-full max-w-md"
+            placeholder="40"
             required
           />
         </div>
 
-        {/* ---------------- SIZE SELECTOR ---------------- */}
+        {/* ================= SIZES ================= */}
         <div>
-          <p className="mb-2 font-medium">Product Sizes</p>
+          <p className="mb-1 font-medium">Product Sizes</p>
           <div className="flex flex-wrap gap-3">
             {["S", "M", "L", "XL", "XXL"].map((size) => (
               <div
@@ -341,16 +358,15 @@ const Add = ({ token }) => {
                 onClick={() =>
                   setSizes((prev) =>
                     prev.includes(size)
-                      ? prev.filter((item) => item !== size)
+                      ? prev.filter((s) => s !== size)
                       : [...prev, size]
                   )
                 }
-                className={`px-4 py-1 rounded-md cursor-pointer transition 
-              ${
-                sizes.includes(size)
-                  ? "bg-black text-white scale-105"
-                  : "bg-gray-200 hover:bg-black hover:text-white"
-              }`}
+                className={`px-4 py-1 rounded-md cursor-pointer transition ${
+                  sizes.includes(size)
+                    ? "bg-black text-white scale-105"
+                    : "bg-gray-200 hover:bg-black hover:text-white"
+                }`}
               >
                 {size}
               </div>
@@ -358,13 +374,13 @@ const Add = ({ token }) => {
           </div>
         </div>
 
-        {/* ---------------- BESTSELLER ---------------- */}
+        {/* ================= BESTSELLER ================= */}
         <div className="flex items-center gap-3">
           <input
-            onChange={() => setBestseller((prev) => !prev)}
-            checked={bestseller}
             type="checkbox"
             id="bestseller"
+            checked={bestseller}
+            onChange={() => setBestseller((prev) => !prev)}
             className="cursor-pointer w-4 h-4"
           />
           <label htmlFor="bestseller" className="cursor-pointer font-medium">
@@ -372,15 +388,15 @@ const Add = ({ token }) => {
           </label>
         </div>
 
-        {/* SUBMIT */}
+        {/* ================= SUBMIT BUTTON ================= */}
         <button
           disabled={loading}
-          className="bg-black text-white py-3 rounded-lg hover:scale-105 transition"
+          className="bg-black text-white py-3 rounded-lg hover:scale-105 transition cursor-pointer"
         >
           {loading ? "Uploading..." : "Add Product"}
         </button>
 
-        {/* LOADING UI */}
+        {/* LOADING OVERLAY */}
         {loading && (
           <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center">
             <div className="bg-white p-6 rounded-lg">

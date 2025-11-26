@@ -7,192 +7,357 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 const PlaceOrder = () => {
+  const [method, setMethod] = useState("cod");
+  const [showCouponBox, setShowCouponBox] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [checkingCoupon, setCheckingCoupon] = useState(false);
+  const [placingOrder, setPlacingOrder] = useState(false);
 
-  const [method, setMethod]=useState('cod');
-  const {navigate,backendUrl,token,cartItems,setCartItems,getCartAmount,delivery_fee,products}=useContext(ShopContext)
+  const {
+    navigate,
+    backendUrl,
+    token,
+    cartItems,
+    setCartItems,
+    getCartAmount,
+    delivery_fee,
+    products,
+  } = useContext(ShopContext);
 
-  const[formData,setFormData]=useState({
-    firstName:'',
-    lastName:'',
-    email:'',
-    street:'',
-    city:'',
-    state:'',
-    pincode:'',
-    country:'',
-    phone:''
-  })
-  
-  const onChangeHandler=(event)=>{
-    const name=event.target.name;
-    const value=event.target.value;
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    street: "",
+    city: "",
+    state: "",
+    pincode: "",
+    country: "",
+    phone: "",
+  });
 
-    setFormData(data=>({...data,[name]:value}))
+  const onChangeHandler = (event) => {
+    const { name, value } = event.target;
+    setFormData((data) => ({ ...data, [name]: value }));
+  };
 
-  }
+  // ---------------- APPLY COUPON ----------------
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) {
+      return toast.error("Please enter a coupon code!");
+    }
 
-  const onSubmitHandler=async(event)=>{
-    event.preventDefault()
+    setCheckingCoupon(true);
+
     try {
-      let orderItems=[]
-      for(const items in cartItems){
-        for(const item in cartItems[items]){
-          if(cartItems[items][item]>0){
-            const itemInfo=structuredClone(products.find(product=>product._id===items))
-            if(itemInfo){
-              itemInfo.size=item
-              itemInfo.quantity=cartItems[items][item]
-              orderItems.push(itemInfo)
+      const res = await axios.post(
+        `${backendUrl}/api/coupon/validate`,
+        { code: couponCode },
+        { headers: { token } }
+      );
+
+      if (res.data.success) {
+        setCouponDiscount(res.data.discountPercent);
+        toast.success(`Coupon Applied! ${res.data.discountPercent}% OFF`);
+      } else {
+        setCouponDiscount(0);
+        toast.error(res.data.message);
+      }
+    } catch (error) {
+      toast.error("Invalid coupon or expired.");
+    }
+
+    setCheckingCoupon(false);
+  };
+
+  // ------------ SUBMIT ORDER ------------
+  const onSubmitHandler = async (event) => {
+    event.preventDefault();
+
+    if (placingOrder) return; // stop double click
+
+    setPlacingOrder(true);
+
+    try {
+      let orderItems = [];
+
+      for (const items in cartItems) {
+        for (const item in cartItems[items]) {
+          if (cartItems[items][item] > 0) {
+            const itemInfo = structuredClone(
+              products.find((product) => product._id === items)
+            );
+            if (itemInfo) {
+              itemInfo.size = item;
+              itemInfo.quantity = cartItems[items][item];
+              orderItems.push(itemInfo);
             }
           }
         }
       }
-     let orderData={
-      address:formData,
-      items:orderItems,
-      amount:getCartAmount()+delivery_fee
-     }
 
-     switch(method){
-      //Api Calls for COD
-      case 'cod':
-        const response=await axios.post(backendUrl+'/api/order/place',orderData,{headers:{token}})
-        console.log(response.data.success)
-        if(response.data.success){
-          setCartItems({})
-          navigate('/orders')
-        }
-        else{
-          toast.error(response.data.message)
-        }
+      let baseAmount = getCartAmount() + delivery_fee;
+      let finalAmount = couponDiscount
+        ? baseAmount - (baseAmount * couponDiscount) / 100
+        : baseAmount;
 
-      break;
-      //Api call for CashFree
-      case 'cashfree':
-        const responseCashfree=await axios.post(backendUrl+'/api/order/cashfree',orderData,{headers:{token}})
-        if(responseCashfree.data.success){
-          const {session_url}=responseCashfree.data;
-          window.location.replace(session_url)
-        }
-        else{
-          toast.error(responseCashfree.data.message)
-        }
+      let orderData = {
+        address: formData,
+        items: orderItems,
+        amount: Math.round(finalAmount),
+      };
 
-      break;
+      switch (method) {
+        // ---------------- COD ----------------
+        case "cod":
+          const res = await axios.post(
+            backendUrl + "/api/order/place",
+            orderData,
+            { headers: { token } }
+          );
 
-      default:
-        break;
+          if (res.data.success) {
+            setCartItems({});
+            toast.success("Order Placed Successfully!", {
+              position: "top-center",
+              theme: "dark",
+            });
 
+            setTimeout(() => navigate("/orders"), 800);
+          } else {
+            toast.error(res.data.message);
+          }
+          break;
 
-     }
+        // ---------------- CASHFREE ----------------
+        case "cashfree":
+          const resCF = await axios.post(
+            backendUrl + "/api/order/cashfree",
+            orderData,
+            { headers: { token } }
+          );
+
+          if (resCF.data.success) {
+            window.location.replace(resCF.data.session_url);
+          } else {
+            toast.error(resCF.data.message);
+          }
+          break;
+
+        default:
+          break;
+      }
     } catch (error) {
-     console.error("Order placement failed:", error);
-     toast.error("Something went wrong while placing the order");
-      
+      toast.error("Order placement failed!");
     }
-  }
 
-  
+    setPlacingOrder(false);
+  };
 
   return (
-    <form onSubmit={onSubmitHandler} className="flex flex-col sm:flex-row justify-between gap-4 pt-5 sm:pt-14 min-h-[80vh] border-t">
-      {/* Left Side */}
-      <div className="flex flex-col gap-4 w-full sm:max-w-[480px]">
-        <div className="text-xl sm:text-2xl my-3">
-          <Title text1={"Delivery"} text2={"Information"} />
+    <form
+      onSubmit={onSubmitHandler}
+      className="flex flex-col sm:flex-row justify-between gap-10 pt-10 min-h-[90vh] border-t text-white"
+    >
+      {/* ================= LEFT SECTION ================= */}
+      <div className="flex flex-col gap-4 w-full sm:max-w-[480px] bg-[#121212] p-6 rounded-2xl border border-white/10 shadow-xl">
+        <div className="text-2xl mb-1">
+          <Title text1="Delivery" text2="Information" />
         </div>
+
         <div className="flex gap-3">
-          <input required
-            onChange={onChangeHandler} name='firstName' value={formData.firstName}
-            className="border border-gray-300 rounded py-1.5 px-3.5 w-full"
-            type="text"
+          <input
+            required
+            name="firstName"
+            value={formData.firstName}
+            onChange={onChangeHandler}
+            className="input-box"
             placeholder="First Name"
           />
-          <input required
-            onChange={onChangeHandler} name='lastName' value={formData.lastName}
-            className="border border-gray-300 rounded py-1.5 px-3.5 w-full"
-            type="text"
+          <input
+            required
+            name="lastName"
+            value={formData.lastName}
+            onChange={onChangeHandler}
+            className="input-box"
             placeholder="Last Name"
           />
         </div>
-        <input required
-          onChange={onChangeHandler} name='email' value={formData.email}
-          className="border border-gray-300 rounded py-1.5 px-3.5 w-full"
+
+        <input
+          required
+          name="email"
           type="email"
-          placeholder="Email address"
+          value={formData.email}
+          onChange={onChangeHandler}
+          className="input-box"
+          placeholder="Email Address"
         />
-        <input required
-          onChange={onChangeHandler} name='street' value={formData.street}
-          className="border border-gray-300 rounded py-1.5 px-3.5 w-full"
-          type="text"
+
+        <input
+          required
+          name="street"
+          value={formData.street}
+          onChange={onChangeHandler}
+          className="input-box"
           placeholder="Street"
         />
+
         <div className="flex gap-3">
-          <input required
-          onChange={onChangeHandler} name='city' value={formData.city}
-            className="border border-gray-300 rounded py-1.5 px-3.5 w-full"
-            type="text"
+          <input
+            required
+            name="city"
+            value={formData.city}
+            onChange={onChangeHandler}
+            className="input-box"
             placeholder="City"
           />
+
           <input
-            onChange={onChangeHandler} name='state' value={formData.state}
-            className="border border-gray-300 rounded py-1.5 px-3.5 w-full"
-            type="text"
-            placeholder="State"
             required
+            name="state"
+            value={formData.state}
+            onChange={onChangeHandler}
+            className="input-box"
+            placeholder="State"
           />
         </div>
+
         <div className="flex gap-3">
-          <input required
-            onChange={onChangeHandler} name='pincode' value={formData.pincode}
-            className="border border-gray-300 rounded py-1.5 px-3.5 w-full"
+          <input
+            required
             type="number"
+            name="pincode"
+            value={formData.pincode}
+            onChange={onChangeHandler}
+            className="input-box"
             placeholder="Pin Code"
           />
-          <input required
-            onChange={onChangeHandler} name='country' value={formData.country}
-            className="border border-gray-300 rounded py-1.5 px-3.5 w-full"
-            type="text"
+
+          <input
+            required
+            name="country"
+            value={formData.country}
+            onChange={onChangeHandler}
+            className="input-box"
             placeholder="Country"
           />
         </div>
-        <input required
-          onChange={onChangeHandler} name='phone' value={formData.phone}
-          className="border border-gray-300 rounded py-1.5 px-3.5 w-full"
+
+        <input
+          required
           type="number"
+          name="phone"
+          value={formData.phone}
+          onChange={onChangeHandler}
+          className="input-box"
           placeholder="Phone Number"
         />
       </div>
 
-      {/* Right Side */}
-      <div className="mt-8">
-        <div className="mt-8 min-w-80">
-          <CartTotal/>
+      {/* ================= RIGHT SECTION ================= */}
+      <div className="flex-1 px-3">
+        {/* CART TOTAL */}
+        <div className="bg-[#121212] rounded-2xl border border-white/10 p-6 shadow-xl mb-10">
+          <CartTotal />
+
+          {/* APPLY COUPON */}
+          <div className="mt-6">
+            <button
+              type="button"
+              onClick={() => setShowCouponBox(!showCouponBox)}
+              className="text-[1/2]xl text-blue-300 underline cursor-pointer hover:text-white"
+            >
+              {showCouponBox ? "Hide Coupon" : "Have a coupon?"}
+            </button>
+
+            {/* COUPON TOGGLE BOX */}
+            {showCouponBox && (
+              <div className="mt-4 bg-black/40 p-4 rounded-xl border border-white/10">
+                <div className="flex gap-3">
+                  <input
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    className="flex-1 bg-black text-white p-2 rounded-lg border border-white/20"
+                    placeholder="Enter coupon code"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={applyCoupon}
+                    disabled={checkingCoupon}
+                    className="bg-white text-black px-5 rounded-lg font-semibold hover:bg-gray-300 transition"
+                  >
+                    {checkingCoupon ? "Checking..." : "Apply"}
+                  </button>
+                </div>
+
+                {couponDiscount > 0 && (
+                  <p className="text-green-400 text-sm mt-2">
+                    🎉 Coupon Applied: {couponDiscount}% OFF!
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-        <div className="mt-12">
-          <Title text1={'Payment'} text2={'method'}/>
-          {/* Payment Method Selction */}
-          <div className="flex gap-3 flex-col lg:flex-row">
-            <div onClick={()=>setMethod('cashfree')} className="flex items-center gap-3 border p-2 px-3 cursor-pointer">
-              <p className={`min-w-3.5 h-3.5 border rounded-full ${method==='cashfree' ?'bg-green-400' :''}`}></p>
-              <img className="h-5 mx-4" src="https://cashfreelogo.cashfree.com/cashfreepayments/logopng4x/Cashfree_Payments_Logo.png" alt="Cashfree" />
+
+        {/* PAYMENT METHOD */}
+        <div>
+          <Title text1="Payment" text2="Method" />
+
+          <div className="flex gap-4 flex-col lg:flex-row mt-4">
+            <div
+              onClick={() => setMethod("cashfree")}
+              className={`pay-box ${method === "cashfree" && "active-pay"}`}
+            >
+              <p className="radio-dot"></p>
+              <img
+                className="h-5 mx-4"
+                src="https://cashfreelogo.cashfree.com/cashfreepayments/logopng4x/Cashfree_Payments_Logo.png"
+                alt="cashfree"
+              />
             </div>
-            <div onClick={()=>setMethod('razorpay')} className="flex items-center gap-3 border p-2 px-3 cursor-pointer">
-              <p className={`min-w-3.5 h-3.5 border rounded-full ${method==='razorpay' ?'bg-green-400' :''}`}></p>
-              <img className="h-5 mx-4" src={assets.razorpay_logo} alt="Razorpay" />
+
+            <div
+              onClick={() => setMethod("razorpay")}
+              className={`pay-box ${method === "razorpay" && "active-pay"}`}
+            >
+              <p className="radio-dot"></p>
+              <img className="h-5 mx-4" src={assets.razorpay_logo} />
             </div>
-            <div onClick={()=>setMethod('cod')} className="flex items-center gap-3 border p-2 px-3 cursor-pointer">
-              <p className={`min-w-3.5 h-3.5 border rounded-full ${method==='cod' ?'bg-green-400' :''}`}></p>
-              <p className="text-gray-800 text-sm font-medium mx-4">Cash On Delivery</p>
+
+            <div
+              onClick={() => setMethod("cod")}
+              className={`pay-box ${method === "cod" && "active-pay"}`}
+            >
+              <p className="radio-dot"></p>
+              <p className="text-sm font-medium mx-4">Cash On Delivery</p>
             </div>
           </div>
 
-          <div className="w-full text-end mt-8">
-            <button type='submit' className="bg-black text-white px-16 py-3 text-sm cursor-pointer">Place Order</button>
-
+          <div className="w-full text-end mt-10">
+            <button
+              type="submit"
+              disabled={placingOrder}
+              className={`${
+                placingOrder
+                  ? "bg-gray-700 text-gray-300 cursor-not-allowed"
+                  : "bg-white text-black hover:bg-black/40 border hover:text-white"
+              } px-16 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-3 cursor-pointer`}
+            >
+              {placingOrder ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-gray-400 border-t-white rounded-full animate-spin"></div>
+                  Placing Order…
+                </>
+              ) : (
+                "Place Order"
+              )}
+            </button>
           </div>
         </div>
-
       </div>
     </form>
   );

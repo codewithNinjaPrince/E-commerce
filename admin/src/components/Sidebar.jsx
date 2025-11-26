@@ -30,16 +30,6 @@ const Sidebar = () => {
           <p className="hidden md:block">Orders</p>
         </NavLink>
 
-        <NavLink
-          className={({
-            isActive,
-          }) => `flex items-center gap-3 px-3 py-2 rounded-lg border 
-  ${isActive ? "bg-white/10 border-yellow-400" : "border-white/20"} 
-  hover:bg-white/10 transition-all`}
-          to="/upload-guide"
-        >
-          <p className="block text-sm">📖 Upload Guide</p>
-        </NavLink>
       </div>
     </div>
   );

@@ -1,179 +1,277 @@
 import React, { useContext, useEffect, useState } from "react";
 import { ShopContext } from "../context/ShopContext";
-import { assets } from "../assets/assets";
 import Title from "../components/Title";
 import ProductItem from "../components/ProductItem";
 
 const Collections = () => {
   const { products, search, showSearch } = useContext(ShopContext);
-  const [showfilter, setShowfilter] = useState(false);
-  const [filterproducts, setFilterProducts] = useState([]);
+
+  const [loading, setLoading] = useState(true); // 🔥 loader only first time
+  const [filterProducts, setFilterProducts] = useState([]);
+
+  // Desktop Filters
   const [category, setCategory] = useState([]);
   const [subCategory, setSubCategory] = useState([]);
-  const [sortType, setSortType] = useState('relavant');
+  const [sortType, setSortType] = useState("relevant");
+
+  // Mobile Drawers
+  const [showMobileFilter, setShowMobileFilter] = useState(false);
+  const [showMobileSort, setShowMobileSort] = useState(false);
+
+  // ========== HANDLERS ==========
 
   const toggleCategory = (e) => {
-    if (category.includes(e.target.value)) {
-      setCategory((prev) => prev.filter((item) => item !== e.target.value));
-    } else {
-      setCategory((prev) => [...prev, e.target.value]);
-    }
+    const val = e.target.value;
+    setCategory((prev) =>
+      prev.includes(val) ? prev.filter((c) => c !== val) : [...prev, val]
+    );
   };
 
   const toggleSubCategory = (e) => {
-    if (subCategory.includes(e.target.value)) {
-      setSubCategory((prev) => prev.filter((item) => item !== e.target.value));
-    } else {
-      setSubCategory((prev) => [...prev, e.target.value]);
-    }
+    const val = e.target.value;
+    setSubCategory((prev) =>
+      prev.includes(val) ? prev.filter((s) => s !== val) : [...prev, val]
+    );
   };
 
-  const applyFilter = ()=>{
-    let productsCopy =products.slice();
-    if(showSearch && search){
-      productsCopy = productsCopy.filter((item)=> item.name.toLowerCase().includes(search.toLowerCase()));
+  // ========== FILTER FUNCTION ==========
+  const applyFilters = () => {
+    let data = [...products];
+
+    // Search filter
+    if (showSearch && search.trim()) {
+      data = data.filter((p) =>
+        p.name.toLowerCase().includes(search.toLowerCase())
+      );
     }
 
-    if(category.length>0){
-      productsCopy = productsCopy.filter((item)=> category.includes(item.category));
+    // Category filter
+    if (category.length > 0) {
+      data = data.filter((p) => category.includes(p.category));
     }
 
-    if(subCategory.length>0){
-      productsCopy = productsCopy.filter((item)=> subCategory.includes(item.subCategory));
+    // Subcategory filter
+    if (subCategory.length > 0) {
+      data = data.filter((p) => subCategory.includes(p.subCategory));
     }
 
-    setFilterProducts(productsCopy);
-  }
+    setFilterProducts(data);
+  };
 
-  const sortProduct = (e)=>{
-    let fpCopy=filterproducts.slice()
+  // ========== SORT FUNCTION ==========
+  const sortProducts = () => {
+    let sorted = [...filterProducts];
 
-    switch(sortType){
-      case 'low-high':
-        setFilterProducts(fpCopy.sort((a,b)=>(a.price-b.price)));
+    switch (sortType) {
+      case "low-high":
+        sorted.sort((a, b) => a.discountedPrice - b.discountedPrice);
         break;
-      case 'high-low':
-        setFilterProducts(fpCopy.sort((a,b)=>(b.price-a.price)));
+
+      case "high-low":
+        sorted.sort((a, b) => b.discountedPrice - a.discountedPrice);
         break;
+
       default:
-        applyFilter();
-        break;
-
+        applyFilters();
+        return;
     }
-  }
 
-   useEffect(() => {
-    applyFilter()
-  },[category,subCategory,search,showSearch,products]);
+    setFilterProducts(sorted);
+  };
 
-   useEffect(() => {
-    sortProduct()
-  },[sortType]);
+  // Apply filters when data changes
+  useEffect(() => {
+    applyFilters();
+  }, [products, search, showSearch, category, subCategory]);
 
+  // Apply sorting when sortType changes
+  useEffect(() => {
+    sortProducts();
+  }, [sortType]);
+
+  // ================= FIRST TIME LOADER =================
+  useEffect(() => {
+    if (products.length > 0) {
+      setTimeout(() => setLoading(false), 400); // only ONCE
+    }
+  }, [products]);
 
   return (
-    <div className="flex flex-col sm:flex-row gap-1 sm-gap-10 pt-10 border-t">
-      {/* Filter Options */}
-      <div className="min-w-60 cursor-pointer ">
-        <p
-          onClick={() => setShowfilter(!showfilter)}
-          className="my-2 text-xl flex-items-center cursor-pointer gap-2"
-        >
-          Filters
-          <img
-            className={`h-3 sm:hidden ${showfilter ? "rotate-90" : ""}`}
-            src={assets.dropdown_icon}
-            alt="Dropdown icon"
-          />
-        </p>
-        {/* category filter */}
-        <div
-          className={`border border-gray-300 pl-5 py-3 mt-6 ${
-            showfilter ? "" : "hidden"
-          } sm:block `}
-        >
-          <p className="mb-3 text-sm font-medium ">Categories</p>
-          <div className="flex flex-col gap-2 text-sm font-light text-gray-700 cursor-pointer">
-            <p className="flex gap-2">
-              <input
-                className="w-3"
-                type="checkbox"
-                value={"Men"}
-                onChange={toggleCategory}
-              />
-              Men
-            </p>
-            <p className="flex gap-2">
-              <input
-                className="w-3"
-                type="checkbox"
-                value={"Women"}
-                onChange={toggleCategory}
-              />
-              Women
-            </p>
-            <p className="flex gap-2">
-              <input
-                className="w-3"
-                type="checkbox"
-                value={"Kids"}
-                onChange={toggleCategory}
-              />
-              Kids
-            </p>
+    <div className="pt-10 border-t text-white min-h-screen">
+      {/* =================== SHOW LOADER ONLY FIRST TIME =================== */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-40">
+          <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+          <p className="text-gray-300 mt-4 text-sm">Loading collections…</p>
+        </div>
+      ) : (
+        <>
+          {/* =================== MAIN LAYOUT =================== */}
+          <div className="flex gap-6">
+            {/* DESKTOP SIDEBAR */}
+            <div className="hidden sm:block min-w-60 bg-[#1c1c1c] p-5 rounded-xl border border-white/10">
+              <h2 className="text-xl font-semibold mb-4">Filters</h2>
+
+              {/* Categories */}
+              <div className="mb-6">
+                <p className="font-medium mb-2">Categories</p>
+                <div className="space-y-2 text-sm cursor-pointer">
+                  {["Men", "Women", "Kids"].map((cat) => (
+                    <label key={cat} className="flex gap-2">
+                      <input
+                        type="checkbox"
+                        value={cat}
+                        onChange={toggleCategory}
+                        className="accent-white cursor-pointer"
+                      />
+                      {cat}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sub-category */}
+              <div className="mb-6">
+                <p className="font-medium mb-2">Type</p>
+                <div className="space-y-2 text-sm cursor-pointer">
+                  {["Topwear", "Bottomwear", "Winterwear"].map((sub) => (
+                    <label key={sub} className="flex gap-2">
+                      <input
+                        type="checkbox"
+                        value={sub}
+                        onChange={toggleSubCategory}
+                        className="accent-white cursor-pointer"
+                      />
+                      {sub}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* =================== RIGHT SIDE =================== */}
+            <div className="flex-1">
+              <div className="flex justify-between items-center text-2xl">
+                <Title text1="All" text2="Collections" />
+
+                <select
+                  value={sortType}
+                  onChange={(e) => setSortType(e.target.value)}
+                  className="hidden sm:block bg-[#1c1c1c] px-3 py-2 rounded-lg border border-white/10 cursor-pointer"
+                >
+                  <option value="relevant">Sort by: Relevant</option>
+                  <option value="low-high">Low → High</option>
+                  <option value="high-low">High → Low</option>
+                </select>
+              </div>
+
+              {/* PRODUCTS */}
+              <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 animate-fadeIn">
+                {filterProducts.length === 0 ? (
+                  <p className="text-gray-400 text-center col-span-full py-20">
+                    No products found.
+                  </p>
+                ) : (
+                  filterProducts.map((item) => (
+                    <ProductItem
+                      key={item._id}
+                      _id={item._id}
+                      name={item.name}
+                      brandName={item.brandName}
+                      image={item.image}
+                      discountedPrice={item.discountedPrice}
+                      actualPrice={item.actualPrice}
+                      review={item.review}
+                      noOfPeopleReviewed={item.noOfPeopleReviewed}
+                    />
+                  ))
+                )}
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Sub-Category Filter */}
+          {/* MOBILE FILTER/SORT BUTTONS */}
+          <div className="sm:hidden fixed bottom-0 left-0 w-full bg-black/90 border-t border-white/10 flex justify-around py-3 z-50">
+            <button
+              onClick={() => {
+                setShowMobileFilter(true);
+                setShowMobileSort(false);
+              }}
+              className="text-white font-semibold cursor-pointer"
+            >
+              🔍 Filter
+            </button>
 
-        <div
-          className={`border border-gray-300 pl-5 py-3 my-5 ${
-            showfilter ? "" : "hidden"
-          } sm:block`}
-        >
-          <p className="mb-3 text-sm font-medium ">Type</p>
-          <div className="flex flex-col gap-2 text-sm font-light text-gray-700">
-            <p className="flex gap-2">
-              <input className="w-3" type="checkbox" value={"Topwear"} onChange={toggleSubCategory}  />{" "}
-              Topwear
-            </p>
-            <p className="flex gap-2">
-              <input className="w-3" type="checkbox" value={"Bottomwear"} onChange={toggleSubCategory} />{" "}
-              Bottomwear
-            </p>
-            <p className="flex gap-2">
-              <input className="w-3" type="checkbox" value={"Winterwear"} onChange={toggleSubCategory} />{" "}
-              Winterwear
-            </p>
+            <button
+              onClick={() => {
+                setShowMobileSort(true);
+                setShowMobileFilter(false);
+              }}
+              className="text-white font-semibold cursor-pointer"
+            >
+              ⇅ Sort
+            </button>
           </div>
-        </div>
-      </div>
-      {/* Right Side */}
 
-      <div className="flex-1">
-        <div className="flex flex-1 justify-between text-base sm:text-2xl mb-4 ">
-          <Title text1={"All"} text2={"Collections"} />
-          {/* Product Sort */}
-          <select onChange={(e)=>setSortType(e.target.value)} className="border-2 border-gray-300 cursor-pointer">
-            <option value="relavant">Sort by: Relavent</option>
-            <option value="low-high">Sort by: Low to High</option>
-            <option value="high-low">Sort by: High to Low</option>
-          </select>
-        </div>
+          {/* MOBILE FILTER DRAWER */}
+          {showMobileFilter && (
+            <div className="fixed bottom-0 left-0 w-full bg-[#111] border-t border-white/10 p-5 rounded-t-2xl z-50 animate-slide-up">
+              <div className="flex justify-between mb-4">
+                <h2 className="text-lg font-semibold">Filters</h2>
+                <button onClick={() => setShowMobileFilter(false)}>✖</button>
+              </div>
 
-        {/* Map products */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6">
-          {filterproducts.map((item, index) => (
-            <ProductItem
-              key={index}
-              name={item.name}
-              id={item._id}
-              price={item.price}
-              image={item.image}
-            />
-          ))}
-        </div>
-      </div>
+              {/* Category */}
+              <p className="font-medium mb-2">Categories</p>
+              <div className="space-y-2 mb-4 cursor-pointer">
+                {["Men", "Women", "Kids"].map((cat) => (
+                  <label key={cat} className="flex gap-2">
+                    <input
+                      type="checkbox"
+                      value={cat}
+                      onChange={toggleCategory}
+                      className="accent-white"
+                    />
+                    {cat}
+                  </label>
+                ))}
+              </div>
+
+              {/* SubCategory */}
+              <p className="font-medium mb-2">Type</p>
+              <div className="space-y-2 cursor-pointer">
+                {["Topwear", "Bottomwear", "Winterwear"].map((sub) => (
+                  <label key={sub} className="flex gap-2">
+                    <input
+                      type="checkbox"
+                      value={sub}
+                      onChange={toggleSubCategory}
+                      className="accent-white"
+                    />
+                    {sub}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* MOBILE SORT DRAWER */}
+          {showMobileSort && (
+            <div className="fixed bottom-0 left-0 w-full bg-[#111] border-t border-white/10 p-5 rounded-t-2xl z-50 animate-slide-up">
+              <div className="flex justify-between mb-4">
+                <h2 className="text-lg font-semibold">Sort By</h2>
+                <button onClick={() => setShowMobileSort(false)}>✖</button>
+              </div>
+
+              <div className="space-y-3 cursor-pointer">
+                <p onClick={() => setSortType("relevant")}>Relevant</p>
+                <p onClick={() => setSortType("low-high")}>Price: Low → High</p>
+                <p onClick={() => setSortType("high-low")}>Price: High → Low</p>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };

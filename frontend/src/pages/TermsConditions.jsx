@@ -3,24 +3,31 @@ import Title from "../components/Title";
 
 const TermsConditions = () => {
   return (
-    <div className="px-4 md:px-20 py-10 border-t">
-
+    <div
+      className="
+        px-4 md:px-20 py-10 
+        bg-black/90
+        border-t border-white/10
+        border-b border-white/20
+        shadow-[0_0_25px_rgba(255,255,255,0.06)]
+      "
+    >
       {/* Page Title */}
-      <div className="text-2xl text-center mb-8">
+      <div className="text-2xl text-center mb-8 text-white">
         <Title text1={"Terms &"} text2={"Conditions"} />
       </div>
 
-      <div className="max-w-5xl mx-auto text-gray-600 space-y-6 text-sm md:text-base leading-7">
+      <div className="max-w-5xl mx-auto text-white space-y-6 text-sm md:text-base leading-7">
 
         <p>
-          Welcome to <span className="font-semibold text-black">Brawvly</span> ("we", "our", "us").  
+          Welcome to <span className="font-semibold text-white">Brawvly</span> ("we", "our", "us").  
           By accessing or using our website and services, you agree to comply with and be bound by the 
           following Terms & Conditions. Please read them carefully before using our platform.
         </p>
 
         {/* Section 1 */}
         <div>
-          <h3 className="text-lg font-semibold text-black mb-2">
+          <h3 className="text-lg font-semibold text-white mb-2">
             1. Platform Overview
           </h3>
           <p>
@@ -32,7 +39,7 @@ const TermsConditions = () => {
 
         {/* Section 2 */}
         <div>
-          <h3 className="text-lg font-semibold text-black mb-2">
+          <h3 className="text-lg font-semibold text-white mb-2">
             2. User Eligibility
           </h3>
           <p>
@@ -44,7 +51,7 @@ const TermsConditions = () => {
 
         {/* Section 3 */}
         <div>
-          <h3 className="text-lg font-semibold text-black mb-2">
+          <h3 className="text-lg font-semibold text-white mb-2">
             3. User Responsibilities
           </h3>
           <ul className="list-disc pl-6 space-y-2">
@@ -56,7 +63,7 @@ const TermsConditions = () => {
 
         {/* Section 4 */}
         <div>
-          <h3 className="text-lg font-semibold text-black mb-2">
+          <h3 className="text-lg font-semibold text-white mb-2">
             4. Orders & Cancellation
           </h3>
           <p>
@@ -68,7 +75,7 @@ const TermsConditions = () => {
 
         {/* Section 5 */}
         <div>
-          <h3 className="text-lg font-semibold text-black mb-2">
+          <h3 className="text-lg font-semibold text-white mb-2">
             5. Pricing & Payments
           </h3>
           <p>
@@ -80,7 +87,7 @@ const TermsConditions = () => {
 
         {/* Section 6 */}
         <div>
-          <h3 className="text-lg font-semibold text-black mb-2">
+          <h3 className="text-lg font-semibold text-white mb-2">
             6. Shipping & Delivery
           </h3>
           <p>
@@ -92,7 +99,7 @@ const TermsConditions = () => {
 
         {/* Section 7 */}
         <div>
-          <h3 className="text-lg font-semibold text-black mb-2">
+          <h3 className="text-lg font-semibold text-white mb-2">
             7. Returns & Refunds
           </h3>
           <p>
@@ -103,7 +110,7 @@ const TermsConditions = () => {
 
         {/* Section 8 */}
         <div>
-          <h3 className="text-lg font-semibold text-black mb-2">
+          <h3 className="text-lg font-semibold text-white mb-2">
             8. Intellectual Property Rights
           </h3>
           <p>
@@ -115,7 +122,7 @@ const TermsConditions = () => {
 
         {/* Section 9 */}
         <div>
-          <h3 className="text-lg font-semibold text-black mb-2">
+          <h3 className="text-lg font-semibold text-white mb-2">
             9. Limitation of Liability
           </h3>
           <p>
@@ -126,7 +133,7 @@ const TermsConditions = () => {
 
         {/* Section 10 */}
         <div>
-          <h3 className="text-lg font-semibold text-black mb-2">
+          <h3 className="text-lg font-semibold text-white mb-2">
             10. Account Suspension
           </h3>
           <p>
@@ -137,7 +144,7 @@ const TermsConditions = () => {
 
         {/* Section 11 */}
         <div>
-          <h3 className="text-lg font-semibold text-black mb-2">
+          <h3 className="text-lg font-semibold text-white mb-2">
             11. Governing Law
           </h3>
           <p>
@@ -148,7 +155,7 @@ const TermsConditions = () => {
 
         {/* Section 12 */}
         <div>
-          <h3 className="text-lg font-semibold text-black mb-2">
+          <h3 className="text-lg font-semibold text-white mb-2">
             12. Updates to Terms
           </h3>
           <p>
@@ -159,15 +166,15 @@ const TermsConditions = () => {
 
         {/* Contact */}
         <div>
-          <h3 className="text-lg font-semibold text-black mb-2">
+          <h3 className="text-lg font-semibold text-white mb-2">
             13. Contact Us
           </h3>
           <p>
             For any questions regarding these terms, you may contact us at:
           </p>
           <p className="mt-2">
-            📧 Email: <a href="mailto:dixitprince895@gmail.com" className="hover:text-black font-medium">dixitprince895@gmail.com</a><br />
-            📞 Phone: <a href="tel:+918736852549" className="hover:text-black font-medium">+91 87368 52549</a>
+            📧 Email: <a href="mailto:dixitprince895@gmail.com" className="hover:text-gray-300 font-medium">dixitprince895@gmail.com</a><br />
+            📞 Phone: <a href="tel:+918736852549" className="hover:text-gray-300 font-medium">+91 87368 52549</a>
           </p>
         </div>
 
