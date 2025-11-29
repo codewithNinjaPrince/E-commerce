@@ -17,12 +17,25 @@ const addProduct = async (req, res) => {
       subCategory,
       sizes,
       bestseller,
+      shopId,
+      sellerId,
     } = req.body;
 
     // ======================== BASIC VALIDATIONS ========================
 
-    if (!brandName || !name || !actualPrice || !discountedPrice || !description || !category || !subCategory) {
-      return res.json({ success: false, message: "All required fields must be filled" });
+    if (
+      !brandName ||
+      !name ||
+      !actualPrice ||
+      !discountedPrice ||
+      !description ||
+      !category ||
+      !subCategory
+    ) {
+      return res.json({
+        success: false,
+        message: "All required fields must be filled",
+      });
     }
 
     const rating = Number(review);
@@ -30,33 +43,41 @@ const addProduct = async (req, res) => {
     const actual = Number(actualPrice);
     const discounted = Number(discountedPrice);
 
-    if (rating > 5) return res.json({ success: false, message: "Review cannot exceed 5 stars" });
-    if (rating < 0) return res.json({ success: false, message: "Review cannot be negative" });
+    if (rating > 5)
+      return res.json({
+        success: false,
+        message: "Review cannot exceed 5 stars",
+      });
+    if (rating < 0)
+      return res.json({ success: false, message: "Review cannot be negative" });
 
-    if (totalPeople > 100) return res.json({ success: false, message: "Maximum 100 people can review" });
+    if (totalPeople > 100)
+      return res.json({
+        success: false,
+        message: "Maximum 100 people can review",
+      });
 
     if (actual <= 0 || discounted <= 0) {
-      return res.json({ success: false, message: "Prices must be greater than 0" });
-    }
-
-    if(actual<discounted){
-      return res.json({success:false, message:"Actual Price should be more than Discounted price"});
+      return res.json({
+        success: false,
+        message: "Prices must be greater than 0",
+      });
     }
 
     // ======================== OFFER CODE VALIDATION ========================
     // Pattern: BrandName + number 10–80 (e.g Prince20)
-     const offerRegex = /^[A-Za-z]+(1[0-9]|[2-7][0-9]|80)$/;
+    const offerRegex = /^[A-Za-z]+(1[0-9]|[2-7][0-9]|80)$/;
 
     // Only validate if offerCode is provided and not empty
     if (offerCode && offerCode.trim() !== "") {
       if (!offerRegex.test(offerCode)) {
         return res.json({
           success: false,
-          message: "Offer code must be like BrandName + number between 10 and 80 (e.g. Prince20)",
+          message:
+            "Offer code must be like BrandName + number between 10 and 80 (e.g. Prince20)",
         });
       }
     }
-
 
     // ======================== IMAGE HANDLING ========================
 
@@ -72,8 +93,16 @@ const addProduct = async (req, res) => {
     const image10 = req.files?.image10?.[0];
 
     const images = [
-      image1,image2,image3,image4,image5,
-      image6,image7,image8,image9,image10
+      image1,
+      image2,
+      image3,
+      image4,
+      image5,
+      image6,
+      image7,
+      image8,
+      image9,
+      image10,
     ].filter(Boolean);
 
     if (images.length > 10) {
@@ -83,8 +112,10 @@ const addProduct = async (req, res) => {
     // ======================== UPLOAD TO CLOUDINARY ========================
 
     const imagesUrl = await Promise.all(
-      imageFiles.map(async (item) => {
-        const result = await cloudinary.uploader.upload(file.path, { resource_type: "image" });
+      images.map(async (item) => {
+        const result = await cloudinary.uploader.upload(item.path, {
+          resource_type: "image",
+        });
         return result.secure_url;
       })
     );
@@ -96,21 +127,24 @@ const addProduct = async (req, res) => {
       parsedSizes = JSON.parse(sizes);
       if (!Array.isArray(parsedSizes)) throw new Error();
     } catch (err) {
-      return res.json({ success: false, message: "Sizes must be a valid array" });
+      return res.json({
+        success: false,
+        message: "Sizes must be a valid array",
+      });
     }
 
     // ======================== FINAL PRODUCT DATA ========================
 
     const productData = {
-      sellerId: req.user.role === "admin" ? "admin" : req.user.id,
-      shopId: req.user.role === "admin" ? "admin_shop" : req.user.shopId,
+      sellerId: req.merchant, // <-- REQUIRED
+      shopId: req.merchantShopId || "",
       review: rating,
       noOfPeopleReviewed: totalPeople,
       brandName,
       name,
       actualPrice: actual,
       discountedPrice: discounted,
-      offerCode: offerCode?.trim() || "",
+      offerCode: offerCode && offerCode.trim() !== "" ? offerCode : null,
       description,
       category,
       subCategory,
@@ -124,30 +158,18 @@ const addProduct = async (req, res) => {
     await product.save();
 
     res.json({ success: true, message: "Product added successfully", product });
-
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
 };
 
-
 // Function for listing product
 const listProducts = async (req, res) => {
   try {
-    let products;
-
-    if (req.user && req.user.role === "admin") {
-      products = await productModel.find({});
-    } else if (req.user && req.user.role === "seller") {
-      products = await productModel.find({ shopId: req.user.shopId });
-    } else {
-      // Public → show all active products
-      products = await productModel.find({});
-    }
+    const products = await productModel.find({}).sort({ createdAt: -1 });
 
     res.json({ success: true, products });
-
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
@@ -157,59 +179,14 @@ const listProducts = async (req, res) => {
 // Function for removing product
 const removeProduct = async (req, res) => {
   try {
-    const product = await productModel.findById(req.body.id);
-
-    if (!product) {
-      return res.json({ success: false, message: "Product not found" });
-    }
-
-    // Admin can remove ANY product
-    if (req.user.role === "admin") {
-      await productModel.findByIdAndDelete(req.body.id);
-      return res.json({ success: true, message: "Product removed" });
-    }
-
-    // Seller can remove ONLY their own product
-    if (product.shopId !== req.user.shopId) {
-      return res.json({ success: false, message: "Not authorized to remove this product" });
-    }
-
     await productModel.findByIdAndDelete(req.body.id);
     res.json({ success: true, message: "Product removed" });
-
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
 };
 
-// Function for single product info
-const singleProduct = async (req, res) => {
-  try {
-    const { productId } = req.body;
-    const product = await productModel.findById(productId);
-
-    if (!product) {
-      return res.json({ success: false, message: "Product not found" });
-    }
-
-    // Admin can view ANY product
-    if (req.user.role === "admin") {
-      return res.json({ success: true, product });
-    }
-
-    // Seller can view ONLY their product
-    if (product.shopId !== req.user.shopId) {
-      return res.json({ success: false, message: "Not authorized to view this product" });
-    }
-
-    res.json({ success: true, product });
-
-  } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
-  }
-};
-export { addProduct, listProducts, removeProduct, singleProduct };
+export { addProduct, listProducts, removeProduct };
 
 //This code is fine please do not touch it ending at 7:08:40

@@ -1,6 +1,6 @@
 import express from 'express'
 import orderController from '../controller/orderController.js'
-const {placeOrder,placeOrderRazorpay,placeOrderCashfree,allOrders,userOrders,updateStatus,verifyCashfree}=orderController
+const {placeOrder,cancelOrder,trackOrder,placeOrderRazorpay,placeOrderCashfree,allOrders,userOrders,updateStatus,verifyCashfree}=orderController
 import adminAuth from '../middleware/adminAuth.js'
 import authUser from '../middleware/auth.js'
 
@@ -12,6 +12,8 @@ orderRouter.post('/status',adminAuth,updateStatus)
 
 //Payment Features
 orderRouter.post('/place',authUser,placeOrder)
+orderRouter.post('/cancel',authUser,cancelOrder)
+orderRouter.post('/track',authUser,trackOrder)
 orderRouter.post('/cashfree',authUser,placeOrderCashfree)
 orderRouter.post('/razorpay',authUser,placeOrderRazorpay)
 

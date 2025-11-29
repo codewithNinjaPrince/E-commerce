@@ -1,14 +1,15 @@
 import mongoose from "mongoose";
 
     const productSchema = new mongoose.Schema({
-    sellerId: { type: String, required: false },
-    shopId: { type: String, required: false },
+    sellerId: { type: String, required: false, default:"" },
+    shopId: { type: String, required: false, default:"" },
+    isVisibleToMerchant: { type: Boolean, default: true },
     name: { type: String, required: true, trim: true },
     brandName: { type: String, required: true, trim: true },
     description: { type: String, required: true },
     actualPrice: { type: Number, required: true, min: 1 },
     discountedPrice: { type: Number, required: true, min: 1 },
-    offerCode: { type: String, default: "" },
+    offerCode: { type: String,required: false, default: "" },
     review: { type: Number, default: 0, min: 0, max: 5 },
     noOfPeopleReviewed: { type: Number, default: 0, max: 100 },
     image: {
@@ -34,4 +35,3 @@ const productModel =
   mongoose.models.product || mongoose.model("product", productSchema);
 
 export default productModel;
-

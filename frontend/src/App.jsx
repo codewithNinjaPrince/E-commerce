@@ -99,6 +99,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import RefundReturnPolicy from "./pages/RefundReturnPolicy";
 import ShippingDelivery from "./pages/ShippingDelivery";
 import TermsConditions from "./pages/TermsConditions";
+import MyProfile from './pages/MyProfilePage';
 import Verify from './pages/Verify'
 import { ShopContext } from "./context/ShopContext";
 
@@ -148,7 +149,7 @@ const App = () => {
               <Route path="/placeorder" element={<PlaceOrder/>}/>
               <Route path="/login" element={<Login/>}/>
               <Route path="/verify" element={<Verify/>}/>
-
+              <Route path="/profile" element={<MyProfile/>}/>
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/refund-return" element={<RefundReturnPolicy />} />
               <Route path="/shipping-delivery" element={<ShippingDelivery />} />

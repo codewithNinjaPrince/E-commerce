@@ -5,6 +5,7 @@ import { assets } from "../assets/assets";
 import { ShopContext } from "../context/ShopContext";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useEffect } from "react";
 
 const PlaceOrder = () => {
   const [method, setMethod] = useState("cod");
@@ -71,6 +72,31 @@ const PlaceOrder = () => {
     setCheckingCoupon(false);
   };
 
+  // ================= AUTO PREFILL USER ADDRESS =================
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      if (!token) return;
+
+      try {
+        const res = await axios.get(`${backendUrl}/api/user/profile`, {
+          headers: { token },
+        });
+
+        if (res.data.success && res.data.user.address) {
+          setFormData((prev) => ({
+            ...prev,
+            ...res.data.user.address, // prefill all fields
+            email: res.data.user.email, // email from user profile
+          }));
+        }
+      } catch (error) {
+        console.log("Failed to fetch user details");
+      }
+    };
+
+    fetchUserDetails();
+  }, [token]);
+
   // ------------ SUBMIT ORDER ------------
   const onSubmitHandler = async (event) => {
     event.preventDefault();
@@ -82,20 +108,22 @@ const PlaceOrder = () => {
     try {
       let orderItems = [];
 
-      for (const items in cartItems) {
-        for (const item in cartItems[items]) {
-          if (cartItems[items][item] > 0) {
-            const itemInfo = structuredClone(
-              products.find((product) => product._id === items)
-            );
-            if (itemInfo) {
-              itemInfo.size = item;
-              itemInfo.quantity = cartItems[items][item];
-              orderItems.push(itemInfo);
-            }
+      Object.keys(cartItems).forEach((productId) => {
+        if (productId.length < 10) return; // ignore invalid ids like "0"
+
+        Object.keys(cartItems[productId]).forEach((size) => {
+          let qty = cartItems[productId][size];
+          console.log("CART ITEMS:", cartItems);
+
+          if (qty > 0) {
+            orderItems.push({
+              productId,
+              size,
+              quantity: qty,
+            });
           }
-        }
-      }
+        });
+      });
 
       let baseAmount = getCartAmount() + delivery_fee;
       let finalAmount = couponDiscount

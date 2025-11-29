@@ -118,7 +118,7 @@ const ShopContextProvider = (props) => {
           ...p,
           _id: typeof p._id === "object" && p._id.$oid ? p._id.$oid : p._id,
         }));
-
+        cleaned.sort((a, b) => b.date - a.date);
         setProducts(cleaned);
       } else {
         toast.error(response.data.message);
@@ -152,13 +152,14 @@ const ShopContextProvider = (props) => {
     getProductsData();
   }, []);
 
-  useEffect(() => {
-    if (!token && localStorage.getItem("token")) {
-      const savedToken = localStorage.getItem("token");
-      setToken(savedToken);
-      getUserCart(savedToken);
-    }
-  }, []);
+ useEffect(() => {
+  const saved = localStorage.getItem("token");
+  if (!token && saved) {
+    setToken(saved);
+    getUserCart(saved);
+  }
+}, [token]);
+
 
   /* ---------------------- CONTEXT VALUE ---------------------- */
   const value = {

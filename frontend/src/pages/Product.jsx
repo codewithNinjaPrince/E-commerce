@@ -372,11 +372,11 @@
 //           {/* ⭐ DESKTOP: SIDE THUMBNAILS (only 4 visible) ⭐ */}
 //           <div
 //             className="
-//               hidden sm:flex 
-//               flex-col gap-3 
-//               w-[22%] 
-//               overflow-y-auto 
-//               max-h-[420px] 
+//               hidden sm:flex
+//               flex-col gap-3
+//               w-[22%]
+//               overflow-y-auto
+//               max-h-[420px]
 //               pr-1 custom-scrollbar cursor-pointer
 //             "
 //           >
@@ -385,8 +385,8 @@
 //                 key={idx}
 //                 src={img}
 //                 onClick={() => setImage(img)}
-//                 className={`rounded-xl border transition object-cover 
-//                 ${image === img ? "border-white scale-105" : "border-gray-400"} 
+//                 className={`rounded-xl border transition object-cover
+//                 ${image === img ? "border-white scale-105" : "border-gray-400"}
 //                 w-full h-24`}
 //               />
 //             ))}
@@ -425,7 +425,7 @@
 //                 rounded-xl
 //                 bg-white
 //                 object-contain
-//                 cursor-pointer 
+//                 cursor-pointer
 //                 max-h-[320px] sm:max-h-[650px]
 //               "
 //               onClick={() => setShowFullView(true)}
@@ -498,7 +498,7 @@
 //                 <button
 //                   key={s}
 //                   onClick={() => setSize(s)}
-//                   className={`py-2 px-5 text-black rounded-md border transition 
+//                   className={`py-2 px-5 text-black rounded-md border transition
 //                     ${
 //                       size === s
 //                         ? "bg-white text-black border-white"
@@ -515,7 +515,7 @@
 //           {/* ADD TO CART */}
 //           <button
 //             onClick={handleAddToCart}
-//             className="bg-white text-black px-12 py-3 rounded-lg border flex items-center justify-center gap-2 
+//             className="bg-white text-black px-12 py-3 rounded-lg border flex items-center justify-center gap-2
 //             hover:bg-gray-200 active:scale-95 transition"
 //           >
 //             {adding ? (
@@ -614,14 +614,25 @@ const Product = () => {
     const found = products.find((p) => p._id === productId);
     if (found) {
       setProductData(found);
-      setImage(found.image[0]);
+      setImage(Array.isArray(found.image) ? found.image[0] : found.image);
     }
   }, [productId, products]);
 
   if (!productData) return <div className="opacity-0"></div>;
 
   /* ------------ Add To Cart ------------ */
+  /* ------------ Add To Cart (With Login Redirect) ------------ */
   const handleAddToCart = () => {
+    const token = localStorage.getItem("token"); // user token
+
+    if (!token) {
+      toast.error("Please login to continue!", { position: "top-center" });
+
+      // Redirect back to same product after login
+      navigate(`/login?redirect=/product/${productId}`);
+      return;
+    }
+
     if (!size) {
       return toast.error("Please select a size!", { position: "top-center" });
     }
@@ -637,10 +648,8 @@ const Product = () => {
 
   return (
     <div className="border-t-2 bg-black pt-0">
-
       {/* ⭐ MOBILE NAVBAR (CUSTOM SURPRISE NAVBAR) ⭐ */}
       <div className="w-full sticky top-0 z-50 bg-black/40 backdrop-blur-xl px-4 py-3 flex items-center justify-between border-b border-white/10 sm:hidden">
-        
         {/* Back */}
         <button
           onClick={() => navigate(-1)}
@@ -665,10 +674,8 @@ const Product = () => {
 
       {/* MAIN GRID */}
       <div className="flex flex-col sm:flex-row gap-10 px-4 sm:px-8 py-10">
-
         {/* ============== LEFT IMAGE SECTION ============== */}
         <div className="flex-1 flex flex-col-reverse sm:flex-row gap-4">
-
           {/* ⭐ MOBILE THUMBNAILS (Horizontal Scroll) */}
           <div className="flex sm:hidden gap-3 overflow-x-auto px-1">
             {productData.image.map((img, idx) => (
@@ -685,8 +692,9 @@ const Product = () => {
 
           {/* ⭐ DESKTOP THUMBNAILS WITH SCROLL ARROWS ⭐ */}
           <div className="hidden sm:flex flex-col items-center w-[22%]">
-            
-            <button className="text-white mb-2 opacity-40 hover:opacity-100">▲</button>
+            <button className="text-white mb-2 opacity-40 hover:opacity-100">
+              ▲
+            </button>
 
             <div className="flex flex-col gap-3 overflow-y-auto max-h-[360px] custom-scrollbar w-full px-1">
               {productData.image.map((img, idx) => (
@@ -701,7 +709,9 @@ const Product = () => {
               ))}
             </div>
 
-            <button className="text-white mt-2 opacity-40 hover:opacity-100">▼</button>
+            <button className="text-white mt-2 opacity-40 hover:opacity-100">
+              ▼
+            </button>
           </div>
 
           {/* MAIN IMAGE */}
@@ -719,12 +729,10 @@ const Product = () => {
               onClick={() => setShowFullView(true)}
             />
           </div>
-
         </div>
 
         {/* ============== RIGHT DETAILS SECTION ============== */}
         <div className="flex-1 text-white relative">
-
           {/* DESKTOP BACK BUTTON */}
           <button
             onClick={() => navigate(-1)}
@@ -753,7 +761,11 @@ const Product = () => {
               .map((_, i) => (
                 <img
                   key={i}
-                  src={i < productData.review ? assets.star_icon : assets.star_dull_icon}
+                  src={
+                    i < productData.review
+                      ? assets.star_icon
+                      : assets.star_dull_icon
+                  }
                   className="w-4"
                 />
               ))}
@@ -773,7 +785,8 @@ const Product = () => {
             <p className="text-red-500 font-semibold text-lg">
               {Math.round(
                 ((productData.actualPrice - productData.discountedPrice) /
-                  productData.actualPrice) * 100
+                  productData.actualPrice) *
+                  100
               )}
               % OFF
             </p>
@@ -795,7 +808,7 @@ const Product = () => {
                   className={`py-2 px-5 rounded-md border cursor-pointer transition ${
                     size === s
                       ? "bg-white text-black font-semibold"
-                      : "bg-gray-200 text-black"
+                      : "bg-black text-white"
                   }`}
                 >
                   {s}
@@ -886,10 +899,8 @@ const Product = () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };
 
 export default Product;
-

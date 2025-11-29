@@ -1,29 +1,27 @@
 import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema({
-   // Existing customer fields (untouched)
-   name: { type: String, required: true },
-   email: { type: String, required: true, unique: true },
-   password: { type: String, required: true },
-   cartData: { type: Object, default: {} },
+const userSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    phone: { type: String, default: "" },
 
-   // NEW FIELDS for Admin + Seller
-   role: {
-      type: String,
-      enum: ["customer", "seller", "admin"],
-      default: "customer"
-   },
+    password: { type: String, required: true },
 
-   shopId: {
-      type: String,
-      required: function () { return this.role === "seller"; },
-      sparse: true
-   },
+    address: {
+      street: { type: String, default: "" },
+      city: { type: String, default: "" },
+      state: { type: String, default: "" },
+      country: { type: String, default: "" },
+      pincode: { type: String, default: "" },
+    },
 
-},{ minimize: false })
+    cartData: { type: Object, default: {} },
+  },
+  { minimize: false }
+);
 
 const userModel = mongoose.models.user || mongoose.model('user', userSchema);
-
 export default userModel;
 
 //THis is also fine and working properly till here timing of video si 5:50

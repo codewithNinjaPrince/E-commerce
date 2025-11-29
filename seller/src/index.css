@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Prata&display=swap');
+
+@import "tailwindcss";
+*{
+  font-family: Outfit;
+}
+
+select,textarea,input{
+  border: 1px solid #c2c2c2;
+  outline-color:#c586a5;
+  border-radius: 4px;
+}
+
+.input-box {
+  @apply w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black transition;
+}
+
+.input-dark {
+  @apply w-full bg-black/40 border border-white/20 text-white 
+  p-3 rounded-lg outline-none transition
+  placeholder-gray-400 backdrop-blur-md;
+}
+
+.input-dark:focus {
+  @apply border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)];
+}
+
+.textarea-dark {
+  @apply w-full bg-black/40 border border-white/20 
+  text-white p-3 rounded-lg outline-none 
+  min-h-[120px] transition placeholder-gray-400 backdrop-blur-md;
+}
+
+.textarea-dark:focus {
+  @apply border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)];
+}

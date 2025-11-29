@@ -1,193 +1,314 @@
-import orderModel from '../models/orderModel.js'
-import userModel from '../models/userModel.js'
+import orderModel from "../models/orderModel.js";
+import userModel from "../models/userModel.js";
+import productModel from "../models/productModel.js";
+import notificationModel from "../models/notificationModel.js";
 
-const currency = 'inr';
+//Global Variables
+const currency = "inr";
 const deliveryCharge = 10;
 
-/* ============================================================
-   1️⃣  PLACE ORDER (COD)
-============================================================ */
+//Gateway Initialize
+// const cashfree = new Cashfree({
+//   appId: process.env.CASHFREE_APP_ID,
+//   secretKey: process.env.CASHFREE_SECRET_KEY,
+//   env: "TEST" // or "PROD"
+// });
+
+//placeorder COD
+// -------------------- PLACE ORDER (COD) --------------------
 const placeOrder = async (req, res) => {
+    console.log("🔥 placeOrder route hit");
   try {
     const { userId, items, amount, address } = req.body;
 
-    const updatedItems = items.map(item => ({
-      ...item,
-      sellerId: item.sellerId,
-      shopId: item.shopId
-    }));
+    if (!items || items.length === 0) {
+      return res.json({ success: false, message: "No items in order" });
+    }
 
-    const newOrder = new orderModel({
+    // 📌 ENRICH ALL CART ITEMS WITH PRODUCT DATA
+    const enrichedItems = await Promise.all(
+      items.map(async (cartItem) => {
+        const product = await productModel.findById(cartItem.productId);
+
+        if (!product)
+          throw new Error("Product not found: " + cartItem.productId);
+
+        return {
+          productId: product._id.toString(),
+          name: product.name,
+          sellerId: product.sellerId?.toString() || "", // FIXED
+          shopId: product.shopId || "",
+
+          actualPrice: product.actualPrice,
+          discountedPrice: product.discountedPrice,
+          price: product.discountedPrice,
+          brandName: product.brandName,
+          sizes: product.sizes,
+          offerCode: product.offerCode,
+
+          description: product.description,
+          category: product.category,
+          subCategory: product.subCategory,
+
+          quantity: cartItem.quantity,
+          size: cartItem.size,
+
+          image: product.image,
+          productDate: product.date,
+        };
+      })
+    );
+
+    // 📌 COMBINED ORDER OBJECT (ONE ORDER)
+    const orderData = {
       userId,
-      items: updatedItems,
+      items: enrichedItems,
       amount,
       address,
       paymentMethod: "COD",
       payment: false,
+      status: "Order Placed",
       date: Date.now(),
-    });
+    };
 
-    await newOrder.save();
+    // Save the combined order
+    const newOrder = await orderModel.create(orderData);
+
+    // Clear user cart
     await userModel.findByIdAndUpdate(userId, { cartData: {} });
 
-    res.json({ success: true, message: "Order Placed" });
+    // 📌 SEND NOTIFICATIONS TO MERCHANTS
+    for (const item of enrichedItems) {
+      try {
+        if (item.sellerId) {
+          await notificationModel.create({
+            merchantId: item.sellerId,
+            title: "New Order Received",
+            message: `You received an order for ${item.name} (Qty: ${item.quantity}, Size: ${item.size}).`,
+            read: false,
+            date: Date.now(),
+          });
+        }
+      } catch (err) {
+        console.log("Merchant notification error:", err);
+      }
+    }
 
+    res.json({ success: true, message: "Order Placed", orderId: newOrder._id });
   } catch (error) {
-    console.log(error);
+    console.log("ORDER ERROR:", error);
     res.json({ success: false, message: error.message });
   }
 };
 
-
-/* ============================================================
-   2️⃣  PLACE ORDER (CASHFREE) — Placeholder (No Crash)
-============================================================ */
+//placing orders using Stripe Method
 const placeOrderCashfree = async (req, res) => {
   try {
+    console.log("🔥 Incoming order items from user:", req.body.items);
+
     const { userId, items, amount, address } = req.body;
+    const { origin } = req.headers;
 
-    const updatedItems = items.map(item => ({
-      ...item,
-      sellerId: item.sellerId,
-      shopId: item.shopId,
-    }));
-
-    const newOrder = new orderModel({
+    const orderData = {
       userId,
-      items: updatedItems,
+      items,
       amount,
       address,
       paymentMethod: "Cashfree",
       payment: false,
       date: Date.now(),
-    });
+    };
 
+    const newOrder = new orderModel(orderData);
     await newOrder.save();
 
-    // YOU WILL ADD CASHFREE SESSION CODE HERE LATER
-    res.json({ success: true, message: "Cashfree session disabled here", orderId: newOrder._id });
+    const line_items = items.map((item) => ({
+      price_data: {
+        currency: currency,
+        product_data: {
+          name: item.name,
+        },
+        unit_amount: item.price * 100,
+      },
+      quantity: item.quantity,
+    }));
 
+    line_items.push({
+      price_data: {
+        currency: currency,
+        product_data: {
+          name: "Delivery Charges",
+        },
+        unit_amount: deliveryCharge * 100,
+      },
+      quantity: 1,
+    });
+
+    const session = await cashfree.checkout.sesssions.create({
+      success_url: `${origin}/verify?success=true&orderId=${newOrder._id}`,
+      cancel_url: `${origin}/verify?success=false&orderId=${newOrder._id}`,
+      line_items,
+      mode: "payment",
+    });
+    res.json({ success: true, session_url: session.url });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
 };
 
+//Verify Cashfree
 
-/* ============================================================
-   3️⃣  VERIFY CASHFREE PAYMENT
-============================================================ */
 const verifyCashfree = async (req, res) => {
-  try {
-    const { orderId, success, userId } = req.body;
+  const { orderId, success, userId } = req.body;
 
+  try {
     if (success === "true") {
       await orderModel.findByIdAndUpdate(orderId, { payment: true });
       await userModel.findByIdAndUpdate(userId, { cartData: {} });
-      return res.json({ success: true });
+      res.json({ success: true });
+    } else {
+      await orderModel.findByIdAndDelete(orderId);
+      res.json({ success: false });
     }
-
-    // Delete unpaid order
-    await orderModel.findByIdAndDelete(orderId);
-    res.json({ success: false });
-
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
 };
 
+//placing orders using Razorpay Method
+const placeOrderRazorpay = async (req, res) => {};
 
-/* ============================================================
-   4️⃣  PLACE ORDER (RAZORPAY) — Blank for Now
-============================================================ */
-const placeOrderRazorpay = async (req, res) => {
-  res.json({ success: false, message: "Razorpay not implemented yet" });
-};
-
-
-/* ============================================================
-   5️⃣  ADMIN / SELLER — ALL ORDERS
-============================================================ */
+//All Orders data for Admin Panel
 const allOrders = async (req, res) => {
   try {
-    let orders;
-
-    if (req.user.role === "admin") {
-      orders = await orderModel.find({});
-    } else {
-      orders = await orderModel.find({ "items.shopId": req.user.shopId });
-    }
-
+    const orders = await orderModel.find({});
     res.json({ success: true, orders });
-
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
 };
 
-
-/* ============================================================
-   6️⃣  USER ORDERS
-============================================================ */
+//User Order data for frontend
+// -------------------- USER ORDERS (Frontend) --------------------
 const userOrders = async (req, res) => {
   try {
-    const { userId } = req.body;
-    const orders = await orderModel.find({ userId });
+    const  userId  = req.userId;
+
+    if (!userId) {
+      return res.json({ success: false, message: "User ID missing" });
+    }
+
+    // Fetch all orders (newest → oldest)
+    const orders = await orderModel.find({ userId }).sort({ date: -1 }).lean(); // IMPORTANT → faster + allows editing items[]
+
+    // Sort items inside each order (newest product first)
+    orders.forEach((order) => {
+      order.items.sort((a, b) => {
+        const dateA = a.productDate || a.date || 0;
+        const dateB = b.productDate || b.date || 0;
+        return dateB - dateA; // newest → oldest
+      });
+    });
 
     res.json({ success: true, orders });
-
   } catch (error) {
-    console.log(error);
+    console.log("USER ORDERS ERROR:", error);
     res.json({ success: false, message: error.message });
   }
 };
 
-
-/* ============================================================
-   7️⃣  UPDATE ORDER STATUS (ADMIN / SELLER)
-============================================================ */
+//Update Order Status from Admin Panel
 const updateStatus = async (req, res) => {
   try {
     const { orderId, status } = req.body;
+    await orderModel.findByIdAndUpdate(orderId, { status });
+    res.json({ success: true, message: "Status Updated" });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+const cancelOrder = async (req, res) => {
+  try {
+    const { orderId, productId } = req.body;
 
     const order = await orderModel.findById(orderId);
     if (!order) return res.json({ success: false, message: "Order not found" });
 
-    // Admin can edit anything
-    if (req.user.role === "admin") {
-      await orderModel.findByIdAndUpdate(orderId, { status });
-      return res.json({ success: true, message: "Status Updated" });
-    }
+    let updatedItem = null;
 
-    // Sellers can update only their own orders
-    const sellerShop = req.user.shopId;
-    const belongsToSeller = order.items.some(item => item.shopId === sellerShop);
+    order.items = order.items.map((item) => {
+      if (item.productId.toString() === productId.toString()) {
+        updatedItem = item;
+        return { ...item, itemStatus: "Cancelled" };
+      }
+      return item;
+    });
 
-    if (!belongsToSeller) {
-      return res.json({ success: false, message: "Not authorized" });
-    }
+    if (!updatedItem)
+      return res.json({ success: false, message: "Item not found" });
 
-    await orderModel.findByIdAndUpdate(orderId, { status });
-    res.json({ success: true, message: "Status Updated" });
+    await order.save();
 
-  } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    await notificationModel.create({
+      merchantId: updatedItem.sellerId,
+      title: "Order Item Cancelled",
+      message: `User cancelled ${updatedItem.name} (Qty ${updatedItem.quantity}).`,
+      read: false,
+      date: Date.now(),
+    });
+
+    res.json({ success: true, message: "Item cancelled" });
+  } catch (err) {
+    console.log("CANCEL ERROR:", err);
+    res.json({ success: false, message: "Unable to cancel" });
   }
 };
 
+export const trackOrder = async (req, res) => {
+  try {
+    const { orderId } = req.body;
+    if (!orderId)
+      return res.json({ success: false, message: "Order ID missing" });
 
-/* ============================================================
-   EXPORT
-============================================================ */
+    // Get latest order
+
+    const order = await orderModel.findById(orderId).lean();
+    if (order.status === "Cancelled") {
+      return res.json({ success: true, order }); // return but DO NOT update
+    }
+
+    if (!order) return res.json({ success: false, message: "Order not found" });
+
+    // (Optional) sort items here also
+    order.items = order.items.sort((a, b) => {
+      const da = a.productDate || a.updatedAt || a.date || 0;
+      const db = b.productDate || b.updatedAt || b.date || 0;
+      return db - da;
+    });
+
+    return res.json({
+      success: true,
+      order,
+    });
+  } catch (err) {
+    console.log("TRACK ORDER ERROR:", err);
+    return res.json({ success: false, message: "Unable to track order" });
+  }
+};
+
 export default {
-  placeOrder,
-  placeOrderCashfree,
   verifyCashfree,
+  placeOrder,
   placeOrderRazorpay,
+  placeOrderCashfree,
   allOrders,
   userOrders,
-  updateStatus
+  updateStatus,
+  cancelOrder,
+  trackOrder,
 };

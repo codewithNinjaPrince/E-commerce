@@ -8,22 +8,14 @@ const adminAuth = async (req, res, next) => {
          return res.json({ success: false, message: "Not Authorized. Login Again" });
       }
       const token_decode = jwt.verify(token, process.env.JWT_SECRET);
-      
-      if (!token_decode.role) {
+
+      if (token_decode !== process.env.ADMIN_EMAIL+process.env.ADMIN_PASSWORD) {
          return res.json({ success: false, message: "Not Authorized. Login Again." });
       }
-
-      // Allow admin and seller
-      if (token_decode.role === "admin" || token_decode.role === "seller") {
-         req.user = token_decode;   // Store decoded details for routes
-         return next();
-      }
-
-      // Otherwise reject
-      return res.json({ success: false, message: "Not Authorized. Login Again." });
+      next();
 
    } catch (error) {
-      console.log("Admin/Seller auth error:", error);
+      console.log("Admin authentication error:", error);
       return res.json({ success: false, message: "Authentication failed. Login Again." });
    }
 };

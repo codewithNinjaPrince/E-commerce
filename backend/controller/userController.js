@@ -3,8 +3,8 @@ import bcrypt from "bcrypt";
 import jwt from 'jsonwebtoken'; 
 import userModel from "../models/userModel.js";
 
-const createToken = (payload) => {
-   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "7d" });
+const createToken = (id) => {
+   return jwt.sign({ id }, process.env.JWT_SECRET); 
 };
 
 
@@ -18,11 +18,13 @@ const loginUser = async (req, res) => {
          return res.json({ success: false, message: "User does not exist" });
       }
       const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) return res.json({ success: false, message: "Invalid credential" });
 
-      const token = createToken({ id: user._id, role: user.role });
-      res.json({ success: true, token, role: user.role });
-
+      if (isMatch) {
+         const token = createToken(user._id);
+         res.json({ success: true, token });
+      } else {
+         res.json({ success: false, message: "Invalid credential" });
+      }
    } catch (error) {
       console.log(error);
       res.json({ success: false, message: error.message }); 
@@ -46,15 +48,18 @@ const registerUser = async (req, res) => {
           return res.json({ success: false, msg: "Please enter a strong password" });
        }
       // Generate a salt and hash the password securely
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const user = await userModel.create({
-        name,
-        email,
-        password: hashedPassword,
-        role: "customer"
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+
+      const newUser = new userModel({
+            name,
+            email,
+            password: hashedPassword
       });
 
-      const token = createToken({ id: user._id, role: "customer" });
+      const user = await newUser.save();
+
+      const token = createToken(user._id);
 
       res.json({ success: true, token });
 
@@ -68,73 +73,17 @@ const registerUser = async (req, res) => {
 // Route handler for admin login this code is perfect please do not touch it 
 const adminLogin = async (req, res) => {
    try {
-      const { email, password, role } = req.body; 
-
-      //Admin Login
-
+      const { email, password } = req.body; 
       if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
-      const token = jwt.sign({ email, role: "admin" }, process.env.JWT_SECRET, {expiresIn: "3d"
-      });
-
-      return res.json({ success: true, token, role: "admin" });
-    }
-
-      //Seller Login
-
-      if (role === "seller") {
-      const seller = await userModel.findOne({ email, role: "seller" });
-      if (!seller) return res.json({ success: false, message: "Seller not found" });
-
-      const isMatch = await bcrypt.compare(password, seller.password);
-      if (!isMatch) return res.json({ success: false, message: "Invalid password" });
-
-      const token = createToken({ id: seller._id, role: "seller", shopId: seller.shopId });
-      return res.json({ success: true, token, role: "seller", shopId: seller.shopId });
-    }
-
-      // 🔹 If role is customer OR invalid
-    return res.json({ success: false, message: "Invalid credentials" });
-      
+         const token = jwt.sign(email + password, process.env.JWT_SECRET);
+         res.json({ success: true, token }); 
+      } else {
+         res.json({ success: false, message: "Invalid credentials" });
+      }
    } catch (error) {
       console.log(error); // Log error to console
       res.json({ success: false, message: error.message }); 
    }
 };
 
-//Create Seller
-const createSeller = async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-
-    const exists = await userModel.findOne({ email });
-    if (exists) return res.json({ success: false, message: "Seller already exists" });
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const shopId = "shop_" + Math.random().toString(36).substring(2, 10);
-
-    const seller = await userModel.create({
-      name,
-      email,
-      password: hashedPassword,
-      role: "seller",
-      shopId,
-    });
-
-    res.json({ success: true, seller });
-  } catch (error) {
-    res.json({ success: false, message: error.message });
-  }
-};
-
-//List Seller
-const listSellers = async (req, res) => {
-  try {
-    const sellers = await userModel.find({ role: "seller" }).select("-password");
-    res.json({ success: true, sellers });
-  } catch (error) {
-    res.json({ success: false, message: error.message });
-  }
-};
-
-export { loginUser, registerUser, adminLogin, createSeller, listSellers };
+export { loginUser, registerUser, adminLogin };

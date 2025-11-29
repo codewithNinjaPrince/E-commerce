@@ -1,19 +1,18 @@
 import express from 'express'
-import { loginUser, registerUser, adminLogin } from "../controller/userController.js"
-import { createSeller, listSellers } from "../controller/userController.js";
-import adminAuth from "../middleware/adminAuth.js";
+import { loginUser, registerUser, adminLogin} from "../controller/userController.js"
+import { getUserProfile, updateUserProfile, updateUserPassword } from "../controller/userProfileController.js";
 
+import authUser from "../middleware/auth.js"
 
 const userRouter = express.Router();
 
 userRouter.post('/register', registerUser)
 userRouter.post('/login', loginUser)
 userRouter.post('/admin', adminLogin)
-// Admin creates seller
-userRouter.post("/admin/create-seller", adminAuth, createSeller);
+userRouter.get("/profile", authUser, getUserProfile);
+userRouter.post("/update-profile", authUser, updateUserProfile);
+userRouter.post("/update-password", authUser, updateUserPassword);
 
-// Admin gets list of sellers
-userRouter.get("/admin/sellers", adminAuth, listSellers);
 export default userRouter;
 
 //This is also fine and till here video is 5:55
