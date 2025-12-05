@@ -13,10 +13,9 @@ import emailRouter from './routes/emailRoute.js';
 
 // MERCHANT ROUTES
 import merchantRouter from './routes/merchantRoute.js';
-import merchantKycRouter from './routes/merchantKycRoute.js';
 import merchantProductRouter from './routes/merchantProductRoute.js';
-import merchantPaymentsRouter from './routes/merchantPaymentsRoute.js';
 import merchantDashboardRouter from './routes/merchantDashboardRoute.js';
+import merchantKycRouter from './routes/merchantKycRoute.js';
 import notificationRouter from "./routes/notificationRoute.js";
 import chatRouter from "./routes/chatRoute.js";
 
@@ -55,14 +54,11 @@ app.use('/api/email', emailRouter);
 // 1️⃣ Merchant Auth (MUST come BEFORE other merchant routes)
 app.use('/api/merchant', merchantRouter);
 
+app.use('/api/merchant/kyc',merchantKycRouter);
+
 // 2️⃣ Merchant Product CRUD
 app.use('/api/merchant/product', merchantProductRouter);
 
-// 3️⃣ Merchant KYC
-app.use('/api/merchant/kyc', merchantKycRouter);
-
-// 4️⃣ Merchant Payments
-app.use('/api/merchant/payments', merchantPaymentsRouter);
 
 // 5️⃣ Merchant Dashboard
 app.use('/api/merchant/dashboard', merchantDashboardRouter);
@@ -72,6 +68,8 @@ app.use("/api/merchant/notifications", notificationRouter);
 
 // 7️⃣ Chat Support
 app.use("/api/chat", chatRouter);
+
+
 
 // ================================
 //           ROOT ROUTE

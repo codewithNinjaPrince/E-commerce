@@ -8,7 +8,9 @@ import {
   FaCog,
   FaSignOutAlt,
   FaTimes,
+  FaShieldAlt
 } from "react-icons/fa";
+
 import { NavLink, useNavigate } from "react-router-dom";
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen, setMerchantToken, unreadCount = 0 }) => {
@@ -43,7 +45,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, setMerchantToken, unreadCount = 
     { label: "Orders", icon: <FaShoppingCart />, path: "/orders" },
     { label: "Support", icon: <FaHeadset />, path: "/support" },
     { label: "Notification", icon: <FaBell />, path: "/notification" },
-    { label: "Settings", icon: <FaCog />, path: "/setting" },
+    { label: "Kyc", icon: <FaShieldAlt />, path: "/kyc" },    
+    { label: "Settings", icon: <FaCog />, path: "/setting" },    
+
   ];
 
   return (

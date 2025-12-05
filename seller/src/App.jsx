@@ -16,6 +16,7 @@ import Support from "./pages/Support";
 import Profile from "./pages/Profile";
 import Setting from "./pages/Setting";
 import Notification from "./pages/Notification";
+import UpdateKycPage from "./pages/updateKycPage";
 
 import axios from "axios";
 import { ToastContainer } from "react-toastify";
@@ -127,6 +128,7 @@ const App = () => {
           <Route path="/support" element={<Support />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/setting" element={<Setting />} />
+          <Route path="/update-kyc" element={<UpdateKycPage/>}/>
           <Route path="/notification" element={<Notification />} />
         </Routes>
       </div>

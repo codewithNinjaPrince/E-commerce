@@ -189,6 +189,35 @@ export const addMerchantProduct = async (req, res) => {
 };
 
 // --------------------------------------------------
+// GET SINGLE PRODUCT
+// --------------------------------------------------
+export const getSingleMerchantProduct = async (req, res) => {
+  try {
+    const sellerId = req.merchant;
+    const { productId } = req.body;
+
+    if (!productId) {
+      return res.json({ success: false, message: "Product ID missing" });
+    }
+
+    const product = await productModel.findOne({
+      _id: productId,
+      sellerId,
+    });
+
+    if (!product) {
+      return res.json({ success: false, message: "Product not found" });
+    }
+
+    return res.json({ success: true, product });
+  } catch (error) {
+    console.log("GET SINGLE PRODUCT ERROR:", error);
+    return res.json({ success: false, message: error.message });
+  }
+};
+
+
+// --------------------------------------------------
 // LIST MERCHANT PRODUCTS
 // --------------------------------------------------
 export const listMerchantProducts = async (req, res) => {
@@ -414,3 +443,34 @@ export const updateMerchantPassword = async (req, res) => {
   }
 };
 
+//Verify merchant password
+
+export const verifyMerchantPassword = async (req, res) => {
+  try {
+    const merchantId = req.merchant;
+    const { password } = req.body;
+
+    const merchant = await merchantModel.findById(merchantId);
+    if (!merchant) {
+      return res.status(404).json({ success: false, message: "Merchant not found" });
+    }
+
+    const isMatch = await bcrypt.compare(password, merchant.password);
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: "Incorrect password",
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Password verified",
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: err.message || "Password verification failed",
+    });
+  }
+};

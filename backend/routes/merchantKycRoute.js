@@ -1,21 +1,41 @@
 import express from "express";
-import { merchantAuth } from "../middleware/merchantAuth.js";
-import { uploadKyc } from "../controller/merchantKycController.js";
 import upload from "../middleware/multer.js";
+import { merchantAuth } from "../middleware/merchantAuth.js";
+import {submitKyc, updateKyc, deleteKycDocument } from "../controller/merchantKycController.js";
 
 const merchantKycRouter = express.Router();
 
-// upload.single for each doc OR multiple in same request
+
 merchantKycRouter.post(
-  "/kyc",
+  "/",
   merchantAuth,
   upload.fields([
-    { name: "gstFile", maxCount: 1 },
-    { name: "panFile", maxCount: 1 },
     { name: "aadhaarFront", maxCount: 1 },
-    { name: "aadhaarBack", maxCount: 1 }
+    { name: "aadhaarBack", maxCount: 1 },
+    { name: "panFile", maxCount: 1 },
+    { name: "gstFile", maxCount: 1 },
+    { name: "passbookFile", maxCount: 1 },
+    { name: "profileImage", maxCount: 1 },
   ]),
-  uploadKyc
+  submitKyc
 );
 
+merchantKycRouter.put(
+  "/",
+  merchantAuth,
+  upload.fields([
+    { name: "aadhaarFront", maxCount: 1 },
+    { name: "aadhaarBack", maxCount: 1 },
+    { name: "panFile", maxCount: 1 },
+    { name: "gstFile", maxCount: 1 },
+    { name: "passbookFile", maxCount: 1 },
+    { name: "profileImage", maxCount: 1 },
+  ]),
+  updateKyc
+);
+
+merchantKycRouter.delete("/:docType", merchantAuth, deleteKycDocument);
+
 export default merchantKycRouter;
+
+

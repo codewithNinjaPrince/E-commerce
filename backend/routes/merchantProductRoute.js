@@ -4,6 +4,7 @@ import {
   listMerchantProducts,
   removeMerchantProduct,
   updateMerchantProduct,
+  getSingleMerchantProduct
 } from "../controller/merchantController.js";
 import upload from "../middleware/multer.js";
 import { merchantAuth } from "../middleware/merchantAuth.js";
@@ -15,6 +16,6 @@ merchantProductRouter.get("/list", merchantAuth, listMerchantProducts);
 merchantProductRouter.post("/remove", merchantAuth, removeMerchantProduct);
 merchantProductRouter.post("/update", merchantAuth, upload.array("images"),updateMerchantProduct
 );
-
+merchantProductRouter.post("/single", merchantAuth, getSingleMerchantProduct);
 
 export default merchantProductRouter;
