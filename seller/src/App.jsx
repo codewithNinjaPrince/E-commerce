@@ -16,7 +16,7 @@ import Support from "./pages/Support";
 import Profile from "./pages/Profile";
 import Setting from "./pages/Setting";
 import Notification from "./pages/Notification";
-import UpdateKycPage from "./pages/updateKycPage";
+import UpdateKycPage from "./pages/UpdateKycPage";
 
 import axios from "axios";
 import { ToastContainer } from "react-toastify";
