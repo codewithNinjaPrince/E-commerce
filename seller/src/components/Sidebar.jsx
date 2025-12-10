@@ -63,9 +63,10 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, setMerchantToken, unreadCount = 
       {/* SIDEBAR */}
       <div
         className={`
-          fixed top-0 left-0 h-full w-[260px] 
+          fixed top-0 left-0 h-full w-[240px] sm:w-[260px] 
           bg-[#151515] border-r border-[#2a2a2a]
-          p-5 pt-7 z-[999] transition-transform duration-300
+          p-5 pt-7 z-[999]
+          overflow-x-hidden transition-transform duration-300
           flex flex-col justify-between
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
           lg:translate-x-0

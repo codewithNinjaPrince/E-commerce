@@ -143,7 +143,13 @@ const EditProduct = () => {
     return <div className="text-white p-6">Loading product details...</div>;
 
   return (
-    <div className="w-full flex justify-center px-4 py-8">
+    <div
+      className="
+    w-full max-w-[1600px] mx-auto 
+    p-4 sm:p-6 text-white 
+    pt-[30px] sm:pt-[60px] lg:pt-[50px]
+  "
+    >
       {/* CENTER CONTENT SAME AS ADD PRODUCT UI */}
 
       <form

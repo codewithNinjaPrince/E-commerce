@@ -76,7 +76,13 @@ const Products = () => {
   };
 
   return (
-    <div className="w-full max-w-[1600px] mx-auto p-4 sm:p-6 text-white">
+    <div
+      className="
+    w-full max-w-[1600px] mx-auto 
+    p-4 sm:p-6 text-white 
+    pt-[30px] sm:pt-[60px] lg:pt-[50px]
+  "
+    >
       {/* WRAPPER */}
       <div className="max-w-5xl mx-auto w-full">
         {/* HEADER */}

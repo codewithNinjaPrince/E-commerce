@@ -128,7 +128,13 @@ const AddProduct = () => {
   //                              UI STARTS HERE
   // =======================================================================
   return (
-    <div className="w-full flex justify-center px-4 py-8">
+    <div
+      className="
+    w-full max-w-[1600px] mx-auto 
+    p-4 sm:p-6 text-white 
+    pt-[30px] sm:pt-[60px] lg:pt-[50px]
+  "
+    >
       <form
         onSubmit={submitProduct}
         className="w-full max-w-5xl bg-[#151515] border border-[#222] text-white rounded-xl shadow-lg p-6 md:p-10 flex flex-col gap-8"

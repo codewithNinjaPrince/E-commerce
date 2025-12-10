@@ -294,7 +294,9 @@ const UpdateKycPage = () => {
         return;
       }
 
-      toast.success("KYC updated. Verification pending.");
+      toast.success("KYC updated! Verification may take up to 24 hours.");
+      navigate("/kyc");
+
       // clear local files + previews (reset)
       Object.values(localPreviews).forEach((u) => u && URL.revokeObjectURL(u));
       setFiles({

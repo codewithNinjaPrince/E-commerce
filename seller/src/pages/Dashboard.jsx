@@ -1,6 +1,11 @@
 import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
-import { FaBoxOpen, FaShoppingCart, FaMoneyBillWave, FaWallet } from "react-icons/fa";
+import {
+  FaBoxOpen,
+  FaShoppingCart,
+  FaMoneyBillWave,
+  FaWallet,
+} from "react-icons/fa";
 import { backendUrl } from "../App";
 import axios from "axios";
 
@@ -47,16 +52,21 @@ const Dashboard = () => {
     fetchMerchant();
   }, []);
 
-  if (!stats)
-    return <div className="text-white p-10">Loading Dashboard…</div>;
+  if (!stats) return <div className="text-white p-10">Loading Dashboard…</div>;
 
   return (
-    <div className="flex bg-gradient-to-br from-black via-gray-900 to-black min-h-screen text-white">
+    <div className="flex bg-gradient-to-br from-black via-gray-900 to-black min-h-screen text-white overflow-x-hidden w-full">
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-      <main className="w-full max-w-[1600px] mx-auto p-6">
-        <div className="max-w-5xl mx-auto">
-
+      <main
+        className="
+    w-full max-w-[1600px] mx-auto 
+    px-4 sm:px-6 
+    overflow-x-hidden 
+    pt-[30px] sm:pt-[60px] lg:pt-[50px]
+  "
+      >
+        <div className="max-w-5xl mx-auto w-full overflow-x-hidden">
           {/* WELCOME */}
           <h1
             className="text-3xl sm:text-4xl font-extrabold mb-6 
@@ -99,108 +109,114 @@ const Dashboard = () => {
 
           {/* RECENT SECTIONS */}
           {/* RECENT ORDERS */}
-<div className="mt-12">
-  <h2 className="text-xl font-semibold mb-4">Recent Orders</h2>
+          <div className="mt-12">
+            <h2 className="text-xl font-semibold mb-4">Recent Orders</h2>
 
-  {stats.recentOrders.length === 0 ? (
-    <div className="bg-white/5 p-6 rounded-xl border border-white/10">
-      No recent orders yet
-    </div>
-  ) : (
-    <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-4">
-      {stats.recentOrders.map((order) => {
-        const date = new Date(order.date);
-        const firstItem = order.items[0];
-        const customer = order.address?.firstName + " " + order.address?.lastName;
+            {stats.recentOrders.length === 0 ? (
+              <div className="bg-white/5 p-6 rounded-xl border border-white/10">
+                No recent orders yet
+              </div>
+            ) : (
+              <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-4">
+                {stats.recentOrders.map((order) => {
+                  const date = new Date(order.date);
+                  const firstItem = order.items[0];
+                  const customer =
+                    order.address?.firstName + " " + order.address?.lastName;
 
-        return (
-          <div
-            key={order._id}
-            className="p-4 bg-black/30 rounded-lg border border-white/10 
+                  return (
+                    <div
+                      key={order._id}
+                      className="p-4 bg-black/30 rounded-lg border border-white/10 
             hover:border-blue-500 cursor-pointer flex justify-between items-center"
-            onClick={() => window.location.href = `/orders`} // you can change this to specific page
-          >
-            {/* LEFT DETAILS */}
-            <div>
-              <p className="font-semibold text-white">
-                Order #{order._id.slice(-6).toUpperCase()}
-              </p>
+                      onClick={() => (window.location.href = `/orders`)} // you can change this to specific page
+                    >
+                      {/* LEFT DETAILS */}
+                      <div>
+                        <p className="font-semibold text-white">
+                          Order #{order._id.slice(-6).toUpperCase()}
+                        </p>
 
-              <p className="text-gray-400 text-sm">
-                {date.toLocaleDateString()} •{" "}
-                {date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-              </p>
+                        <p className="text-gray-400 text-sm">
+                          {date.toLocaleDateString()} •{" "}
+                          {date.toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
 
-              <p className="text-gray-300 text-sm mt-1">
-                👤 {customer}
-              </p>
-            </div>
+                        <p className="text-gray-300 text-sm mt-1">
+                          👤 {customer}
+                        </p>
+                      </div>
 
-            {/* RIGHT PRICE */}
-            <p className="text-blue-400 font-semibold text-lg">
-              ₹{order.amount}
-            </p>
+                      {/* RIGHT PRICE */}
+                      <p className="text-blue-400 font-semibold text-lg">
+                        ₹{order.amount}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        );
-      })}
-    </div>
-  )}
-</div>
 
           {/* RECENT PRODUCTS */}
-<div className="mt-12">
-  <h2 className="text-xl font-semibold mb-4">Recent Products</h2>
+          <div className="mt-12">
+            <h2 className="text-xl font-semibold mb-4">Recent Products</h2>
 
-  {stats.recentProducts.length === 0 ? (
-    <div className="bg-white/5 p-6 rounded-xl border border-white/10">
-      No recent products yet
-    </div>
-  ) : (
-    <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-4">
-      {stats.recentProducts.map((p) => (
-        <div
-          key={p._id}
-          className="
+            {stats.recentProducts.length === 0 ? (
+              <div className="bg-white/5 p-6 rounded-xl border border-white/10">
+                No recent products yet
+              </div>
+            ) : (
+              <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-4">
+                {stats.recentProducts.map((p) => (
+                  <div
+                    key={p._id}
+                    className="
             p-4 bg-black/30 rounded-lg border border-white/10 
             hover:border-green-500 hover:shadow-[0_0_12px_rgba(0,255,120,0.5)]
             cursor-pointer flex items-center gap-4 transition-all
           "
-          onClick={() => window.location.href = `/products?highlight=${p._id}`}
-        >
-          {/* IMAGE */}
-          <img
-            src={p.image[0]}
-            alt={p.name}
-            className="w-14 h-14 rounded-lg object-cover border border-gray-700"
-          />
+                    onClick={() =>
+                      (window.location.href = `/products?highlight=${p._id}`)
+                    }
+                  >
+                    {/* IMAGE */}
+                    <img
+                      src={p.image[0]}
+                      alt={p.name}
+                      className="w-14 h-14 rounded-lg object-cover border border-gray-700"
+                    />
 
-          {/* DETAILS */}
-          <div className="flex-1">
-            <p className="text-white font-semibold">{p.name}</p>
+                    {/* DETAILS */}
+                    <div className="flex-1">
+                      <p className="text-white font-semibold">{p.name}</p>
 
-            <p className="text-gray-400 text-sm">
-              Brand: <span className="text-gray-300">{p.brandName}</span>
-            </p>
+                      <p className="text-gray-400 text-sm">
+                        Brand:{" "}
+                        <span className="text-gray-300">{p.brandName}</span>
+                      </p>
 
-            <p className="text-gray-400 text-sm">
-              Category: <span className="text-gray-300">{p.category}</span>
-            </p>
+                      <p className="text-gray-400 text-sm">
+                        Category:{" "}
+                        <span className="text-gray-300">{p.category}</span>
+                      </p>
 
-            <p className="text-green-400 font-medium">
-              ₹{p.discountedPrice}
-            </p>
+                      <p className="text-green-400 font-medium">
+                        ₹{p.discountedPrice}
+                      </p>
 
-            <p className="text-gray-500 text-xs">
-              Added: {new Date(p.createdAt).toLocaleDateString()}
-            </p>
+                      <p className="text-gray-500 text-xs">
+                        Added: {new Date(p.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
-      ))}
-    </div>
-  )}
-</div>
-
-
         </div>
       </main>
     </div>
@@ -318,11 +334,13 @@ const RecentProducts = ({ products }) => {
                 {product.name}
               </p>
               <p className="text-gray-400 text-sm">
-                Brand: <span className="text-gray-300">{product.brandName}</span>
+                Brand:{" "}
+                <span className="text-gray-300">{product.brandName}</span>
               </p>
 
               <p className="text-blue-300 text-sm">
-                Category: <span className="text-gray-300">{product.category}</span>
+                Category:{" "}
+                <span className="text-gray-300">{product.category}</span>
               </p>
 
               <p className="text-green-400 font-semibold">
@@ -342,4 +360,3 @@ const RecentProducts = ({ products }) => {
     </div>
   );
 };
-

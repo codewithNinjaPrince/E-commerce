@@ -93,7 +93,13 @@ const Setting = () => {
   };
 
   return (
-    <div className="flex bg-gradient-to-br from-black via-gray-900 to-black min-h-screen text-white">
+    <div
+      className="
+    flex bg-gradient-to-br from-black via-gray-900 to-black 
+    min-h-screen text-white 
+    pt-[30px] sm:pt-[60px] lg:pt-[50px]
+  "
+    >
       {/* SIDEBAR */}
       <Sidebar />
 
