@@ -32,8 +32,8 @@ export const backendUrl = import.meta.env.VITE_BACKEND_URL;
 const App = () => {
   const navigate = useNavigate();
 
-  const [kycVerified, setKycVerified] = useState(null);
-  const [checkingKyc, setCheckingKyc] = useState(true);
+  // ⭐ Default TRUE = smooth UX, no flicker, no white screen
+  const [kycVerified, setKycVerified] = useState(true);
 
   const [unreadCount, setUnreadCount] = useState(0);
   const [token, setToken] = useState(localStorage.getItem("merchantToken") || "");
@@ -87,7 +87,8 @@ const App = () => {
   }, [token]);
 
   /* -------------------------------------------
-     FETCH KYC STATUS (ONCE)
+     FETCH KYC STATUS (Runs only ONCE per login)
+     ⭐ Does NOT block UI → Smooth start
   ------------------------------------------- */
   useEffect(() => {
     if (!token) return;
@@ -99,12 +100,10 @@ const App = () => {
         });
 
         if (res.data.success) {
-          setKycVerified(res.data.merchant.isVerified);
+          setKycVerified(res.data.merchant.isVerified); // instantly lock if false
         }
       } catch (err) {
         console.log("KYC status fetch error:", err);
-      } finally {
-        setCheckingKyc(false);
       }
     };
 
@@ -123,12 +122,7 @@ const App = () => {
   }
 
   /* -------------------------------------------
-     DON'T RENDER ANY ROUTES UNTIL KYC FETCHED ONCE
-  ------------------------------------------- */
-  if (checkingKyc) return null;
-
-  /* -------------------------------------------
-     LOCKED PAGE COMPONENT
+     LOCKED PAGE
   ------------------------------------------- */
   const LockedPage = () => (
     <div className="w-full min-h-[60vh] flex flex-col items-center justify-center text-center p-6">
@@ -146,14 +140,16 @@ const App = () => {
     </div>
   );
 
-  /* 🔥 IMPORTANT RULE:
-     Show LockedPage ONLY IF kycVerified === false
-     Do NOT lock page when kycVerified === null
-  */
+  /* -------------------------------------------
+     PROTECTION FUNCTION
+     ⭐ Only lock when explicitly false
+     ⭐ Default true means smooth UX
+  ------------------------------------------- */
+  const protect = (page) => (kycVerified === false ? <LockedPage /> : page);
 
-  const protect = (component) =>
-    kycVerified === false ? <LockedPage /> : component;
-
+  /* -------------------------------------------
+     APP LAYOUT
+  ------------------------------------------- */
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-black via-gray-900 to-black overflow-x-hidden">
       <ToastContainer />
@@ -196,3 +192,4 @@ const App = () => {
 };
 
 export default App;
+
