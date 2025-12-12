@@ -22,6 +22,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import RefundPolicy from "./pages/RefundPolicy";
 import ShippingPolicy from "./pages/ShippingPolicy";
 import Legal from "./pages/Legal";
+
 import axios from "axios";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -32,16 +33,15 @@ const App = () => {
   const navigate = useNavigate();
 
   const [kycVerified, setKycVerified] = useState(null);
+  const [checkingKyc, setCheckingKyc] = useState(true);
 
   const [unreadCount, setUnreadCount] = useState(0);
-  const [token, setToken] = useState(
-    localStorage.getItem("merchantToken") || ""
-  );
+  const [token, setToken] = useState(localStorage.getItem("merchantToken") || "");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  /* =========================================================
+  /* -------------------------------------------
      AUTO UPDATE TOKEN
-  ========================================================= */
+  ------------------------------------------- */
   useEffect(() => {
     const storedToken = localStorage.getItem("merchantToken");
     if (storedToken !== token) {
@@ -49,16 +49,16 @@ const App = () => {
     }
   }, [token]);
 
-  /* =========================================================
+  /* -------------------------------------------
      REDIRECT IF LOGGED OUT
-  ========================================================= */
+  ------------------------------------------- */
   useEffect(() => {
     if (!token) navigate("/", { replace: true });
   }, [token]);
 
-  /* =========================================================
+  /* -------------------------------------------
      FETCH UNREAD NOTIFICATIONS COUNT
-  ========================================================= */
+  ------------------------------------------- */
   const fetchUnreadCount = async () => {
     if (!token) return;
 
@@ -77,44 +77,43 @@ const App = () => {
     }
   };
 
-  /* =========================================================
+  /* -------------------------------------------
      AUTO REFRESH EVERY 10 SECONDS
-  ========================================================= */
+  ------------------------------------------- */
   useEffect(() => {
-    fetchUnreadCount(); // Initial load
-
-    const interval = setInterval(() => {
-      fetchUnreadCount();
-    }, 10000); // 10 seconds
-
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 10000);
     return () => clearInterval(interval);
   }, [token]);
 
-  //Kyc page would only be active if kyc is not done
-  const fetchMerchantStatus = async () => {
+  /* -------------------------------------------
+     FETCH KYC STATUS (ONCE)
+  ------------------------------------------- */
+  useEffect(() => {
     if (!token) return;
 
-    try {
-      const res = await axios.get(`${backendUrl}/api/merchant/profile`, {
-        headers: { token },
-      });
+    const fetchMerchantStatus = async () => {
+      try {
+        const res = await axios.get(`${backendUrl}/api/merchant/profile`, {
+          headers: { token },
+        });
 
-      if (res.data.success) {
-        const merchant = res.data.merchant;
-        setKycVerified(merchant.isVerified); // true or false
+        if (res.data.success) {
+          setKycVerified(res.data.merchant.isVerified);
+        }
+      } catch (err) {
+        console.log("KYC status fetch error:", err);
+      } finally {
+        setCheckingKyc(false);
       }
-    } catch (err) {
-      console.log("KYC status fetch error:", err);
-    }
-  };
+    };
 
-  useEffect(() => {
     fetchMerchantStatus();
   }, [token]);
 
-  /* =========================================================
-     AUTH: Login Page
-  ========================================================= */
+  /* -------------------------------------------
+     AUTH PAGE
+  ------------------------------------------- */
   if (!token) {
     return (
       <div className="w-full h-full bg-gradient-to-br from-black via-gray-900 to-black">
@@ -123,18 +122,19 @@ const App = () => {
     );
   }
 
-  /* =========================================================
-     APP LAYOUT
-  ========================================================= */
+  /* -------------------------------------------
+     DON'T RENDER ANY ROUTES UNTIL KYC FETCHED ONCE
+  ------------------------------------------- */
+  if (checkingKyc) return null;
 
-  // Lock Component
-
+  /* -------------------------------------------
+     LOCKED PAGE COMPONENT
+  ------------------------------------------- */
   const LockedPage = () => (
     <div className="w-full min-h-[60vh] flex flex-col items-center justify-center text-center p-6">
       <h2 className="text-2xl font-bold mb-3 text-red-400">KYC Not Verified</h2>
       <p className="text-gray-300 max-w-md mb-6">
-        Your KYC is not active. Complete your KYC to unlock all merchant
-        features.
+        Your KYC is not active. Complete your KYC to unlock all merchant features.
       </p>
 
       <a
@@ -146,14 +146,20 @@ const App = () => {
     </div>
   );
 
+  /* 🔥 IMPORTANT RULE:
+     Show LockedPage ONLY IF kycVerified === false
+     Do NOT lock page when kycVerified === null
+  */
+
+  const protect = (component) =>
+    kycVerified === false ? <LockedPage /> : component;
+
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-black via-gray-900 to-black overflow-x-hidden">
       <ToastContainer />
 
-      {/* MOBILE NAVBAR */}
       <MobileNavbar setSidebarOpen={setSidebarOpen} />
 
-      {/* SIDEBAR */}
       <Sidebar
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
@@ -161,53 +167,19 @@ const App = () => {
         unreadCount={unreadCount}
       />
 
-      {/* MAIN CONTENT AREA */}
       <div className="flex-1 pt-[70px] lg:pt-0 p-4 sm:p-6 text-white lg:pl-[260px]">
         <Routes>
-          <Route
-            path="/"
-            element={kycVerified ? <Dashboard /> : <LockedPage />}
-          />
-          <Route
-            path="/dashboard"
-            element={kycVerified ? <Dashboard /> : <LockedPage />}
-          />
-          <Route
-            path="/products"
-            element={kycVerified ? <Products /> : <LockedPage />}
-          />
-          <Route
-            path="/add-product"
-            element={kycVerified ? <AddProduct /> : <LockedPage />}
-          />
-          <Route
-            path="/products/edit/:id"
-            element={kycVerified ? <EditProduct /> : <LockedPage />}
-          />
-          <Route
-            path="/orders"
-            element={kycVerified ? <Orders /> : <LockedPage />}
-          />
-          <Route
-            path="/payments"
-            element={kycVerified ? <Payments /> : <LockedPage />}
-          />
-          <Route
-            path="/support"
-            element={kycVerified ? <Support /> : <LockedPage />}
-          />
-          <Route
-            path="/profile"
-            element={kycVerified ? <Profile /> : <LockedPage />}
-          />
-          <Route
-            path="/setting"
-            element={kycVerified ? <Setting /> : <LockedPage />}
-          />
-          <Route
-            path="/notification"
-            element={kycVerified ? <Notification /> : <LockedPage />}
-          />
+          <Route path="/" element={protect(<Dashboard />)} />
+          <Route path="/dashboard" element={protect(<Dashboard />)} />
+          <Route path="/products" element={protect(<Products />)} />
+          <Route path="/add-product" element={protect(<AddProduct />)} />
+          <Route path="/products/edit/:id" element={protect(<EditProduct />)} />
+          <Route path="/orders" element={protect(<Orders />)} />
+          <Route path="/payments" element={protect(<Payments />)} />
+          <Route path="/support" element={protect(<Support />)} />
+          <Route path="/profile" element={protect(<Profile />)} />
+          <Route path="/setting" element={protect(<Setting />)} />
+          <Route path="/notification" element={protect(<Notification />)} />
 
           {/* KYC pages always accessible */}
           <Route path="/kyc" element={<Kyc />} />
