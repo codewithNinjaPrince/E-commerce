@@ -1,20 +1,20 @@
 import React, { useEffect, useState } from "react";
-import Sidebar from "../components/Sidebar";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { FaTimes, FaUpload } from "react-icons/fa";
+import { FaUpload } from "react-icons/fa";
 
 const EditProduct = () => {
   const { id } = useParams();
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const token = localStorage.getItem("merchantToken");
 
-  // ---------------- IMAGE STATES ----------------
-  const [images, setImages] = useState(Array(10).fill(null));
-  const [existingImages, setExistingImages] = useState([]);
+  // ------------------------------------
+  // STATES
+  // ------------------------------------
+  const [images, setImages] = useState(Array(10).fill(null)); // new images
+  const [existingImages, setExistingImages] = useState([]); // already saved images
 
-  // ---------------- FORM FIELDS ----------------
   const [brandName, setBrandName] = useState("");
   const [name, setName] = useState("");
   const [actualPrice, setActualPrice] = useState("");
@@ -29,8 +29,15 @@ const EditProduct = () => {
   const [bestseller, setBestseller] = useState(false);
 
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  // ---------------- FETCH PRODUCT ----------------
+  // For drag reorder
+  const [dragIndex, setDragIndex] = useState(null);
+  const [dragType, setDragType] = useState(null); // "existing" or "new"
+
+  // ------------------------------------
+  // FETCH PRODUCT
+  // ------------------------------------
   const fetchProduct = async () => {
     try {
       const response = await axios.post(
@@ -40,24 +47,24 @@ const EditProduct = () => {
       );
 
       if (response.data.success) {
-        const product = response.data.product;
+        const p = response.data.product;
 
-        setBrandName(product.brandName);
-        setName(product.name);
-        setDescription(product.description);
-        setActualPrice(product.actualPrice);
-        setDiscountedPrice(product.discountedPrice);
-        setOfferCode(product.offerCode);
-        setReview(product.review);
-        setNoOfPeopleReviewed(product.noOfPeopleReviewed);
-        setCategory(product.category);
-        setSubCategory(product.subCategory);
-        setSizes(product.sizes);
-        setBestseller(product.bestseller);
+        setBrandName(p.brandName);
+        setName(p.name);
+        setDescription(p.description);
+        setActualPrice(p.actualPrice);
+        setDiscountedPrice(p.discountedPrice);
+        setOfferCode(p.offerCode);
+        setReview(p.review);
+        setNoOfPeopleReviewed(p.noOfPeopleReviewed);
+        setCategory(p.category);
+        setSubCategory(p.subCategory);
+        setSizes(p.sizes);
+        setBestseller(p.bestseller);
 
-        setExistingImages(product.image);
+        setExistingImages(p.image);
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to load product");
     }
     setLoading(false);
@@ -67,31 +74,83 @@ const EditProduct = () => {
     fetchProduct();
   }, []);
 
-  // ---------------- IMAGE HANDLING ----------------
-  const handleUpload = (e, idx) => {
+  // ------------------------------------
+  // IMAGE HANDLERS
+  // ------------------------------------
+
+  const handleUpload = (e, index) => {
     const file = e.target.files[0];
     if (!file) return;
 
     const updated = [...images];
-    updated[idx] = file;
+    updated[index] = file;
     setImages(updated);
   };
 
-  const removeExistingImage = (index) => {
+  const removeExistingImage = (i) => {
     const updated = [...existingImages];
-    updated.splice(index, 1);
+    updated.splice(i, 1);
     setExistingImages(updated);
   };
 
-  const removeNewImage = (index) => {
+  const removeNewImage = (i) => {
     const updated = [...images];
-    updated[index] = null;
+    updated[i] = null;
     setImages(updated);
   };
 
-  // ---------------- UPDATE PRODUCT ----------------
+  // DRAG START
+  const handleDragStart = (index, type) => {
+    setDragIndex(index);
+    setDragType(type); // "existing" or "new"
+  };
+
+  // DRAG OVER
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  // DROP (ONLY REORDER INSIDE SAME GROUP)
+  const handleDrop = (dropIndex, type) => {
+    if (dragType !== type) return; // cannot mix
+
+    if (type === "existing") {
+      const updated = [...existingImages];
+      const moved = updated.splice(dragIndex, 1)[0];
+      updated.splice(dropIndex, 0, moved);
+      setExistingImages(updated);
+    }
+
+    if (type === "new") {
+      const updated = [...images];
+      const moved = updated.splice(dragIndex, 1)[0];
+      updated.splice(dropIndex, 0, moved);
+      setImages(updated);
+    }
+  };
+
+  // ------------------------------------
+  // SORT SIZES
+  // ------------------------------------
+  const sizeOrder = ["S", "M", "L", "XL", "XXL", "XXXL"];
+
+  const toggleSize = (sz) => {
+    setSizes((prev) => {
+      let updated = prev.includes(sz)
+        ? prev.filter((x) => x !== sz)
+        : [...prev, sz];
+
+      updated.sort((a, b) => sizeOrder.indexOf(a) - sizeOrder.indexOf(b));
+      return updated;
+    });
+  };
+
+  // ------------------------------------
+  // SUBMIT
+  // ------------------------------------
   const submitHandler = async (e) => {
     e.preventDefault();
+    setSaving(true);
 
     try {
       const formData = new FormData();
@@ -115,7 +174,7 @@ const EditProduct = () => {
         if (img) formData.append("images", img);
       });
 
-      // EXISTING IMAGES
+      // EXISTING images
       formData.append("existingImages", JSON.stringify(existingImages));
 
       const response = await axios.post(
@@ -134,23 +193,28 @@ const EditProduct = () => {
       } else {
         toast.error(response.data.message);
       }
-    } catch (err) {
+    } catch {
       toast.error("Something went wrong");
     }
+
+    setSaving(false);
   };
 
   if (loading)
     return <div className="text-white p-6">Loading product details...</div>;
 
+  // ------------------------------------
+  // UI
+  // ------------------------------------
   return (
-    <div
-      className="
-    w-full max-w-[1600px] mx-auto 
-    p-4 sm:p-6 text-white 
-    pt-[30px] sm:pt-[60px] lg:pt-[50px]
-  "
-    >
-      {/* CENTER CONTENT SAME AS ADD PRODUCT UI */}
+    <div className="w-full max-w-[1600px] mx-auto p-4 sm:p-6 text-white pt-[30px] sm:pt-[60px] lg:pt-[50px]">
+
+      {/* LOADING OVERLAY */}
+      {saving && (
+        <div className="fixed inset-0 bg-black/70 flex justify-center items-center z-50">
+          <div className="w-12 h-12 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+        </div>
+      )}
 
       <form
         onSubmit={submitHandler}
@@ -158,7 +222,7 @@ const EditProduct = () => {
       >
         <h2 className="text-2xl font-bold">✏ Edit Product</h2>
 
-        {/* ---------------- EXISTING IMAGES ---------------- */}
+        {/* EXISTING IMAGES */}
         <div>
           <p className="font-semibold text-lg mb-3">Existing Images</p>
 
@@ -166,14 +230,18 @@ const EditProduct = () => {
             {existingImages.map((img, i) => (
               <div
                 key={i}
-                className="relative border border-[#333] bg-[#0f0f0f] rounded-lg overflow-hidden aspect-square"
+                draggable
+                onDragStart={() => handleDragStart(i, "existing")}
+                onDragOver={handleDragOver}
+                onDrop={() => handleDrop(i, "existing")}
+                className="relative border border-[#333] rounded-lg overflow-hidden aspect-square cursor-pointer"
               >
                 <img src={img} className="w-full h-full object-cover" />
 
                 <button
                   type="button"
                   onClick={() => removeExistingImage(i)}
-                  className="absolute top-1 right-1 px-2 py-1 bg-black/80 text-xs rounded cursor-pointer"
+                  className="absolute top-1 right-1 bg-black/80 px-2 py-1 text-xs rounded cursor-pointer"
                 >
                   ✕
                 </button>
@@ -182,15 +250,19 @@ const EditProduct = () => {
           </div>
         </div>
 
-        {/* ---------------- NEW IMAGES ---------------- */}
+        {/* NEW IMAGES */}
         <div>
           <p className="font-semibold text-lg mb-3">Upload New Images</p>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-            {images.map((img, index) => (
+            {images.map((img, i) => (
               <div
-                key={index}
-                className="relative border border-[#333] bg-[#0f0f0f] rounded-lg overflow-hidden aspect-square flex justify-center items-center"
+                key={i}
+                draggable={!!img}
+                onDragStart={() => img && handleDragStart(i, "new")}
+                onDragOver={handleDragOver}
+                onDrop={() => handleDrop(i, "new")}
+                className="relative border border-[#333] rounded-lg overflow-hidden aspect-square flex justify-center items-center cursor-pointer"
               >
                 {img ? (
                   <>
@@ -198,10 +270,9 @@ const EditProduct = () => {
                       src={URL.createObjectURL(img)}
                       className="w-full h-full object-cover"
                     />
-
                     <button
                       type="button"
-                      onClick={() => removeNewImage(index)}
+                      onClick={() => removeNewImage(i)}
                       className="absolute top-1 right-1 bg-black/80 px-2 py-1 text-xs rounded cursor-pointer"
                     >
                       ✕
@@ -215,7 +286,7 @@ const EditProduct = () => {
                       type="file"
                       hidden
                       accept="image/*"
-                      onChange={(e) => handleUpload(e, index)}
+                      onChange={(e) => handleUpload(e, i)}
                     />
                   </label>
                 )}
@@ -224,7 +295,7 @@ const EditProduct = () => {
           </div>
         </div>
 
-        {/* -------- BASIC FIELDS -------- */}
+        {/* BASIC FIELDS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <p className="mb-1">Brand Name</p>
@@ -245,7 +316,7 @@ const EditProduct = () => {
           </div>
         </div>
 
-        {/* -------- DESCRIPTION -------- */}
+        {/* DESCRIPTION */}
         <div>
           <p className="mb-1">Description</p>
           <textarea
@@ -255,7 +326,7 @@ const EditProduct = () => {
           />
         </div>
 
-        {/* -------- CATEGORY -------- */}
+        {/* CATEGORY */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div>
             <p className="mb-1">Category</p>
@@ -295,7 +366,7 @@ const EditProduct = () => {
           </div>
         </div>
 
-        {/* -------- PRICES -------- */}
+        {/* PRICES */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div>
             <p className="mb-1">Actual Price</p>
@@ -327,7 +398,7 @@ const EditProduct = () => {
           </div>
         </div>
 
-        {/* -------- REVIEWERS -------- */}
+        {/* REVIEWERS */}
         <div>
           <p className="mb-1">No. of People Reviewed</p>
           <input
@@ -338,20 +409,14 @@ const EditProduct = () => {
           />
         </div>
 
-        {/* -------- SIZES -------- */}
+        {/* SIZES */}
         <div>
           <p className="mb-1">Sizes</p>
           <div className="flex flex-wrap gap-3">
-            {["S", "M", "L", "XL", "XXL"].map((sz) => (
+            {sizeOrder.map((sz) => (
               <div
                 key={sz}
-                onClick={() =>
-                  setSizes((prev) =>
-                    prev.includes(sz)
-                      ? prev.filter((x) => x !== sz)
-                      : [...prev, sz]
-                  )
-                }
+                onClick={() => toggleSize(sz)}
                 className={`px-4 py-1 rounded cursor-pointer ${
                   sizes.includes(sz)
                     ? "bg-blue-600 text-white"
@@ -364,7 +429,7 @@ const EditProduct = () => {
           </div>
         </div>
 
-        {/* -------- BESTSELLER -------- */}
+        {/* BESTSELLER */}
         <div className="flex items-center gap-3">
           <input
             type="checkbox"
@@ -374,9 +439,14 @@ const EditProduct = () => {
           <span>Mark as Bestseller</span>
         </div>
 
-        {/* -------- SUBMIT BUTTON -------- */}
-        <button className="bg-blue-600 hover:bg-blue-700 py-3 rounded-lg w-full font-semibold cursor-pointer">
-          Save Changes
+        {/* SUBMIT */}
+        <button
+          disabled={saving}
+          className={`bg-blue-600 hover:bg-blue-700 py-3 rounded-lg w-full font-semibold cursor-pointer ${
+            saving && "opacity-50 cursor-not-allowed"
+          }`}
+        >
+          {saving ? "Saving..." : "Save Changes"}
         </button>
       </form>
     </div>

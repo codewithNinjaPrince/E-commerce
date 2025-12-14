@@ -1012,7 +1012,6 @@
 
 // export default Kyc;
 
-
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -1723,13 +1722,6 @@ const Kyc = () => {
               >
                 Update KYC
               </button>
-
-              <button
-                className="bg-red-500 text-white py-2 px-4 rounded-md font-bold cursor-pointer hover:bg-red-600 transition"
-                onClick={() => openConfirm("all")}
-              >
-                Delete KYC
-              </button>
             </div>
           )}
         </div>
@@ -2125,139 +2117,88 @@ const Kyc = () => {
               Your uploaded documents
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 cursor-pointer">
               {/* Aadhaar Front */}
-              <div className="p-4 bg-white/3 border border-white/10 rounded-lg relative">
-                <h3 className="font-semibold mb-2">Aadhaar Front</h3>
-                {merchant.documents?.aadhaarFront &&
-                !removedDocs.has("aadhaarFront") ? (
-                  <>
-                    <img
-                      src={merchant.documents.aadhaarFront}
-                      alt="aadhaarFront"
-                      className="w-full h-40 object-cover rounded-md mb-3"
-                    />
-                    <button
-                      onClick={() => onPreviewDeleteClick("aadhaarFront")}
-                      className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center shadow"
-                    >
-                      ×
-                    </button>
-                  </>
+              <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
+                <h3 className="font-semibold mb-2 text-sm">Aadhaar Front</h3>
+                {merchant.documents?.aadhaarFront ? (
+                  <img
+                    src={merchant.documents.aadhaarFront}
+                    alt="Aadhaar Front"
+                    className="w-full h-32 object-cover rounded-md"
+                  />
                 ) : (
-                  <p className="text-sm text-gray-300 mb-3">Not uploaded</p>
+                  <p className="text-sm text-gray-300">Not uploaded</p>
                 )}
               </div>
 
               {/* Aadhaar Back */}
-              <div className="p-4 bg-white/3 border border-white/10 rounded-lg relative">
-                <h3 className="font-semibold mb-2">Aadhaar Back</h3>
-                {merchant.documents?.aadhaarBack &&
-                !removedDocs.has("aadhaarBack") ? (
-                  <>
-                    <img
-                      src={merchant.documents.aadhaarBack}
-                      alt="aadhaarBack"
-                      className="w-full h-40 object-cover rounded-md mb-3"
-                    />
-                    <button
-                      onClick={() => onPreviewDeleteClick("aadhaarBack")}
-                      className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center shadow"
-                    >
-                      ×
-                    </button>
-                  </>
+              <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
+                <h3 className="font-semibold mb-2 text-sm">Aadhaar Back</h3>
+                {merchant.documents?.aadhaarBack ? (
+                  <img
+                    src={merchant.documents.aadhaarBack}
+                    alt="Aadhaar Back"
+                    className="w-full h-32 object-cover rounded-md"
+                  />
                 ) : (
-                  <p className="text-sm text-gray-300 mb-3">Not uploaded</p>
+                  <p className="text-sm text-gray-300">Not uploaded</p>
                 )}
               </div>
 
-              {/* PAN */}
-              <div className="p-4 bg-white/3 border border-white/10 rounded-lg relative">
-                <h3 className="font-semibold mb-2">PAN</h3>
-                {merchant.documents?.panFile && !removedDocs.has("panFile") ? (
-                  <>
-                    <img
-                      src={merchant.documents.panFile}
-                      alt="panFile"
-                      className="w-full h-40 object-cover rounded-md mb-3"
-                    />
-                    <button
-                      onClick={() => onPreviewDeleteClick("panFile")}
-                      className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center shadow"
-                    >
-                      ×
-                    </button>
-                  </>
+              {/* PAN Card */}
+              <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
+                <h3 className="font-semibold mb-2 text-sm">PAN Card</h3>
+                {merchant.documents?.panFile ? (
+                  <img
+                    src={merchant.documents.panFile}
+                    alt="PAN"
+                    className="w-full h-32 object-cover rounded-md"
+                  />
                 ) : (
-                  <p className="text-sm text-gray-300 mb-3">Not uploaded</p>
+                  <p className="text-sm text-gray-300">Not uploaded</p>
                 )}
               </div>
 
               {/* Passbook */}
-              <div className="p-4 bg-white/3 border border-white/10 rounded-lg relative">
-                <h3 className="font-semibold mb-2">Passbook</h3>
-                {merchant.bank?.passbookFile &&
-                !removedDocs.has("passbookFile") ? (
-                  <>
-                    <img
-                      src={merchant.bank.passbookFile}
-                      alt="passbookFile"
-                      className="w-full h-40 object-cover rounded-md mb-3"
-                    />
-                    <button
-                      onClick={() => onPreviewDeleteClick("passbookFile")}
-                      className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center shadow"
-                    >
-                      ×
-                    </button>
-                  </>
+              <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
+                <h3 className="font-semibold mb-2 text-sm">Passbook</h3>
+                {merchant.bank?.passbookFile ? (
+                  <img
+                    src={merchant.bank.passbookFile}
+                    alt="Passbook"
+                    className="w-full h-32 object-cover rounded-md"
+                  />
                 ) : (
-                  <p className="text-sm text-gray-300 mb-3">Not uploaded</p>
+                  <p className="text-sm text-gray-300">Not uploaded</p>
                 )}
               </div>
 
-              {/* Profile */}
-              <div className="p-4 bg-white/3 border border-white/10 rounded-lg relative">
-                <h3 className="font-semibold mb-2">Profile Image</h3>
-                {merchant.profileImage && !removedDocs.has("profileImage") ? (
-                  <>
-                    <img
-                      src={merchant.profileImage}
-                      alt="profileImage"
-                      className="w-full h-40 object-cover rounded-md mb-3"
-                    />
-                    <button
-                      onClick={() => onPreviewDeleteClick("profileImage")}
-                      className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center shadow"
-                    >
-                      ×
-                    </button>
-                  </>
+              {/* Profile Image */}
+              <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
+                <h3 className="font-semibold mb-2 text-sm">Profile Image</h3>
+                {merchant.profileImage ? (
+                  <img
+                    src={merchant.profileImage}
+                    alt="Profile"
+                    className="w-full h-32 object-cover rounded-md"
+                  />
                 ) : (
-                  <p className="text-sm text-gray-300 mb-3">Not uploaded</p>
+                  <p className="text-sm text-gray-300">Not uploaded</p>
                 )}
               </div>
 
               {/* GST */}
-              <div className="p-4 bg-white/3 border border-white/10 rounded-lg relative">
-                <h3 className="font-semibold mb-2">GST</h3>
-                {merchant.documents?.gstFile && !removedDocs.has("gstFile") ? (
-                  <>
-                    <img
-                      src={merchant.documents.gstFile}
-                      alt="gstFile"
-                      className="w-full h-40 object-cover rounded-md mb-3"
-                    />
-                    <button
-                      onClick={() => onPreviewDeleteClick("gstFile")}
-                      className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center shadow"
-                    >
-                      ×
-                    </button>
-                  </>
+              <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
+                <h3 className="font-semibold mb-2 text-sm">GST File</h3>
+                {merchant.documents?.gstFile ? (
+                  <img
+                    src={merchant.documents.gstFile}
+                    alt="GST"
+                    className="w-full h-32 object-cover rounded-md"
+                  />
                 ) : (
-                  <p className="text-sm text-gray-300 mb-3">Not uploaded</p>
+                  <p className="text-sm text-gray-300">Not uploaded</p>
                 )}
               </div>
             </div>

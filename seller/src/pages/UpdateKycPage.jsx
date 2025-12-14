@@ -1,81 +1,103 @@
-// UpdateKycPage.jsx
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { backendUrl } from "../App";
 import { useNavigate } from "react-router-dom";
 
+import Cropper from "react-cropper";
+import "cropperjs/dist/cropper.css";
+
 /**
- * UpdateKycPage
+ * UpdateKyc.jsx
  *
- * - Auto-fills fields from /api/merchant/profile
- * - Shows existing images & allows immediate delete (password confirm)
- * - Allows replacing files (camera/gallery via capture attr)
- * - Submits via PUT /api/merchant/kyc (multipart/form-data)
- * - Clears local files/previews after actions
+ * - Modern upload UI with cropper modal
+ * - Safe delete (password confirm) that updates UI instantly
+ * - No auto-submit (press Save Changes to submit)
+ * - Works nicely on mobile (capture attr used)
  */
 
-const FileBox = ({
+/* ----------------------
+   Helper: UploadCard
+   - label
+   - name: field key (e.g. "aadhaarFront")
+   - previewUrl: cloud or local preview
+   - onPick: callback receiving event-like { target: { name, files } }
+   - onRemove: optional remove handler (opens confirm)
+   ---------------------- */
+const UploadCard = ({
   label,
   name,
-  accept,
-  capture,
-  onChange,
   previewUrl,
+  onPick,
   onRemove,
+  capture = null,
 }) => {
+  const fileInputRef = useRef(null);
+
   return (
-    <div className="relative">
-      <label className="file-box cursor-pointer flex flex-col gap-2 p-3 rounded-lg border border-white/10 bg-white/5 hover:bg-white/6 transition items-start">
-        <span className="text-sm text-gray-300">{label}</span>
-
-        <div className="w-full flex items-center gap-3">
-          <div className="grow">
-            <input
-              type="file"
-              name={name}
-              accept={accept}
-              capture={capture}
-              onChange={onChange}
-              className="w-full text-sm"
-            />
-          </div>
-
+    <div className="relative bg-white/5 border border-white/10 rounded-xl p-3 shadow-sm hover:bg-white/8 transition">
+      <div className="flex items-start gap-3">
+        <div className="w-20 h-20 rounded-md overflow-hidden bg-[#0b0b0b] flex items-center justify-center border border-white/6">
           {previewUrl ? (
             <img
               src={previewUrl}
               alt={label}
-              className="w-16 h-12 object-cover rounded-md border border-white/10 cursor-pointer"
+              className="w-full h-full object-cover"
+              draggable={false}
             />
           ) : (
-            <div className="w-16 h-12 rounded-md border border-white/10 bg-white/3 flex items-center justify-center text-xs text-gray-300">
-              No preview
-            </div>
+            <div className="text-gray-400 text-2xl select-none">📷</div>
           )}
         </div>
-      </label>
 
-      {/* If onRemove provided, show small remove button overlay on preview */}
-      {previewUrl && onRemove && (
-        <button
-          onClick={onRemove}
-          className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-7 h-7 flex items-center justify-center shadow-md cursor-pointer"
-          aria-label={`Remove ${label}`}
-          title={`Remove ${label}`}
-        >
-          ✕
-        </button>
-      )}
+        <div className="flex-1">
+          <p className="text-sm text-gray-300 font-semibold">{label}</p>
+          <p className="text-xs text-gray-400 mt-1">
+            {previewUrl ? "Tap Replace to change" : "Tap to upload (camera allowed)"}
+          </p>
+
+          <div className="mt-3 flex gap-2">
+            <label
+              className="px-3 py-2 bg-white/6 hover:bg-white/8 rounded-md text-sm cursor-pointer"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {previewUrl ? "Replace" : "Upload"}
+            </label>
+
+            {previewUrl && onRemove && (
+              <button
+                onClick={onRemove}
+                className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        name={name}
+        accept="image/*"
+        capture={capture || undefined}
+        onChange={onPick}
+        className="hidden"
+      />
     </div>
   );
 };
 
+/* ----------------------
+   Main Component
+---------------------- */
 const UpdateKycPage = () => {
   const token = localStorage.getItem("merchantToken");
   const navigate = useNavigate();
 
-  const [loading, setLoading] = useState(false);
   const [merchant, setMerchant] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   // form fields
   const [form, setForm] = useState({
@@ -99,60 +121,63 @@ const UpdateKycPage = () => {
     upi: "",
   });
 
-  // local file objects (File) for upload
+  // files: keeps selected File objects (cropped)
   const [files, setFiles] = useState({
+    profileImage: null,
     aadhaarFront: null,
     aadhaarBack: null,
     panFile: null,
     gstFile: null,
     passbookFile: null,
-    profileImage: null,
   });
 
-  // preview URLs for local files (created via URL.createObjectURL)
-  const [localPreviews, setLocalPreviews] = useState({
+  // previews: URLs for local/cdn previews
+  const [previews, setPreviews] = useState({
+    profileImage: null,
     aadhaarFront: null,
     aadhaarBack: null,
     panFile: null,
     gstFile: null,
     passbookFile: null,
-    profileImage: null,
   });
 
-  // password modal for immediate delete
+  // Cropper modal state
+  const [cropOpen, setCropOpen] = useState(false);
+  const [cropTempUrl, setCropTempUrl] = useState(null);
+  const [cropField, setCropField] = useState(null);
+  const cropperRef = useRef(null);
+
+  // Delete modal state
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState(null); // docType string
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [password, setPassword] = useState("");
   const [verifying, setVerifying] = useState(false);
+
   const passwordRef = useRef(null);
 
-  const handleChange = (e) =>
-    setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+  // Prevent Enter auto-submit
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Enter" && e.target?.tagName !== "TEXTAREA") e.preventDefault();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
-  const handleFile = (e) => {
-    const name = e.target.name;
-    const file = e.target.files?.[0];
-    setFiles((p) => ({ ...p, [name]: file || null }));
-
-    // create + set local preview
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setLocalPreviews((p) => ({ ...p, [name]: url }));
-    } else {
-      // cleared
-      setLocalPreviews((p) => ({ ...p, [name]: null }));
-    }
-  };
-
-  // load merchant and prefill form
+  // Load merchant profile
   const loadMerchant = async () => {
     try {
       const res = await axios.get(`${backendUrl}/api/merchant/profile`, {
         headers: { token },
       });
-      if (!res.data.success) return;
+      if (!res.data.success) {
+        toast.error("Failed to load profile");
+        return;
+      }
       const m = res.data.merchant;
       setMerchant(m);
+
+      // set form defaults (do not overwrite if user has typed)
       setForm((prev) => ({
         ...prev,
         firstName: m.firstName || prev.firstName,
@@ -174,41 +199,107 @@ const UpdateKycPage = () => {
         bankName: m.bank?.bankName || prev.bankName,
         upi: m.bank?.upi || prev.upi,
       }));
+
+      // set previews from cloud if no local
+      setPreviews((p) => ({
+        profileImage: p.profileImage || m.profileImage || null,
+        aadhaarFront: p.aadhaarFront || m.documents?.aadhaarFront || null,
+        aadhaarBack: p.aadhaarBack || m.documents?.aadhaarBack || null,
+        panFile: p.panFile || m.documents?.panFile || null,
+        gstFile: p.gstFile || m.documents?.gstFile || null,
+        passbookFile: p.passbookFile || m.bank?.passbookFile || null,
+      }));
     } catch (err) {
-      console.log("LOAD MERCHANT ERROR:", err);
+      console.error("LOAD MERCHANT ERROR:", err);
       toast.error("Failed to load profile");
     }
   };
 
   useEffect(() => {
     loadMerchant();
-    // cleanup previews on unmount
+    // cleanup objectURLs on unmount
     return () => {
-      Object.values(localPreviews).forEach((u) => {
-        if (u) URL.revokeObjectURL(u);
+      Object.values(previews).forEach((u) => {
+        if (u && u.startsWith("blob:")) URL.revokeObjectURL(u);
       });
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // helper: get cloud preview from merchant or local preview
-  const getPreview = (field) => {
-    if (localPreviews[field]) return localPreviews[field];
-    if (!merchant) return null;
-    if (field === "profileImage") return merchant.profileImage || null;
-    if (field === "passbookFile") return merchant.bank?.passbookFile || null;
-    return merchant.documents?.[field] || null;
+  /* ----------------------
+     Cropper flow
+  -----------------------*/
+  // Called on file input change: opens crop modal with temporary url
+  const handlePickAndCrop = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const url = URL.createObjectURL(file);
+    setCropTempUrl(url);
+    setCropField(e.target.name); // which field are we cropping for
+    setCropOpen(true);
   };
 
-  // open deletion modal for a doc
-  const requestDelete = (docType) => {
-    setDeleteTarget(docType);
+  // Apply cropping -> set files[field] and previews[field]
+  const applyCrop = () => {
+    const cropper = cropperRef.current?.cropper;
+    if (!cropper || !cropField) {
+      setCropOpen(false);
+      return;
+    }
+
+    cropper.getCroppedCanvas().toBlob((blob) => {
+      if (!blob) {
+        toast.error("Crop failed");
+        return;
+      }
+
+      const fileName = `${cropField}-${Date.now()}.jpg`;
+      const croppedFile = new File([blob], fileName, { type: "image/jpeg" });
+
+      // set file and preview
+      setFiles((p) => ({ ...p, [cropField]: croppedFile }));
+
+      // revoke old blob preview if exists
+      setPreviews((p) => {
+        if (p[cropField] && p[cropField].startsWith("blob:")) {
+          URL.revokeObjectURL(p[cropField]);
+        }
+        const newUrl = URL.createObjectURL(croppedFile);
+        return { ...p, [cropField]: newUrl };
+      });
+
+      // close modal and cleanup temp URL
+      setCropOpen(false);
+      if (cropTempUrl) {
+        URL.revokeObjectURL(cropTempUrl);
+      }
+      setCropTempUrl(null);
+      setCropField(null);
+      toast.success("Image cropped & ready to upload (will send on Save)");
+    }, "image/jpeg", 0.9);
+  };
+
+  const cancelCrop = () => {
+    setCropOpen(false);
+    if (cropTempUrl) URL.revokeObjectURL(cropTempUrl);
+    setCropTempUrl(null);
+    setCropField(null);
+  };
+
+  /* ----------------------
+     Delete flow
+     - requestDelete opens modal
+     - confirmDelete verifies password and calls API
+     - on success: update merchant + previews + files locally
+  -----------------------*/
+  const requestDelete = (field) => {
+    setDeleteTarget(field);
     setPassword("");
     setConfirmOpen(true);
-    setTimeout(() => passwordRef.current?.focus(), 100);
+    setTimeout(() => passwordRef.current?.focus(), 80);
   };
 
-  // verify password (backend) - reuses your verify-password route
   const verifyPassword = async (pw) => {
     try {
       setVerifying(true);
@@ -225,15 +316,16 @@ const UpdateKycPage = () => {
     }
   };
 
-  // perform immediate delete (after password)
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     if (!password) {
-      toast.error("Enter your password");
+      toast.error("Enter password to confirm");
       return;
     }
+
     try {
       setLoading(true);
+
       const ok = await verifyPassword(password);
       if (!ok) {
         setLoading(false);
@@ -241,31 +333,70 @@ const UpdateKycPage = () => {
         return;
       }
 
-      await axios.delete(`${backendUrl}/api/merchant/kyc/${deleteTarget}`, {
-        headers: { token },
-      });
+      const res = await axios.delete(
+        `${backendUrl}/api/merchant/kyc/${deleteTarget}`,
+        { headers: { token } }
+      );
+
+      if (!res.data?.success) {
+        toast.error(res.data?.message || "Delete failed");
+        setLoading(false);
+        setConfirmOpen(false);
+        return;
+      }
 
       toast.success(`${deleteTarget} removed`);
-      // also clear any local preview/file for that doc
+
+      // Update merchant object locally so UI immediately reflects deletion
+      setMerchant((prev) => {
+        if (!prev) return prev;
+        const updated = { ...prev };
+
+        if (deleteTarget === "profileImage") {
+          updated.profileImage = null;
+        } else if (deleteTarget === "passbookFile") {
+          if (updated.bank) updated.bank = { ...updated.bank, passbookFile: null };
+        } else {
+          updated.documents = { ...(updated.documents || {}) };
+          updated.documents[deleteTarget] = null;
+        }
+
+        return updated;
+      });
+
+      // Clear local preview & file for the deleted field
+      setPreviews((p) => {
+        const next = { ...p };
+        if (next[deleteTarget] && next[deleteTarget].startsWith("blob:")) {
+          URL.revokeObjectURL(next[deleteTarget]);
+        }
+        next[deleteTarget] = null;
+        return next;
+      });
+
       setFiles((p) => ({ ...p, [deleteTarget]: null }));
-      setLocalPreviews((p) => ({ ...p, [deleteTarget]: null }));
+
+      // reset confirm UI
       setConfirmOpen(false);
       setDeleteTarget(null);
       setPassword("");
-      await loadMerchant();
       setLoading(false);
     } catch (err) {
-      setLoading(false);
-      toast.error("Failed to delete document");
+      console.error("DELETE ERROR:", err);
+      toast.error("Delete failed");
       setConfirmOpen(false);
+      setLoading(false);
     }
   };
 
-  // submit updated kyc (PUT)
+  /* ----------------------
+     Save (PUT) handler
+     - Only called when merchant presses Save Changes
+  -----------------------*/
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // keep same validation you had
+    // Basic validation
     if (!form.firstName || !form.lastName) {
       toast.error("First & Last Name required");
       return;
@@ -278,8 +409,10 @@ const UpdateKycPage = () => {
     try {
       setLoading(true);
       const fd = new FormData();
+
       Object.keys(form).forEach((k) => fd.append(k, form[k] || ""));
-      // append only updated files
+
+      // Attach only new/changed files
       Object.keys(files).forEach((k) => {
         if (files[k]) fd.append(k, files[k]);
       });
@@ -295,66 +428,48 @@ const UpdateKycPage = () => {
       }
 
       toast.success("KYC updated! Verification may take up to 24 hours.");
-      navigate("/kyc");
-
-      // clear local files + previews (reset)
-      Object.values(localPreviews).forEach((u) => u && URL.revokeObjectURL(u));
-      setFiles({
-        aadhaarFront: null,
-        aadhaarBack: null,
-        panFile: null,
-        gstFile: null,
-        passbookFile: null,
-        profileImage: null,
-      });
-      setLocalPreviews({
-        aadhaarFront: null,
-        aadhaarBack: null,
-        panFile: null,
-        gstFile: null,
-        passbookFile: null,
-        profileImage: null,
-      });
-      // reload merchant info from server
+      // After save, reload merchant to reflect server values (and reset local file preview states)
       await loadMerchant();
+
+      // revoke local blobs that were used
+      Object.keys(previews).forEach((k) => {
+        if (previews[k] && previews[k].startsWith("blob:")) {
+          URL.revokeObjectURL(previews[k]);
+        }
+      });
+
+      setFiles({
+        profileImage: null,
+        aadhaarFront: null,
+        aadhaarBack: null,
+        panFile: null,
+        gstFile: null,
+        passbookFile: null,
+      });
+
+      setPreviews((p) => ({
+        profileImage: p.profileImage && !p.profileImage.startsWith("blob:") ? p.profileImage : null,
+        aadhaarFront: p.aadhaarFront && !p.aadhaarFront.startsWith("blob:") ? p.aadhaarFront : null,
+        aadhaarBack: p.aadhaarBack && !p.aadhaarBack.startsWith("blob:") ? p.aadhaarBack : null,
+        panFile: p.panFile && !p.panFile.startsWith("blob:") ? p.panFile : null,
+        gstFile: p.gstFile && !p.gstFile.startsWith("blob:") ? p.gstFile : null,
+        passbookFile: p.passbookFile && !p.passbookFile.startsWith("blob:") ? p.passbookFile : null,
+      }));
     } catch (err) {
+      console.error("UPDATE ERROR:", err);
       setLoading(false);
-      console.log("UPDATE ERROR:", err);
       toast.error(err?.response?.data?.message || "Update failed");
     }
   };
 
-  // helper: reset whole form & files to server values (used when user cancels update)
-  const resetToServer = async () => {
-    // revoke local preview urls
-    Object.values(localPreviews).forEach((u) => u && URL.revokeObjectURL(u));
-    setFiles({
-      aadhaarFront: null,
-      aadhaarBack: null,
-      panFile: null,
-      gstFile: null,
-      passbookFile: null,
-      profileImage: null,
-    });
-    setLocalPreviews({
-      aadhaarFront: null,
-      aadhaarBack: null,
-      panFile: null,
-      gstFile: null,
-      passbookFile: null,
-      profileImage: null,
-    });
-    await loadMerchant();
-  };
-
-  if (!merchant)
+  if (!merchant) {
     return (
       <div className="min-h-screen text-white flex items-center justify-center">
         Loading...
       </div>
     );
+  }
 
-  // compute kyc state
   const kycStatus = merchant?.isVerified
     ? "Verified"
     : merchant?.documents?.aadhaarFront
@@ -370,47 +485,41 @@ const UpdateKycPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black p-4 md:p-6 text-white flex justify-center">
-      {/* LOADING overlay */}
+      {/* Loading overlay */}
       {loading && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center">
-          <div className="w-16 h-16 border-4 border-gray-600 border-t-white rounded-full animate-spin" />
-          <p className="mt-4 text-gray-300">Please wait...</p>
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center">
+          <div className="w-14 h-14 border-4 border-gray-600 border-t-white rounded-full animate-spin" />
         </div>
       )}
 
-      {/* Confirm password modal for immediate delete */}
+      {/* Delete confirm modal */}
       {confirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/60"
-            onClick={() => setConfirmOpen(false)}
-          />
-          <div className="relative bg-white/6 border border-white/20 rounded-xl p-6 w-full max-w-md backdrop-blur-md">
-            <h3 className="text-xl font-semibold mb-3">Confirm Delete</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setConfirmOpen(false)} />
+          <div className="relative bg-[#0f0f0f] p-5 rounded-lg border border-white/10 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-2">Confirm Delete</h3>
             <p className="text-sm text-gray-300 mb-4">
-              Enter your password to confirm deleting{" "}
-              <span className="font-semibold">{deleteTarget}</span>.
+              Enter your password to confirm delete of <b>{deleteTarget}</b>.
             </p>
-
             <input
               ref={passwordRef}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               type="password"
-              placeholder="Your account password"
-              className="w-full p-3 rounded-md bg-white/5 border border-white/10 text-white outline-none mb-4"
+              placeholder="Account password"
+              className="w-full p-3 rounded-md bg-white/5 border border-white/10 mb-4 outline-none"
             />
 
-            <div className="flex gap-3 justify-end">
+            <div className="flex justify-end gap-2">
               <button
                 onClick={() => setConfirmOpen(false)}
-                className="px-4 py-2 rounded-md bg-white/8 hover:bg-white/12 transition cursor-pointer"
+                className="px-3 py-2 rounded-md bg-white/8 hover:bg-white/12"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 transition cursor-pointer text-white font-semibold"
+                className="px-3 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white"
               >
                 {verifying ? "Verifying..." : "Confirm Delete"}
               </button>
@@ -419,39 +528,66 @@ const UpdateKycPage = () => {
         </div>
       )}
 
-      <div className="w-full max-w-5xl bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8 shadow-xl">
-        <h1 className="text-3xl md:text-4xl font-bold text-center">
-          Update KYC
-        </h1>
-        <p className="text-center text-gray-300 mt-2">
-          Edit fields, replace files or remove them directly. Deleting a file
-          requires password confirmation.
-        </p>
+      {/* Cropper modal */}
+      {cropOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70" onClick={cancelCrop} />
+          <div className="relative bg-[#0f0f0f] p-4 rounded-lg border border-white/10 w-full max-w-lg">
+            <h3 className="text-lg font-semibold text-white mb-3">Crop Image</h3>
+            <div className="w-full h-[340px] bg-black">
+              <Cropper
+                src={cropTempUrl}
+                style={{ height: 320, width: "100%" }}
+                // aspectRatio can be adjusted per field; default 1:1
+                aspectRatio={1}
+                guides={true}
+                viewMode={1}
+                ref={cropperRef}
+                dragMode="move"
+                zoomable={true}
+                scalable={true}
+                modal={true}
+              />
+            </div>
 
-        {/* Status + actions */}
+            <div className="flex justify-end gap-2 mt-4">
+              <button onClick={cancelCrop} className="px-3 py-2 rounded-md bg-white/8 hover:bg-white/12">
+                Cancel
+              </button>
+              <button onClick={applyCrop} className="px-3 py-2 rounded-md bg-green-600 hover:bg-green-700 text-white">
+                Apply Crop
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="w-full max-w-5xl bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8 shadow-xl">
+        <h1 className="text-3xl md:text-4xl font-bold text-center">Update KYC</h1>
+        <p className="text-center text-gray-300 mt-2">Edit fields, replace files or remove them directly.</p>
+
         <div className="mt-6 p-4 rounded-lg bg-black/30 border border-white/10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold">KYC Status</h2>
-              <p className={`${kycStatusColor} text-xl font-bold mt-1`}>
-                {kycStatus} 🛡️
-              </p>
+              <p className={`${kycStatusColor} text-xl font-bold mt-1`}>{kycStatus} 🛡️</p>
             </div>
 
             <div className="flex gap-3 items-center">
               <button
                 onClick={() => {
-                  resetToServer();
-                  toast.info("Reset to server values");
+                  // reset to server values
+                  loadMerchant();
+                  toast.info("Reloaded server values");
                 }}
-                className="bg-white text-black py-2 px-4 rounded-md font-bold cursor-pointer hover:bg-gray-200 transition"
+                className="bg-white text-black py-2 px-4 rounded-md font-bold hover:bg-gray-200 transition"
               >
                 Reset
               </button>
 
               <button
                 onClick={() => navigate("/merchant")}
-                className="bg-white/6 text-white py-2 px-4 rounded-md font-bold cursor-pointer hover:bg-white/8 transition"
+                className="bg-white/6 text-white py-2 px-4 rounded-md font-bold hover:bg-white/8 transition"
               >
                 Back
               </button>
@@ -459,69 +595,26 @@ const UpdateKycPage = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-gray-300 mt-4">
-            <div>
-              <strong>Name:</strong> {merchant.name}
-            </div>
-            <div>
-              <strong>Email:</strong> {merchant.email}
-            </div>
-            <div>
-              <strong>Phone:</strong> {merchant.phone}
-            </div>
-            <div>
-              <strong>Bank:</strong> {merchant.bank?.bankName || "Not added"}
-            </div>
-            <div>
-              <strong>Account:</strong>{" "}
-              {merchant.bank?.accountNumber || "Not added"}
-            </div>
-            <div>
-              <strong>IFSC:</strong> {merchant.bank?.ifsc || "Not added"}
-            </div>
+            <div><strong>Name:</strong> {merchant.name}</div>
+            <div><strong>Email:</strong> {merchant.email}</div>
+            <div><strong>Phone:</strong> {merchant.phone}</div>
+            <div><strong>Bank:</strong> {merchant.bank?.bankName || "Not added"}</div>
+            <div><strong>Account:</strong> {merchant.bank?.accountNumber || "Not added"}</div>
+            <div><strong>IFSC:</strong> {merchant.bank?.ifsc || "Not added"}</div>
           </div>
         </div>
 
-        {/* Form */}
         <form
           onSubmit={handleSubmit}
           className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-6"
         >
-          {/* Personal */}
+          {/* Personal fields */}
           <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
-            <input
-              name="firstName"
-              value={form.firstName}
-              onChange={handleChange}
-              placeholder="First Name *"
-              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
-            />
-            <input
-              name="lastName"
-              value={form.lastName}
-              onChange={handleChange}
-              placeholder="Last Name *"
-              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
-            />
-            <input
-              name="fatherName"
-              value={form.fatherName}
-              onChange={handleChange}
-              placeholder="Father's Name"
-              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
-            />
-            <input
-              type="date"
-              name="dateOfBirth"
-              value={form.dateOfBirth}
-              onChange={handleChange}
-              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
-            />
-            <select
-              name="gender"
-              value={form.gender}
-              onChange={handleChange}
-              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
-            >
+            <input name="firstName" value={form.firstName} onChange={(e) => setForm((p) => ({ ...p, firstName: e.target.value }))} placeholder="First Name *" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
+            <input name="lastName" value={form.lastName} onChange={(e) => setForm((p) => ({ ...p, lastName: e.target.value }))} placeholder="Last Name *" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
+            <input name="fatherName" value={form.fatherName} onChange={(e) => setForm((p) => ({ ...p, fatherName: e.target.value }))} placeholder="Father's Name" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
+            <input type="date" name="dateOfBirth" value={form.dateOfBirth} onChange={(e) => setForm((p) => ({ ...p, dateOfBirth: e.target.value }))} className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
+            <select name="gender" value={form.gender} onChange={(e) => setForm((p) => ({ ...p, gender: e.target.value }))} className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none">
               <option>Male</option>
               <option>Female</option>
               <option>Other</option>
@@ -530,255 +623,92 @@ const UpdateKycPage = () => {
 
           {/* Address */}
           <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
-            <textarea
-              name="fullAddress"
-              rows={3}
-              value={form.fullAddress}
-              onChange={handleChange}
-              placeholder="Full Address *"
-              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none col-span-2"
-            />
-            <input
-              name="city"
-              value={form.city}
-              onChange={handleChange}
-              placeholder="City"
-              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
-            />
-            <input
-              name="state"
-              value={form.state}
-              onChange={handleChange}
-              placeholder="State"
-              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
-            />
-            <input
-              name="pincode"
-              value={form.pincode}
-              onChange={handleChange}
-              placeholder="Pincode"
-              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
-            />
+            <textarea name="fullAddress" rows={3} value={form.fullAddress} onChange={(e) => setForm((p) => ({ ...p, fullAddress: e.target.value }))} placeholder="Full Address *" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none col-span-2" />
+            <input name="city" value={form.city} onChange={(e) => setForm((p) => ({ ...p, city: e.target.value }))} placeholder="City" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
+            <input name="state" value={form.state} onChange={(e) => setForm((p) => ({ ...p, state: e.target.value }))} placeholder="State" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
+            <input name="pincode" value={form.pincode} onChange={(e) => setForm((p) => ({ ...p, pincode: e.target.value }))} placeholder="Pincode" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
           </div>
 
           {/* IDs */}
           <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-3">
-            <input
-              name="aadhaarNumber"
-              value={form.aadhaarNumber}
-              onChange={handleChange}
-              placeholder="Aadhaar Number *"
-              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
-            />
-            <input
-              name="panNumber"
-              value={form.panNumber}
-              onChange={handleChange}
-              placeholder="PAN Number *"
-              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
-            />
-            <input
-              name="gstNumber"
-              value={form.gstNumber}
-              onChange={handleChange}
-              placeholder="GST Number (Optional)"
-              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
-            />
+            <input name="aadhaarNumber" value={form.aadhaarNumber} onChange={(e) => setForm((p) => ({ ...p, aadhaarNumber: e.target.value }))} placeholder="Aadhaar Number *" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
+            <input name="panNumber" value={form.panNumber} onChange={(e) => setForm((p) => ({ ...p, panNumber: e.target.value }))} placeholder="PAN Number *" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
+            <input name="gstNumber" value={form.gstNumber} onChange={(e) => setForm((p) => ({ ...p, gstNumber: e.target.value }))} placeholder="GST Number (Optional)" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
           </div>
 
           {/* Bank */}
           <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
-            <input
-              name="accountName"
-              value={form.accountName}
-              onChange={handleChange}
-              placeholder="Account Holder Name"
-              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
-            />
-            <input
-              name="accountNumber"
-              value={form.accountNumber}
-              onChange={handleChange}
-              placeholder="Account Number"
-              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
-            />
-            <input
-              name="ifsc"
-              value={form.ifsc}
-              onChange={handleChange}
-              placeholder="IFSC Code"
-              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
-            />
-            <input
-              name="bankName"
-              value={form.bankName}
-              onChange={handleChange}
-              placeholder="Bank Name"
-              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
-            />
-            <input
-              name="upi"
-              value={form.upi}
-              onChange={handleChange}
-              placeholder="UPI ID"
-              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
-            />
+            <input name="accountName" value={form.accountName} onChange={(e) => setForm((p) => ({ ...p, accountName: e.target.value }))} placeholder="Account Holder Name" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
+            <input name="accountNumber" value={form.accountNumber} onChange={(e) => setForm((p) => ({ ...p, accountNumber: e.target.value }))} placeholder="Account Number" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
+            <input name="ifsc" value={form.ifsc} onChange={(e) => setForm((p) => ({ ...p, ifsc: e.target.value }))} placeholder="IFSC Code" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
+            <input name="bankName" value={form.bankName} onChange={(e) => setForm((p) => ({ ...p, bankName: e.target.value }))} placeholder="Bank Name" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
+            <input name="upi" value={form.upi} onChange={(e) => setForm((p) => ({ ...p, upi: e.target.value }))} placeholder="UPI ID" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
           </div>
 
-          {/* Upload boxes */}
-          <div className="col-span-1 md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FileBox
+          {/* Upload cards (grid) */}
+          <div className="col-span-1 md:col-span-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 mt-4">
+            <UploadCard
               label="Profile Image"
               name="profileImage"
-              accept="image/*"
               capture="user"
-              onChange={handleFile}
-              previewUrl={getPreview("profileImage")}
+              previewUrl={previews.profileImage}
+              onPick={handlePickAndCrop}
               onRemove={() => requestDelete("profileImage")}
             />
-
-            <FileBox
+            <UploadCard
               label="Aadhaar Front"
               name="aadhaarFront"
-              accept="image/*"
               capture="environment"
-              onChange={handleFile}
-              previewUrl={getPreview("aadhaarFront")}
+              previewUrl={previews.aadhaarFront}
+              onPick={handlePickAndCrop}
               onRemove={() => requestDelete("aadhaarFront")}
             />
-            <FileBox
+            <UploadCard
               label="Aadhaar Back"
               name="aadhaarBack"
-              accept="image/*"
               capture="environment"
-              onChange={handleFile}
-              previewUrl={getPreview("aadhaarBack")}
+              previewUrl={previews.aadhaarBack}
+              onPick={handlePickAndCrop}
               onRemove={() => requestDelete("aadhaarBack")}
             />
-            <FileBox
+            <UploadCard
               label="PAN Card"
               name="panFile"
-              accept="image/*"
               capture="environment"
-              onChange={handleFile}
-              previewUrl={getPreview("panFile")}
+              previewUrl={previews.panFile}
+              onPick={handlePickAndCrop}
               onRemove={() => requestDelete("panFile")}
             />
-            <FileBox
-              label="GST (optional)"
+            <UploadCard
+              label="GST Certificate (Optional)"
               name="gstFile"
-              accept="image/*"
               capture="environment"
-              onChange={handleFile}
-              previewUrl={getPreview("gstFile")}
+              previewUrl={previews.gstFile}
+              onPick={handlePickAndCrop}
               onRemove={() => requestDelete("gstFile")}
             />
-            <FileBox
+            <UploadCard
               label="Passbook First Page"
               name="passbookFile"
-              accept="image/*"
               capture="environment"
-              onChange={handleFile}
-              previewUrl={getPreview("passbookFile")}
+              previewUrl={previews.passbookFile}
+              onPick={handlePickAndCrop}
               onRemove={() => requestDelete("passbookFile")}
             />
           </div>
 
-          <div className="col-span-1 md:col-span-2 flex gap-3 items-center">
-            <button
-              type="submit"
-              className="bg-white text-black py-3 px-6 rounded-md font-bold hover:bg-gray-200 transition cursor-pointer"
-            >
+          <div className="col-span-1 md:col-span-2 flex gap-3 items-center mt-2">
+            <button type="submit" className="bg-white text-black py-3 px-6 rounded-md font-bold hover:bg-gray-200 transition">
               Save Changes
             </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                resetToServer();
-                toast.info("Form reset");
-              }}
-              className="bg-white/6 text-white py-3 px-6 rounded-md hover:bg-white/8 transition cursor-pointer"
-            >
+            <button type="button" onClick={() => { loadMerchant(); toast.info("Reset"); }} className="bg-white/6 text-white py-3 px-6 rounded-md hover:bg-white/8 transition">
               Cancel
             </button>
           </div>
         </form>
 
-        {/* existing document gallery (for quick view & delete) */}
-        <div className="mt-6">
-          <h3 className="text-lg font-semibold mb-3">
-            Existing documents (server)
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              { key: "aadhaarFront", title: "Aadhaar Front" },
-              { key: "aadhaarBack", title: "Aadhaar Back" },
-              { key: "panFile", title: "PAN" },
-              { key: "passbookFile", title: "Passbook" },
-              { key: "profileImage", title: "Profile Image" },
-              { key: "gstFile", title: "GST" },
-            ].map((item) => {
-              const src =
-                item.key === "profileImage"
-                  ? merchant.profileImage
-                  : item.key === "passbookFile"
-                  ? merchant.bank?.passbookFile
-                  : merchant.documents?.[item.key];
-
-              return (
-                <div
-                  key={item.key}
-                  className="p-4 bg-white/3 border border-white/10 rounded-lg"
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-semibold">{item.title}</h4>
-                    {src && (
-                      <button
-                        onClick={() => requestDelete(item.key)}
-                        className="text-sm text-red-400 hover:text-red-300 cursor-pointer"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-
-                  {src ? (
-                    <img
-                      src={src}
-                      alt={item.key}
-                      className="w-full h-44 object-cover rounded-md mb-2"
-                    />
-                  ) : (
-                    <p className="text-sm text-gray-300 mb-2">Not uploaded</p>
-                  )}
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => navigate("/update-kyc")}
-                      className="px-3 py-2 rounded-md bg-white text-black cursor-pointer hover:bg-gray-200 transition"
-                    >
-                      Replace
-                    </button>
-                    {src && (
-                      <button
-                        onClick={() => requestDelete(item.key)}
-                        className="px-3 py-2 rounded-md bg-red-600 text-white cursor-pointer hover:bg-red-700 transition"
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
         <style>{`
           .input { cursor: text; }
-          .file-box input[type=file] { cursor: pointer; opacity: 0.999; }
-          .file-box { cursor: pointer; }
           button { cursor: pointer; }
         `}</style>
       </div>

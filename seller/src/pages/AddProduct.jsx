@@ -9,23 +9,46 @@ const AddProduct = () => {
   // 10 IMAGE SLOTS (null initially)
   const [images, setImages] = useState(Array(10).fill(null));
   const [dragIndex, setDragIndex] = useState(null);
+    const SIZE_ORDER = ["S", "M", "L", "XL", "XXL", "XXXL"];
 
   // ================= MULTIPLE IMAGE SELECT =================
-  const handleMultiUpload = (e, slotIndex) => {
-    const files = Array.from(e.target.files);
-    if (!files.length) return;
+ const MAX_IMAGE_SIZE = 4.4 * 1024 * 1024; // 4.4 MB
 
-    const updated = [...images];
-    let insertIndex = slotIndex;
+const handleMultiUpload = (e, slotIndex) => {
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
 
-    files.forEach((file) => {
-      if (insertIndex < 10) {
-        updated[insertIndex] = file;
-        insertIndex++;
-      }
+  const updated = [...images];
+  let insertIndex = slotIndex;
+
+  for (let file of files) {
+    if (insertIndex >= 10) break;
+
+    if (file.size >= MAX_IMAGE_SIZE) {
+      toast.error(
+        "❌ Image too large! Please upload images smaller than 4.4 MB."
+      );
+      return; // STOP upload
+    }
+
+    updated[insertIndex] = file;
+    insertIndex++;
+  }
+
+  setImages(updated);
+};
+
+  //Size toggle function
+  const toggleSize = (size) => {
+    setSizes((prev) => {
+      const updated = prev.includes(size)
+        ? prev.filter((s) => s !== size)
+        : [...prev, size];
+
+      return updated.sort(
+        (a, b) => SIZE_ORDER.indexOf(a) - SIZE_ORDER.indexOf(b)
+      );
     });
-
-    setImages(updated);
   };
 
   // ================= DRAG & DROP REORDER =================
@@ -307,21 +330,16 @@ const AddProduct = () => {
         </div>
 
         {/* ================= SIZES ================= */}
+        {/* ================= SIZES ================= */}
         <div>
           <p className="mb-1 font-medium">Sizes</p>
           <div className="flex flex-wrap gap-3">
-            {["S", "M", "L", "XL", "XXL"].map((s) => (
+            {SIZE_ORDER.map((s) => (
               <button
                 key={s}
                 type="button"
-                onClick={() =>
-                  setSizes((prev) =>
-                    prev.includes(s)
-                      ? prev.filter((x) => x !== s)
-                      : [...prev, s]
-                  )
-                }
-                className={`px-4 py-1 rounded-md ${
+                onClick={() => toggleSize(s)}
+                className={`px-4 py-1 rounded-md cursor-pointer ${
                   sizes.includes(s)
                     ? "bg-blue-600 text-white"
                     : "bg-[#222] text-gray-300 hover:bg-blue-600 hover:text-white"
@@ -347,7 +365,7 @@ const AddProduct = () => {
         {/* ================= BUTTON ================= */}
         <button
           disabled={loading}
-          className="bg-blue-600 hover:bg-blue-700 py-3 rounded-lg text-white font-semibold transition"
+          className="bg-blue-600 hover:bg-blue-700 py-3 rounded-lg text-white font-semibold transition cursor-pointer"
         >
           {loading ? "Uploading..." : "Add Product"}
         </button>
