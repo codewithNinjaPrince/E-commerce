@@ -105,6 +105,7 @@ import { ShopContext } from "./context/ShopContext";
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import ForgotPassword from './pages/ForgotPassword';
 
 const App = () => {
 
@@ -154,6 +155,7 @@ const App = () => {
               <Route path="/refund-return" element={<RefundReturnPolicy />} />
               <Route path="/shipping-delivery" element={<ShippingDelivery />} />
               <Route path="/terms-conditions" element={<TermsConditions />} />
+              <Route path="/forgot-password" element={<ForgotPassword/>}/>
             </Routes>
 
             <ScrollToTop />

@@ -232,7 +232,7 @@
 // export default App;
 
 import React, { useState, useEffect } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 
 import Sidebar from "./components/Sidebar";
 import MobileNavbar from "./components/MobileNavbar";
@@ -269,8 +269,28 @@ const App = () => {
   const [kycVerified, setKycVerified] = useState(true);
 
   const [unreadCount, setUnreadCount] = useState(0);
-  const [token, setToken] = useState(localStorage.getItem("merchantToken") || "");
+  const [token, setToken] = useState(
+    localStorage.getItem("merchantToken") || ""
+  );
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const location = useLocation();
+
+  const isLegalPage = [
+    "/terms",
+    "/privacy-policy",
+    "/refund-policy",
+    "/shipping-policy",
+    "/legal",
+  ].includes(location.pathname);
+
+  const handleBack = () => {
+    if (token) {
+      navigate("/kyc");
+    } else {
+      navigate("/");
+    }
+  };
 
   /* -------------------------------------------
      AUTO UPDATE TOKEN
@@ -280,13 +300,6 @@ const App = () => {
     if (storedToken !== token) {
       setToken(storedToken);
     }
-  }, [token]);
-
-  /* -------------------------------------------
-     REDIRECT IF LOGGED OUT
-  ------------------------------------------- */
-  useEffect(() => {
-    if (!token) navigate("/", { replace: true });
   }, [token]);
 
   /* -------------------------------------------
@@ -348,8 +361,47 @@ const App = () => {
   ------------------------------------------- */
   if (!token) {
     return (
-      <div className="w-full h-full bg-gradient-to-br from-black via-gray-900 to-black">
-        <MerchantAuth setMerchantToken={setToken} />
+      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white">
+        {isLegalPage && (
+          <div className="sticky top-0 z-50 bg-black/80 backdrop-blur border-b border-white/10 px-4 py-3 flex justify-end">
+            <button
+              onClick={handleBack}
+              className="
+        flex items-center gap-2
+        px-4 py-2 rounded-lg
+        text-gray-300 bg-white/5
+        hover:text-white hover:bg-white/10
+        transition-all duration-300 ease-out
+        hover:-translate-x-1
+        animate-slide-in-right
+        cursor-pointer
+      "
+            >
+             ← Back
+            </button>
+          </div>
+        )}
+
+        <Routes>
+          {/* AUTH */}
+          <Route
+            path="/"
+            element={<MerchantAuth setMerchantToken={setToken} />}
+          />
+
+          {/* PUBLIC LEGAL PAGES */}
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/refund-policy" element={<RefundPolicy />} />
+          <Route path="/shipping-policy" element={<ShippingPolicy />} />
+          <Route path="/legal" element={<Legal />} />
+
+          {/* FALLBACK */}
+          <Route
+            path="*"
+            element={<MerchantAuth setMerchantToken={setToken} />}
+          />
+        </Routes>
       </div>
     );
   }
@@ -361,7 +413,8 @@ const App = () => {
     <div className="w-full min-h-[60vh] flex flex-col items-center justify-center text-center p-6">
       <h2 className="text-2xl font-bold mb-3 text-red-400">KYC Not Verified</h2>
       <p className="text-gray-300 max-w-md mb-6">
-        Your KYC is not active. Complete your KYC to unlock all merchant features.
+        Your KYC is not active. Complete your KYC to unlock all merchant
+        features.
       </p>
 
       <a
@@ -413,11 +466,6 @@ const App = () => {
           {/* KYC pages always accessible */}
           <Route path="/kyc" element={<Kyc />} />
           <Route path="/update-kyc" element={<UpdateKycPage />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/shipping-policy" element={<ShippingPolicy />} />
-          <Route path="/refund-policy" element={<RefundPolicy />} />
-          <Route path="/legal" element={<Legal />} />
         </Routes>
       </div>
     </div>

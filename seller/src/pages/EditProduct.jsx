@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { FaUpload } from "react-icons/fa";
 
@@ -8,6 +8,7 @@ const EditProduct = () => {
   const { id } = useParams();
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const token = localStorage.getItem("merchantToken");
+  const navigate = useNavigate();
 
   // ------------------------------------
   // STATES
@@ -190,6 +191,9 @@ const EditProduct = () => {
 
       if (response.data.success) {
         toast.success("Product Updated Successfully!");
+        setTimeout(() => {
+          navigate("/products"); // ✅ change route if yours is different
+        }, 200);
       } else {
         toast.error(response.data.message);
       }
@@ -208,7 +212,6 @@ const EditProduct = () => {
   // ------------------------------------
   return (
     <div className="w-full max-w-[1600px] mx-auto p-4 sm:p-6 text-white pt-[30px] sm:pt-[60px] lg:pt-[50px]">
-
       {/* LOADING OVERLAY */}
       {saving && (
         <div className="fixed inset-0 bg-black/70 flex justify-center items-center z-50">

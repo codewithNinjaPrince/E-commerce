@@ -43,7 +43,7 @@ export const getMerchantDashboard = async (req, res) => {
       });
     });
 
-    const commission = 0.1;
+    const commission = 0.03;
     const earnings = Math.floor(totalRevenue * (1 - commission));
 
     res.json({

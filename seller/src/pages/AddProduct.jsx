@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import axios from "axios";
 import { backendUrl } from "../App";
 import { toast } from "react-toastify";
+import imageCompression from "browser-image-compression";
+
 
 const AddProduct = () => {
   const [loading, setLoading] = useState(false);
@@ -9,12 +11,35 @@ const AddProduct = () => {
   // 10 IMAGE SLOTS (null initially)
   const [images, setImages] = useState(Array(10).fill(null));
   const [dragIndex, setDragIndex] = useState(null);
-    const SIZE_ORDER = ["S", "M", "L", "XL", "XXL", "XXXL"];
+  const SIZE_ORDER = ["S", "M", "L", "XL", "XXL", "XXXL"];
+  const MAX_COMPRESSED_SIZE = 4 * 1024 * 1024; // 4 MB
+  const MAX_ORIGINAL_SIZE = 15 * 1024 * 1024; // optional safety (15 MB)
+
+  //Image Compression
+  const compressImage = async (file) => {
+  if (file.size > MAX_ORIGINAL_SIZE) {
+    throw new Error("Original image too large");
+  }
+
+  const options = {
+    maxSizeMB: 4,
+    maxWidthOrHeight: 1920,
+    useWebWorker: true,
+    initialQuality: 0.8,
+  };
+
+  const compressedFile = await imageCompression(file, options);
+
+  if (compressedFile.size > MAX_COMPRESSED_SIZE) {
+    throw new Error("Compression failed");
+  }
+
+  return compressedFile;
+};
+
 
   // ================= MULTIPLE IMAGE SELECT =================
- const MAX_IMAGE_SIZE = 4.4 * 1024 * 1024; // 4.4 MB
-
-const handleMultiUpload = (e, slotIndex) => {
+const handleMultiUpload = async (e, slotIndex) => {
   const files = Array.from(e.target.files);
   if (!files.length) return;
 
@@ -24,15 +49,18 @@ const handleMultiUpload = (e, slotIndex) => {
   for (let file of files) {
     if (insertIndex >= 10) break;
 
-    if (file.size >= MAX_IMAGE_SIZE) {
-      toast.error(
-        "❌ Image too large! Please upload images smaller than 4.4 MB."
-      );
-      return; // STOP upload
-    }
+    try {
+      // 👇 background compression starts
+      const compressed = await compressImage(file);
 
-    updated[insertIndex] = file;
-    insertIndex++;
+      updated[insertIndex] = compressed;
+      insertIndex++;
+    } catch (err) {
+      toast.error(
+        "❌ Image too large. Please select a smaller image (max 4 MB after compression)."
+      );
+      return;
+    }
   }
 
   setImages(updated);

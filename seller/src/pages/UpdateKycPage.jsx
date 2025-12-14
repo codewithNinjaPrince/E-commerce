@@ -53,7 +53,9 @@ const UploadCard = ({
         <div className="flex-1">
           <p className="text-sm text-gray-300 font-semibold">{label}</p>
           <p className="text-xs text-gray-400 mt-1">
-            {previewUrl ? "Tap Replace to change" : "Tap to upload (camera allowed)"}
+            {previewUrl
+              ? "Tap Replace to change"
+              : "Tap to upload (camera allowed)"}
           </p>
 
           <div className="mt-3 flex gap-2">
@@ -158,7 +160,8 @@ const UpdateKycPage = () => {
   // Prevent Enter auto-submit
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === "Enter" && e.target?.tagName !== "TEXTAREA") e.preventDefault();
+      if (e.key === "Enter" && e.target?.tagName !== "TEXTAREA")
+        e.preventDefault();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -248,36 +251,40 @@ const UpdateKycPage = () => {
       return;
     }
 
-    cropper.getCroppedCanvas().toBlob((blob) => {
-      if (!blob) {
-        toast.error("Crop failed");
-        return;
-      }
-
-      const fileName = `${cropField}-${Date.now()}.jpg`;
-      const croppedFile = new File([blob], fileName, { type: "image/jpeg" });
-
-      // set file and preview
-      setFiles((p) => ({ ...p, [cropField]: croppedFile }));
-
-      // revoke old blob preview if exists
-      setPreviews((p) => {
-        if (p[cropField] && p[cropField].startsWith("blob:")) {
-          URL.revokeObjectURL(p[cropField]);
+    cropper.getCroppedCanvas().toBlob(
+      (blob) => {
+        if (!blob) {
+          toast.error("Crop failed");
+          return;
         }
-        const newUrl = URL.createObjectURL(croppedFile);
-        return { ...p, [cropField]: newUrl };
-      });
 
-      // close modal and cleanup temp URL
-      setCropOpen(false);
-      if (cropTempUrl) {
-        URL.revokeObjectURL(cropTempUrl);
-      }
-      setCropTempUrl(null);
-      setCropField(null);
-      toast.success("Image cropped & ready to upload (will send on Save)");
-    }, "image/jpeg", 0.9);
+        const fileName = `${cropField}-${Date.now()}.jpg`;
+        const croppedFile = new File([blob], fileName, { type: "image/jpeg" });
+
+        // set file and preview
+        setFiles((p) => ({ ...p, [cropField]: croppedFile }));
+
+        // revoke old blob preview if exists
+        setPreviews((p) => {
+          if (p[cropField] && p[cropField].startsWith("blob:")) {
+            URL.revokeObjectURL(p[cropField]);
+          }
+          const newUrl = URL.createObjectURL(croppedFile);
+          return { ...p, [cropField]: newUrl };
+        });
+
+        // close modal and cleanup temp URL
+        setCropOpen(false);
+        if (cropTempUrl) {
+          URL.revokeObjectURL(cropTempUrl);
+        }
+        setCropTempUrl(null);
+        setCropField(null);
+        toast.success("Image cropped & ready to upload (will send on Save)");
+      },
+      "image/jpeg",
+      0.9
+    );
   };
 
   const cancelCrop = () => {
@@ -355,7 +362,8 @@ const UpdateKycPage = () => {
         if (deleteTarget === "profileImage") {
           updated.profileImage = null;
         } else if (deleteTarget === "passbookFile") {
-          if (updated.bank) updated.bank = { ...updated.bank, passbookFile: null };
+          if (updated.bank)
+            updated.bank = { ...updated.bank, passbookFile: null };
         } else {
           updated.documents = { ...(updated.documents || {}) };
           updated.documents[deleteTarget] = null;
@@ -428,8 +436,11 @@ const UpdateKycPage = () => {
       }
 
       toast.success("KYC updated! Verification may take up to 24 hours.");
-      // After save, reload merchant to reflect server values (and reset local file preview states)
-      await loadMerchant();
+
+      // ⏳ small delay so user sees toast
+      setTimeout(() => {
+        navigate("/kyc"); // 👈 change if your KYC page route is different
+      }, 300);
 
       // revoke local blobs that were used
       Object.keys(previews).forEach((k) => {
@@ -448,12 +459,24 @@ const UpdateKycPage = () => {
       });
 
       setPreviews((p) => ({
-        profileImage: p.profileImage && !p.profileImage.startsWith("blob:") ? p.profileImage : null,
-        aadhaarFront: p.aadhaarFront && !p.aadhaarFront.startsWith("blob:") ? p.aadhaarFront : null,
-        aadhaarBack: p.aadhaarBack && !p.aadhaarBack.startsWith("blob:") ? p.aadhaarBack : null,
+        profileImage:
+          p.profileImage && !p.profileImage.startsWith("blob:")
+            ? p.profileImage
+            : null,
+        aadhaarFront:
+          p.aadhaarFront && !p.aadhaarFront.startsWith("blob:")
+            ? p.aadhaarFront
+            : null,
+        aadhaarBack:
+          p.aadhaarBack && !p.aadhaarBack.startsWith("blob:")
+            ? p.aadhaarBack
+            : null,
         panFile: p.panFile && !p.panFile.startsWith("blob:") ? p.panFile : null,
         gstFile: p.gstFile && !p.gstFile.startsWith("blob:") ? p.gstFile : null,
-        passbookFile: p.passbookFile && !p.passbookFile.startsWith("blob:") ? p.passbookFile : null,
+        passbookFile:
+          p.passbookFile && !p.passbookFile.startsWith("blob:")
+            ? p.passbookFile
+            : null,
       }));
     } catch (err) {
       console.error("UPDATE ERROR:", err);
@@ -495,7 +518,10 @@ const UpdateKycPage = () => {
       {/* Delete confirm modal */}
       {confirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setConfirmOpen(false)} />
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setConfirmOpen(false)}
+          />
           <div className="relative bg-[#0f0f0f] p-5 rounded-lg border border-white/10 w-full max-w-md">
             <h3 className="text-lg font-semibold mb-2">Confirm Delete</h3>
             <p className="text-sm text-gray-300 mb-4">
@@ -533,7 +559,9 @@ const UpdateKycPage = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/70" onClick={cancelCrop} />
           <div className="relative bg-[#0f0f0f] p-4 rounded-lg border border-white/10 w-full max-w-lg">
-            <h3 className="text-lg font-semibold text-white mb-3">Crop Image</h3>
+            <h3 className="text-lg font-semibold text-white mb-3">
+              Crop Image
+            </h3>
             <div className="w-full h-[340px] bg-black">
               <Cropper
                 src={cropTempUrl}
@@ -551,10 +579,16 @@ const UpdateKycPage = () => {
             </div>
 
             <div className="flex justify-end gap-2 mt-4">
-              <button onClick={cancelCrop} className="px-3 py-2 rounded-md bg-white/8 hover:bg-white/12">
+              <button
+                onClick={cancelCrop}
+                className="px-3 py-2 rounded-md bg-white/8 hover:bg-white/12"
+              >
                 Cancel
               </button>
-              <button onClick={applyCrop} className="px-3 py-2 rounded-md bg-green-600 hover:bg-green-700 text-white">
+              <button
+                onClick={applyCrop}
+                className="px-3 py-2 rounded-md bg-green-600 hover:bg-green-700 text-white"
+              >
                 Apply Crop
               </button>
             </div>
@@ -563,14 +597,20 @@ const UpdateKycPage = () => {
       )}
 
       <div className="w-full max-w-5xl bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8 shadow-xl">
-        <h1 className="text-3xl md:text-4xl font-bold text-center">Update KYC</h1>
-        <p className="text-center text-gray-300 mt-2">Edit fields, replace files or remove them directly.</p>
+        <h1 className="text-3xl md:text-4xl font-bold text-center">
+          Update KYC
+        </h1>
+        <p className="text-center text-gray-300 mt-2">
+          Edit fields, replace files or remove them directly.
+        </p>
 
         <div className="mt-6 p-4 rounded-lg bg-black/30 border border-white/10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold">KYC Status</h2>
-              <p className={`${kycStatusColor} text-xl font-bold mt-1`}>{kycStatus} 🛡️</p>
+              <p className={`${kycStatusColor} text-xl font-bold mt-1`}>
+                {kycStatus} 🛡️
+              </p>
             </div>
 
             <div className="flex gap-3 items-center">
@@ -595,12 +635,25 @@ const UpdateKycPage = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-gray-300 mt-4">
-            <div><strong>Name:</strong> {merchant.name}</div>
-            <div><strong>Email:</strong> {merchant.email}</div>
-            <div><strong>Phone:</strong> {merchant.phone}</div>
-            <div><strong>Bank:</strong> {merchant.bank?.bankName || "Not added"}</div>
-            <div><strong>Account:</strong> {merchant.bank?.accountNumber || "Not added"}</div>
-            <div><strong>IFSC:</strong> {merchant.bank?.ifsc || "Not added"}</div>
+            <div>
+              <strong>Name:</strong> {merchant.name}
+            </div>
+            <div>
+              <strong>Email:</strong> {merchant.email}
+            </div>
+            <div>
+              <strong>Phone:</strong> {merchant.phone}
+            </div>
+            <div>
+              <strong>Bank:</strong> {merchant.bank?.bankName || "Not added"}
+            </div>
+            <div>
+              <strong>Account:</strong>{" "}
+              {merchant.bank?.accountNumber || "Not added"}
+            </div>
+            <div>
+              <strong>IFSC:</strong> {merchant.bank?.ifsc || "Not added"}
+            </div>
           </div>
         </div>
 
@@ -610,11 +663,50 @@ const UpdateKycPage = () => {
         >
           {/* Personal fields */}
           <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
-            <input name="firstName" value={form.firstName} onChange={(e) => setForm((p) => ({ ...p, firstName: e.target.value }))} placeholder="First Name *" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
-            <input name="lastName" value={form.lastName} onChange={(e) => setForm((p) => ({ ...p, lastName: e.target.value }))} placeholder="Last Name *" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
-            <input name="fatherName" value={form.fatherName} onChange={(e) => setForm((p) => ({ ...p, fatherName: e.target.value }))} placeholder="Father's Name" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
-            <input type="date" name="dateOfBirth" value={form.dateOfBirth} onChange={(e) => setForm((p) => ({ ...p, dateOfBirth: e.target.value }))} className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
-            <select name="gender" value={form.gender} onChange={(e) => setForm((p) => ({ ...p, gender: e.target.value }))} className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none">
+            <input
+              name="firstName"
+              value={form.firstName}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, firstName: e.target.value }))
+              }
+              placeholder="First Name *"
+              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
+            />
+            <input
+              name="lastName"
+              value={form.lastName}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, lastName: e.target.value }))
+              }
+              placeholder="Last Name *"
+              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
+            />
+            <input
+              name="fatherName"
+              value={form.fatherName}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, fatherName: e.target.value }))
+              }
+              placeholder="Father's Name"
+              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
+            />
+            <input
+              type="date"
+              name="dateOfBirth"
+              value={form.dateOfBirth}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, dateOfBirth: e.target.value }))
+              }
+              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
+            />
+            <select
+              name="gender"
+              value={form.gender}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, gender: e.target.value }))
+              }
+              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
+            >
               <option>Male</option>
               <option>Female</option>
               <option>Other</option>
@@ -623,26 +715,117 @@ const UpdateKycPage = () => {
 
           {/* Address */}
           <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
-            <textarea name="fullAddress" rows={3} value={form.fullAddress} onChange={(e) => setForm((p) => ({ ...p, fullAddress: e.target.value }))} placeholder="Full Address *" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none col-span-2" />
-            <input name="city" value={form.city} onChange={(e) => setForm((p) => ({ ...p, city: e.target.value }))} placeholder="City" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
-            <input name="state" value={form.state} onChange={(e) => setForm((p) => ({ ...p, state: e.target.value }))} placeholder="State" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
-            <input name="pincode" value={form.pincode} onChange={(e) => setForm((p) => ({ ...p, pincode: e.target.value }))} placeholder="Pincode" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
+            <textarea
+              name="fullAddress"
+              rows={3}
+              value={form.fullAddress}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, fullAddress: e.target.value }))
+              }
+              placeholder="Full Address *"
+              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none col-span-2"
+            />
+            <input
+              name="city"
+              value={form.city}
+              onChange={(e) => setForm((p) => ({ ...p, city: e.target.value }))}
+              placeholder="City"
+              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
+            />
+            <input
+              name="state"
+              value={form.state}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, state: e.target.value }))
+              }
+              placeholder="State"
+              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
+            />
+            <input
+              name="pincode"
+              value={form.pincode}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, pincode: e.target.value }))
+              }
+              placeholder="Pincode"
+              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
+            />
           </div>
 
           {/* IDs */}
           <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-3">
-            <input name="aadhaarNumber" value={form.aadhaarNumber} onChange={(e) => setForm((p) => ({ ...p, aadhaarNumber: e.target.value }))} placeholder="Aadhaar Number *" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
-            <input name="panNumber" value={form.panNumber} onChange={(e) => setForm((p) => ({ ...p, panNumber: e.target.value }))} placeholder="PAN Number *" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
-            <input name="gstNumber" value={form.gstNumber} onChange={(e) => setForm((p) => ({ ...p, gstNumber: e.target.value }))} placeholder="GST Number (Optional)" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
+            <input
+              name="aadhaarNumber"
+              value={form.aadhaarNumber}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, aadhaarNumber: e.target.value }))
+              }
+              placeholder="Aadhaar Number *"
+              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
+            />
+            <input
+              name="panNumber"
+              value={form.panNumber}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, panNumber: e.target.value }))
+              }
+              placeholder="PAN Number *"
+              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
+            />
+            <input
+              name="gstNumber"
+              value={form.gstNumber}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, gstNumber: e.target.value }))
+              }
+              placeholder="GST Number (Optional)"
+              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
+            />
           </div>
 
           {/* Bank */}
           <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
-            <input name="accountName" value={form.accountName} onChange={(e) => setForm((p) => ({ ...p, accountName: e.target.value }))} placeholder="Account Holder Name" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
-            <input name="accountNumber" value={form.accountNumber} onChange={(e) => setForm((p) => ({ ...p, accountNumber: e.target.value }))} placeholder="Account Number" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
-            <input name="ifsc" value={form.ifsc} onChange={(e) => setForm((p) => ({ ...p, ifsc: e.target.value }))} placeholder="IFSC Code" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
-            <input name="bankName" value={form.bankName} onChange={(e) => setForm((p) => ({ ...p, bankName: e.target.value }))} placeholder="Bank Name" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
-            <input name="upi" value={form.upi} onChange={(e) => setForm((p) => ({ ...p, upi: e.target.value }))} placeholder="UPI ID" className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none" />
+            <input
+              name="accountName"
+              value={form.accountName}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, accountName: e.target.value }))
+              }
+              placeholder="Account Holder Name"
+              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
+            />
+            <input
+              name="accountNumber"
+              value={form.accountNumber}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, accountNumber: e.target.value }))
+              }
+              placeholder="Account Number"
+              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
+            />
+            <input
+              name="ifsc"
+              value={form.ifsc}
+              onChange={(e) => setForm((p) => ({ ...p, ifsc: e.target.value }))}
+              placeholder="IFSC Code"
+              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
+            />
+            <input
+              name="bankName"
+              value={form.bankName}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, bankName: e.target.value }))
+              }
+              placeholder="Bank Name"
+              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
+            />
+            <input
+              name="upi"
+              value={form.upi}
+              onChange={(e) => setForm((p) => ({ ...p, upi: e.target.value }))}
+              placeholder="UPI ID"
+              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
+            />
           </div>
 
           {/* Upload cards (grid) */}
@@ -698,10 +881,20 @@ const UpdateKycPage = () => {
           </div>
 
           <div className="col-span-1 md:col-span-2 flex gap-3 items-center mt-2">
-            <button type="submit" className="bg-white text-black py-3 px-6 rounded-md font-bold hover:bg-gray-200 transition">
+            <button
+              type="submit"
+              className="bg-white text-black py-3 px-6 rounded-md font-bold hover:bg-gray-200 transition"
+            >
               Save Changes
             </button>
-            <button type="button" onClick={() => { loadMerchant(); toast.info("Reset"); }} className="bg-white/6 text-white py-3 px-6 rounded-md hover:bg-white/8 transition">
+            <button
+              type="button"
+              onClick={() => {
+                loadMerchant();
+                toast.info("Reset");
+              }}
+              className="bg-white/6 text-white py-3 px-6 rounded-md hover:bg-white/8 transition"
+            >
               Cancel
             </button>
           </div>
