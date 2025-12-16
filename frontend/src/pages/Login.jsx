@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 /* ---------------- HELPERS ---------------- */
-const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
 const passwordChecks = {
   length: (p) => p.length >= 8,
@@ -14,6 +14,15 @@ const passwordChecks = {
   lower: (p) => /[a-z]/.test(p),
   number: (p) => /[0-9]/.test(p),
   special: (p) => /[^A-Za-z0-9]/.test(p),
+};
+
+/* ---------------- HELPERS ---------------- */
+const isValidPhone = (value) => /^[6-9]\d{9}$/.test(value); // Indian 10-digit numbers
+
+const detectIdentifier = (value) => {
+  if (/^\d+$/.test(value)) return "phone";
+  if (isValidEmail(value)) return "email";
+  return "invalid";
 };
 
 const getPasswordScore = (p) =>
@@ -36,7 +45,7 @@ const Login = () => {
   // Form states
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
 
   // OTP
   const [otp, setOtp] = useState("");
@@ -53,8 +62,15 @@ const Login = () => {
 
   /* ---------------- OTP HANDLERS ---------------- */
   const sendOtp = async () => {
-    if (!isValidEmail(email)) {
-      toast.error("Enter a valid email address");
+    const type = detectIdentifier(identifier);
+
+    if (type === "invalid") {
+      toast.error("Enter a valid email or 10-digit phone number");
+      return;
+    }
+
+    if (type === "phone" && !isValidPhone(identifier)) {
+      toast.error("Enter a valid 10-digit phone number");
       return;
     }
 
@@ -62,34 +78,37 @@ const Login = () => {
 
     try {
       setOtpLoading(true);
-      await axios.post(`${backendUrl}/api/user/send-otp`, { email, firstName });
+
+      await axios.post(`${backendUrl}/api/user/send-otp`, {
+        type, // "email" or "phone"
+        identifier, // actual value
+        firstName,
+      });
+
       setOtpSent(true);
-      setCooldown(60); // 1 minute cooldown
-      toast.success("OTP sent to your email 📩");
+      setCooldown(60);
+      toast.success(
+        type === "email"
+          ? "OTP sent to your email 📩"
+          : "OTP sent to your phone 📱"
+      );
     } catch (err) {
       const response = err?.response;
 
-      if (response?.status === 409 && response?.data?.code === "EMAIL_EXISTS") {
-        toast.info("Email already exists. Please login to continue 🙂");
-
-        // FULL RESET
+      if (response?.status === 409) {
+        toast.info("Account already exists. Please login 🙂");
         setMode("Login");
-        setFirstName("");
-        setLastName("");
-        setEmail("");
+        setIdentifier("");
         setPassword("");
         setConfirmPassword("");
         setOtp("");
         setOtpSent(false);
         setOtpVerified(false);
         setCooldown(0);
-
         return;
       }
 
-      toast.error(
-        response?.data?.message || "Unable to send OTP. Please try again."
-      );
+      toast.error(response?.data?.message || "Unable to send OTP");
     } finally {
       setOtpLoading(false);
     }
@@ -103,9 +122,12 @@ const Login = () => {
 
     try {
       setLoading(true);
-      await axios.post(`${backendUrl}/api/user/verify-otp`, { email, otp });
+      await axios.post(`${backendUrl}/api/user/verify-otp`, {
+        identifier,
+        otp,
+      });
       setOtpVerified(true);
-      toast.success("Email verified successfully ✅");
+      toast.success("Verified successfully ✅");
     } catch (err) {
       toast.error(err?.response?.data?.message || "Invalid OTP");
     }
@@ -149,11 +171,11 @@ const Login = () => {
           ? await axios.post(`${backendUrl}/api/user/register`, {
               firstName,
               lastName,
-              email,
+              identifier,
               password,
             })
           : await axios.post(`${backendUrl}/api/user/login`, {
-              email,
+              identifier,
               password,
             });
 
@@ -165,7 +187,13 @@ const Login = () => {
 
       setToken(res.data.token);
       localStorage.setItem("token", res.data.token);
-      localStorage.setItem("userName", res.data.user.firstName);
+
+      if (res.data.user?.firstName) {
+        localStorage.setItem("userName", res.data.user.firstName);
+      } else {
+        localStorage.setItem("userName", firstName || "User");
+      }
+
       await getUserCart(res.data.token);
 
       if (redirectPath && redirectPath.startsWith("/")) {
@@ -246,12 +274,11 @@ const Login = () => {
         </div>
       )}
 
-      {/* EMAIL */}
+      {/* EMAIL and Phone Number */}
       <input
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        value={identifier}
+        onChange={(e) => setIdentifier(e.target.value.trim())}
         placeholder="Email address"
-        type="email"
         className="dark-input"
         required
       />
@@ -295,7 +322,7 @@ const Login = () => {
 
       {otpVerified && (
         <p className="text-green-400 text-sm text-center">
-          ✔ Email verified successfully
+          ✔ Otp verified successfully
         </p>
       )}
 
@@ -393,9 +420,21 @@ const Login = () => {
       {/* SUBMIT */}
       <button
         disabled={loading}
-        className={`primary-btn ${loading && "opacity-60 cursor-not-allowed"}`}
+        className={`primary-btn flex items-center justify-center gap-2
+    ${loading && "opacity-60 cursor-not-allowed"}`}
       >
-        {loading ? "Processing..." : mode === "Login" ? "Sign In" : "Register"}
+        {loading ? (
+          <>
+            <span className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+            <span className="text-sm">
+              {mode === "Login" ? "Signing you in..." : "Creating account..."}
+            </span>
+          </>
+        ) : mode === "Login" ? (
+          "Sign In"
+        ) : (
+          "Register"
+        )}
       </button>
 
       {/* TOGGLE */}

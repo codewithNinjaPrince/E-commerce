@@ -1,13 +1,103 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="Brawvly logo.png" />
+
+    <!-- ================= BASIC SEO ================= -->
+    <title>Brawvly | Shop Fashion, Electronics & Local Products Online</title>
+    <meta
+      name="description"
+      content="Brawvly is your local marketplace online. Shop fashion, electronics and daily essentials from trusted local sellers across India."
+    />
+    <meta
+      name="keywords"
+      content="
+        Brawvly,
+        Brawly,
+        Bravly,
+        Brawley,
+        Brawlly,
+        Brawvli,
+        online shopping India,
+        local market online,
+        fashion ecommerce,
+        electronics shopping
+      "
+    />
+    <meta name="author" content="Brawvly" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- ================= BRAND ================= -->
+    <link rel="icon" href="/Brawvly logo.png" />
+
+    <!-- ================= MOBILE ================= -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Brawvly-Your Local Market Online</title>
+
+    <!-- ================= OPEN GRAPH (SOCIAL) ================= -->
+    <meta property="og:title" content="Brawvly | Your Local Market Online" />
+    <meta
+      property="og:description"
+      content="Shop fashion, electronics & daily essentials from trusted local sellers on Brawvly."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.brawvly.com" />
+    <meta property="og:image" content="https://www.brawvly.com/og-image.jpg" />
+    <meta property="og:site_name" content="Brawvly" />
+
+    <!-- ================= TWITTER ================= -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Brawvly | Your Local Market Online" />
+    <meta
+      name="twitter:description"
+      content="Buy fashion, electronics and daily needs from local sellers with fast delivery."
+    />
+    <meta name="twitter:image" content="https://www.brawvly.com/og-image.jpg" />
+
+    <!-- ================= STRUCTURED DATA ================= -->
+
+    <!-- Website + Search -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Brawvly",
+        "url": "https://www.brawvly.com",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://www.brawvly.com/search?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    </script>
+
+    <!-- Organization -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Brawvly",
+        "url": "https://www.brawvly.com",
+        "logo": "https://www.brawvly.com/Brawvly logo.png",
+        "sameAs": [
+          "https://www.instagram.com/brawvly",
+          "https://www.facebook.com/brawvly"
+        ]
+      }
+    </script>
+
+    <!-- ================= BRAND SPELLING SIGNAL ================= -->
+    <meta name="application-name" content="Brawvly" />
   </head>
+
   <body>
+    <!-- 🔎 SEO Brand Context (Hidden but Valid HTML) -->
+    <div style="display:none;">
+      Brawvly (also searched as Brawly or Bravly) is an Indian online marketplace
+      for fashion, electronics and local products.
+    </div>
+
     <div id="root"></div>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

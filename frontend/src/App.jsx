@@ -1,173 +1,193 @@
-// import React, { useState, useEffect, useContext } from 'react'
-// import { Routes, Route } from 'react-router-dom'
-// import PreLoader from './components/PreLoader';
-// import Home from './pages/Home'
-// import Collections from './pages/Collections'
-// import About from './pages/About'
-// import Contact from './pages/Contact'
-// import Product from './pages/Product'
-// import Cart from './pages/Cart'
-// import Orders from './pages/Orders'
-// import PlaceOrder from './pages/PlaceOrder'
-// import Login from './pages/Login'
-// import Navbar from './components/Navbar'
-// import Footer from './components/footer'
-// import Searchbar from './components/Searchbar'
-// import ScrollToTop from './components/ScrollToTop';
-// import PrivacyPolicy from "./pages/PrivacyPolicy";
-// import RefundReturnPolicy from "./pages/RefundReturnPolicy";
-// import ShippingDelivery from "./pages/ShippingDelivery";
-// import { ToastContainer } from 'react-toastify';
-// import 'react-toastify/dist/ReactToastify.css';
-// import Verify from './pages/Verify'
-// import { ShopContext } from "./context/ShopContext";
-// import TermsConditions from "./pages/TermsConditions";
+import React, { useState, useEffect, useContext } from "react";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 
+import PreLoader from "./components/PreLoader";
+import Navbar from "./components/Navbar";
+import Searchbar from "./components/Searchbar";
+import Footer from "./components/footer";
+import ScrollToTop from "./components/ScrollToTop";
 
-// const App = () => {
+import Home from "./pages/Home";
+import Collections from "./pages/Collections";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Product from "./pages/Product";
+import Cart from "./pages/Cart";
+import Orders from "./pages/Orders";
+import PlaceOrder from "./pages/PlaceOrder";
+import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import Verify from "./pages/Verify";
+import User from "./pages/User";
 
-//   // 🔥 real loading control
-//   const { products } = useContext(ShopContext);
-//   const [loading, setLoading] = useState(true);
-
-//   useEffect(() => {
-//     // as soon as products arrive from backend, stop loader
-//     if (products && products.length > 0) {
-//       setLoading(false);
-//     }
-//   }, [products]);
-
-//   return (
-//     <div className='pt-[90px] px-4 sm:px-[2vw] md:px-[4vw] lg:px-[4vw]'>
-
-//       {/* Pass loading state */}
-//       <PreLoader isLoading={loading} />
-
-//       <ToastContainer/>
-//       <Navbar/>
-//       <Searchbar/>
-
-//       {/* Show app only after loading */}
-//       {!loading && (
-//         <>
-//           <Routes>
-//             <Route path="/" element={<Home/>}/>
-//             <Route path="/collections" element={<Collections/>}/>
-//             <Route path="/about" element={<About/>}/>
-//             <Route path="/contact" element={<Contact/>}/>
-//             <Route path="/product/:productId" element={<Product/>}/>
-//             <Route path="/cart" element={<Cart/>}/>
-//             <Route path="/orders" element={<Orders/>}/>
-//             <Route path="/placeorder" element={<PlaceOrder/>}/>
-//             <Route path="/login" element={<Login/>}/>
-//             <Route path="/verify" element={<Verify/>}/>
-//             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-//             <Route path="/refund-return" element={<RefundReturnPolicy />} />
-//             <Route path="/shipping-delivery" element={<ShippingDelivery />} />
-//             <Route path="/terms-conditions" element={<TermsConditions />} />
-//           </Routes>
-
-//           <Footer className/>
-//           <ScrollToTop />
-//         </>
-//       )}
-
-//     </div>
-//   );
-// }
-
-// export default App;
-
-import React, { useState, useEffect, useContext } from 'react'
-import { Routes, Route } from 'react-router-dom'
-
-import PreLoader from './components/PreLoader';
-import Home from './pages/Home'
-import Collections from './pages/Collections'
-import About from './pages/About'
-import Contact from './pages/Contact'
-import Product from './pages/Product'
-import Cart from './pages/Cart'
-import Orders from './pages/Orders'
-import PlaceOrder from './pages/PlaceOrder'
-import Login from './pages/Login'
-import Navbar from './components/Navbar'
-import Footer from './components/footer'
-import Searchbar from './components/Searchbar'
-import ScrollToTop from './components/ScrollToTop';
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import RefundReturnPolicy from "./pages/RefundReturnPolicy";
 import ShippingDelivery from "./pages/ShippingDelivery";
 import TermsConditions from "./pages/TermsConditions";
-import MyProfile from './pages/MyProfilePage';
-import Verify from './pages/Verify'
+import SearchPage from "./pages/SearchPage";
+
 import { ShopContext } from "./context/ShopContext";
 
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import ForgotPassword from './pages/ForgotPassword';
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+/* 🔒 SEARCH ROUTE GUARD */
+const SearchRouteGuard = ({ children }) => {
+  const location = useLocation();
+  const from = location.state?.from;
+
+  if (from !== "/" && from !== "/collections") {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
 
 const App = () => {
-
   const { products } = useContext(ShopContext);
   const [loading, setLoading] = useState(true);
+  const [showNavbar, setShowNavbar] = useState(true);
+  const [isMobileOrTablet, setIsMobileOrTablet] = useState(
+    window.innerWidth < 1024
+  );
 
+  const location = useLocation();
+  const pathname = location.pathname;
+
+  /* PAGE FLAGS */
+  const isSearchPage = pathname === "/search";
+  const isUserPage = pathname === "/user";
+
+  const showSearchBar = ["/", "/collections"].includes(pathname);
+  const showFooter = !isSearchPage && !isUserPage;
+
+  /* STOP LOADER */
   useEffect(() => {
-    if (products && products.length > 0) {
+    if (products !== undefined) {
       setLoading(false);
     }
   }, [products]);
 
-  return (
-    // <div className='min-h-screen bg-gradient-to-b from-black via-[#0d0d0d] to-[#1a1a1a] text-white'>
-    <div className="
-  min-h-screen
-  text-white
-  bg-black
-">
+  /* NAVBAR HIDE ON SCROLL */
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
 
-      {/* Loader */}
+    const onScroll = () => {
+      if (window.scrollY > lastScrollY && window.scrollY > 80) {
+        setShowNavbar(false);
+      } else {
+        setShowNavbar(true);
+      }
+      lastScrollY = window.scrollY;
+    };
+
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileOrTablet(window.innerWidth < 1024);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-black text-white relative overflow-x-hidden">
+      {/* LOADER */}
       <PreLoader isLoading={loading} />
 
+      {/* TOAST */}
       <ToastContainer theme="dark" />
 
-      <Navbar />
-      <Searchbar />
+      {/* NAVBAR */}
+      {!isSearchPage && <Navbar showNavbar={showNavbar} />}
 
-      {/* CONTENT WRAPPER */}
-      <div className="pt-[90px] px-4 sm:px-[4vw] md:px-[5vw] lg:px-[6vw]">
+      {/* SEARCHBAR (HOME + COLLECTIONS ONLY) */}
+      {showSearchBar && !isSearchPage && isMobileOrTablet && (
+        <Searchbar showNavbar={showNavbar} />
+      )}
 
-        {!loading && (
-          <>
-            <Routes>
-              <Route path="/" element={<Home/>}/>
-              <Route path="/collections" element={<Collections/>}/>
-              <Route path="/about" element={<About/>}/>
-              <Route path="/contact" element={<Contact/>}/>
-              <Route path="/product/:productId" element={<Product/>}/>
-              <Route path="/cart" element={<Cart/>}/>
-              <Route path="/orders" element={<Orders/>}/>
-              <Route path="/placeorder" element={<PlaceOrder/>}/>
-              <Route path="/login" element={<Login/>}/>
-              <Route path="/verify" element={<Verify/>}/>
-              <Route path="/profile" element={<MyProfile/>}/>
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/refund-return" element={<RefundReturnPolicy />} />
-              <Route path="/shipping-delivery" element={<ShippingDelivery />} />
-              <Route path="/terms-conditions" element={<TermsConditions />} />
-              <Route path="/forgot-password" element={<ForgotPassword/>}/>
-            </Routes>
+      {/* ROUTES */}
+      <Routes>
+        {/* 🔍 SEARCH (FULL SCREEN) */}
+        <Route
+          path="/search"
+          element={
+            <SearchRouteGuard>
+              <SearchPage />
+            </SearchRouteGuard>
+          }
+        />
 
-            <ScrollToTop />
-          </>
-        )}
-      </div>
+        {/* 🏠 NORMAL PAGES */}
+        <Route
+          path="*"
+          element={
+            <div
+              className={`
+    ${isSearchPage ? "" : "pt-[120px]"}
+    px-4 md:px-6 lg:px-8
+    max-w-[1400px] mx-auto
+  `}
+            >
+              {!loading && (
+                <>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/collections" element={<Collections />} />
+                    <Route path="/product/:productId" element={<Product />} />
 
-      {/* FOOTER IS OUTSIDE CONTENT WRAPPER → FULL WIDTH NOW */}
-      <Footer />
+                    {/* AUTH */}
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/verify" element={<Verify />} />
+                    <Route
+                      path="/forgot-password"
+                      element={<ForgotPassword />}
+                    />
 
+                    {/* USER */}
+                    <Route path="/user" element={<User />} />
+
+                    {/* SHOP */}
+                    <Route path="/cart" element={<Cart />} />
+                    <Route path="/orders" element={<Orders />} />
+                    <Route path="/placeorder" element={<PlaceOrder />} />
+
+                    {/* INFO */}
+                    <Route path="/about" element={<About />} />
+                    <Route path="/contact" element={<Contact />} />
+
+                    {/* LEGAL */}
+                    <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                    <Route
+                      path="/refund-return"
+                      element={<RefundReturnPolicy />}
+                    />
+                    <Route
+                      path="/shipping-delivery"
+                      element={<ShippingDelivery />}
+                    />
+                    <Route
+                      path="/terms-conditions"
+                      element={<TermsConditions />}
+                    />
+                  </Routes>
+
+                  <ScrollToTop />
+                </>
+              )}
+            </div>
+          }
+        />
+      </Routes>
+
+      {/* FOOTER */}
+      {showFooter && <Footer />}
     </div>
   );
-}
+};
 
 export default App;

@@ -17,9 +17,10 @@ const deliveryCharge = 10;
 //placeorder COD
 // -------------------- PLACE ORDER (COD) --------------------
 const placeOrder = async (req, res) => {
-    console.log("🔥 placeOrder route hit");
+  console.log("🔥 placeOrder route hit");
   try {
-    const { userId, items, amount, address } = req.body;
+    const userId = req.userId; // from auth middleware
+    const { items, amount, address } = req.body;
 
     if (!items || items.length === 0) {
       return res.json({ success: false, message: "No items in order" });
@@ -53,7 +54,7 @@ const placeOrder = async (req, res) => {
           quantity: cartItem.quantity,
           size: cartItem.size,
 
-          image: product.image,
+          image: Array.isArray(product.image) ? product.image : [],
           productDate: product.date,
         };
       })
@@ -195,7 +196,7 @@ const allOrders = async (req, res) => {
 // -------------------- USER ORDERS (Frontend) --------------------
 const userOrders = async (req, res) => {
   try {
-    const  userId  = req.userId;
+    const userId = req.userId;
 
     if (!userId) {
       return res.json({ success: false, message: "User ID missing" });

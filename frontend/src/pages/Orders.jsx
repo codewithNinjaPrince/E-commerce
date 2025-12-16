@@ -1352,21 +1352,7 @@ const Orders = () => {
 
       const fetched = Array.isArray(res.data.orders) ? res.data.orders : [];
 
-      const prepared = fetched
-        .map((o) => {
-          const copy = { ...o };
-          copy.items = Array.isArray(copy.items)
-            ? [...copy.items].sort(
-                (a, b) =>
-                  (b.productDate || b.date || 0) -
-                  (a.productDate || a.date || 0)
-              )
-            : [];
-          return copy;
-        })
-        .sort((a, b) => (b.date || 0) - (a.date || 0));
-
-      setOrders(prepared);
+      setOrders(fetched);
     } catch (err) {
       toast.error("Failed to load orders");
     } finally {
@@ -1427,12 +1413,17 @@ const Orders = () => {
             });
 
             return {
-              ...res.data.order,
-              items: [...newItems].sort(
-                (a, b) =>
-                  (b.productDate || b.date || 0) -
-                  (a.productDate || a.date || 0)
-              ),
+              ...o,
+              status: res.data.order.status,
+              items: o.items.map((oldItem) => {
+                const updated = res.data.order.items.find(
+                  (ni) => String(ni.productId) === String(oldItem.productId)
+                );
+
+                return updated
+                  ? { ...oldItem, ...updated } // 👈 image preserved
+                  : oldItem;
+              }),
             };
           })
         );
@@ -1564,6 +1555,12 @@ const Orders = () => {
                     actionLoading[`${order._id}-track`]?.track || false;
                   const loadingCancel = actionLoading[itemKey]?.cancel || false;
 
+                  const imageSrc =
+    Array.isArray(item.image) && item.image.length > 0
+      ? item.image[0]
+      : "https://via.placeholder.com/150?text=No+Image";
+
+
                   return (
                     <div
                       key={idx}
@@ -1571,14 +1568,11 @@ const Orders = () => {
                     >
                       <div className="flex-shrink-0">
                         <img
-                          src={
-                            Array.isArray(item.image)
-                              ? item.image[0]
-                              : item.image
-                          }
-                          alt={item.name}
-                          className="w-24 h-24 md:w-28 md:h-28 rounded-lg object-cover border border-gray-700"
-                        />
+          src={imageSrc}
+          alt={item.name}
+          className="w-24 h-24 md:w-28 md:h-28 rounded-lg object-cover border border-gray-700"
+          loading="lazy"
+        />
                       </div>
 
                       <div className="flex-1 flex flex-col justify-between">

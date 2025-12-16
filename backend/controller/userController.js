@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import userModel from "../models/userModel.js";
 import EmailOtp from "../models/emailOtpModel.js";
+import PhoneOtp from "../models/phoneOtpModel.js";
 
 const createToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET);
@@ -11,28 +12,48 @@ const createToken = (id) => {
 // Route handler for user login this function is fine please do not touch it
 const loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const user = await userModel.findOne({ email });
+    const { identifier, password } = req.body;
+
+    if (!identifier || !password) {
+      return res.json({
+        success: false,
+        message: "Email/Phone and password are required",
+      });
+    }
+
+    const isEmail = validator.isEmail(identifier);
+
+    const user = await userModel.findOne(
+      isEmail ? { email: identifier } : { phone: identifier }
+    );
 
     if (!user) {
-      return res.json({ success: false, message: "User does not exist" });
+      return res.json({
+        success: false,
+        message: "User does not exist",
+      });
     }
+
     const isMatch = await bcrypt.compare(password, user.password);
 
-    if (isMatch) {
-      const token = createToken(user._id);
-      res.json({
-        success: true,
-        token,
-        user: {
-          firstName: user.firstName,
-        },
+    if (!isMatch) {
+      return res.json({
+        success: false,
+        message: "Incorrect password",
       });
-    } else {
-      res.json({ success: false, message: "Invalid username or Incorrect password" });
     }
+
+    const token = createToken(user._id);
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        firstName: user.firstName,
+      },
+    });
   } catch (error) {
-    console.log(error);
+    console.log("LOGIN ERROR:", error);
     res.json({ success: false, message: error.message });
   }
 };
@@ -41,42 +62,71 @@ const loginUser = async (req, res) => {
 // Route for user registration (OTP protected)
 const registerUser = async (req, res) => {
   try {
-    const { firstName, lastName, email, password } = req.body;
+    const { firstName, lastName, identifier, password } = req.body;
 
-    // 1️⃣ Basic validations
+    let emailOtp = null;
+    let phoneOtp = null;
+
+    /* ---------------- 1️⃣ BASIC VALIDATIONS ---------------- */
     if (!firstName || !lastName) {
       return res.json({ success: false, msg: "Name is required" });
     }
 
-    if (!validator.isEmail(email)) {
+    if (!identifier) {
       return res.json({
         success: false,
-        msg: "Please enter a valid email address",
+        msg: "Email or phone is required",
       });
     }
 
-    if (password.length < 8) {
+    const isEmail = validator.isEmail(identifier);
+
+    if (!isEmail && !/^[6-9]\d{9}$/.test(identifier)) {
+      return res.json({
+        success: false,
+        msg: "Please enter a valid email or 10 digit phone number",
+      });
+    }
+
+    if (!password || password.length < 8) {
       return res.json({
         success: false,
         msg: "Please enter a strong password",
       });
     }
 
-    // 2️⃣ Check OTP verification
-    const otpRecord = await EmailOtp.findOne({
-      email,
-      verified: true,
-    });
-
-    if (!otpRecord) {
-      return res.json({
-        success: false,
-        msg: "Please verify your email with OTP first",
+    /* ---------------- 2️⃣ OTP VERIFICATION CHECK ---------------- */
+    if (isEmail) {
+      emailOtp = await EmailOtp.findOne({
+        email: identifier,
+        verified: true,
       });
+
+      if (!emailOtp) {
+        return res.json({
+          success: false,
+          msg: "Please verify your email with OTP first",
+        });
+      }
+    } else {
+      phoneOtp = await PhoneOtp.findOne({
+        phone: identifier,
+        verified: true,
+      });
+
+      if (!phoneOtp) {
+        return res.json({
+          success: false,
+          msg: "Please verify your phone number with OTP first",
+        });
+      }
     }
 
-    // 3️⃣ Check if user already exists
-    const exists = await userModel.findOne({ email });
+    /* ---------------- 3️⃣ CHECK IF USER EXISTS ---------------- */
+    const exists = await userModel.findOne(
+      isEmail ? { email: identifier } : { phone: identifier }
+    );
+
     if (exists) {
       return res.json({
         success: false,
@@ -84,28 +134,43 @@ const registerUser = async (req, res) => {
       });
     }
 
-    // 4️⃣ Hash password
+    /* ---------------- 4️⃣ HASH PASSWORD ---------------- */
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // 5️⃣ Create user
+    /* ---------------- 5️⃣ CREATE USER ---------------- */
     const newUser = new userModel({
       firstName,
       lastName,
-      email,
+      email: isEmail ? identifier : undefined,
+      phone: !isEmail ? identifier : undefined,
       password: hashedPassword,
-      isEmailVerified: true, // ✅ confirmed
+      isEmailVerified: isEmail,
+      isPhoneVerified: !isEmail,
     });
 
     const user = await newUser.save();
 
-    // 6️⃣ Delete OTP record (important)
-    await EmailOtp.deleteOne({ email });
+    /* ---------------- 6️⃣ DELETE OTP RECORD ---------------- */
+    if (emailOtp) {
+      await EmailOtp.deleteOne({ email: identifier });
+    }
 
-    // 7️⃣ Generate token
+    if (phoneOtp) {
+      await PhoneOtp.deleteOne({ phone: identifier });
+    }
+
+    /* ---------------- 7️⃣ GENERATE TOKEN ---------------- */
     const token = createToken(user._id);
 
-    res.json({ success: true, token });
+    res.json({
+      success: true,
+      token,
+      message: "Registration successful",
+      user: {
+        firstName: user.firstName,
+      },
+    });
   } catch (error) {
     console.log("REGISTER ERROR:", error);
     res.json({ success: false, message: error.message });
