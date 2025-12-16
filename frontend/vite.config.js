@@ -1,11 +1,10 @@
 import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
-  plugins: [
-    tailwindcss() // plugins array should only contain plugin functions
-  ],
+  plugins: [react(), tailwindcss()],
   server: {
-    port: 5173 // server config is at the root level, not inside plugins
+    port: 5173
   }
 })
