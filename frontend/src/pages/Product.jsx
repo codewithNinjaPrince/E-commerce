@@ -21,23 +21,27 @@ const Product = () => {
     const found = products.find((p) => p._id === productId);
     if (found) {
       setProductData(found);
-      useEffect(() => {
-        if (productData) {
-          document.title = `${productData.name} | Brawvly`;
-
-          const metaDesc = document.querySelector("meta[name='description']");
-          if (metaDesc) {
-            metaDesc.setAttribute(
-              "content",
-              productData.description.slice(0, 150)
-            );
-          }
-        }
-      }, [productData]);
-
       setImage(Array.isArray(found.image) ? found.image[0] : found.image);
     }
   }, [productId, products]);
+
+  // SEO Meta Update
+
+  useEffect(() => {
+    if (!productData) return;
+
+    document.title = `${productData.name} | Brawvly`;
+
+    const metaDesc = document.querySelector("meta[name='description']");
+    if (metaDesc) {
+      metaDesc.setAttribute(
+        "content",
+        productData.description.slice(0, 150)
+      );
+    }
+  }, [productData]);
+
+  if (!productData) return <div className="opacity-0"></div>;
 
   if (!productData) return <div className="opacity-0"></div>;
 
