@@ -213,6 +213,7 @@ import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import Verify from "./pages/Verify";
 import User from "./pages/User";
+import SellWithUs from "./pages/SellWithUs";
 
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import RefundReturnPolicy from "./pages/RefundReturnPolicy";
@@ -369,6 +370,7 @@ const App = () => {
                     {/* INFO */}
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />
+                    <Route path="/sell-with-us" element={<SellWithUs />} />
 
                     {/* LEGAL */}
                     <Route

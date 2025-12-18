@@ -1,5 +1,8 @@
 import chatModel from "../models/chatModel.js";
 import merchantModel from "../models/merchantModel.js";
+import { v2 as cloudinary } from "cloudinary";
+import ContactQuery from "../models/contactModel.js";
+
 
 /* ==============================================================
    SEND MESSAGE (MERCHANT → ADMIN)
@@ -103,5 +106,56 @@ export const adminGetMerchantChat = async (req, res) => {
   } catch (error) {
     console.log("Admin chat fetch error:", error);
     res.json({ success: false, message: error.message });
+  }
+};
+
+export const submitContactForm = async (req, res) => {
+  try {
+    const { name, email, phone, message } = req.body;
+
+    if (!name || !email || !message) {
+      return res.status(400).json({
+        success: false,
+        message: "Name, email and message are required",
+      });
+    }
+
+    let uploadedFiles = [];
+
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const result = await cloudinary.uploader.upload(
+          `data:${file.mimetype};base64,${file.buffer.toString("base64")}`,
+          { folder: "brawvly/contact-support" }
+        );
+
+        uploadedFiles.push({
+          url: result.secure_url,
+          public_id: result.public_id,
+          originalName: file.originalname,
+        });
+      }
+    }
+
+    const newQuery = new ContactQuery({
+      name,
+      email,
+      phone,
+      message,
+      files: uploadedFiles,
+    });
+
+    await newQuery.save();
+
+    res.json({
+      success: true,
+      message: "Query submitted successfully",
+    });
+  } catch (error) {
+    console.error("CONTACT FORM ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 };

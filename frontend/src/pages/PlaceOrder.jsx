@@ -755,7 +755,8 @@ const PlaceOrder = () => {
         <CartTotal />
 
         {/* ================= COUPON SECTION ================= */}
-        <div className="mt-6">
+        {/* ================= COUPON SECTION ================= */}
+        <div className="mt-6 relative">
           <button
             type="button"
             onClick={() => setShowCouponBox(!showCouponBox)}
@@ -765,12 +766,24 @@ const PlaceOrder = () => {
           </button>
 
           {showCouponBox && (
-            <div className="mt-4 bg-[#121212] p-4 rounded-xl border border-white/10">
-              <div className="flex gap-3">
+            <div
+              className="
+        mt-3
+        bg-[#121212] p-4
+        rounded-xl border border-white/10
+        w-full
+        max-w-full
+      "
+            >
+              <div className="flex flex-col sm:flex-row gap-3">
                 <input
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value)}
-                  className="flex-1 bg-black text-white p-2 rounded-lg border border-white/20"
+                  className="
+            w-full
+            bg-black text-white p-3
+            rounded-lg border border-white/20
+          "
                   placeholder="Enter coupon code"
                 />
 
@@ -778,7 +791,14 @@ const PlaceOrder = () => {
                   type="button"
                   onClick={applyCoupon}
                   disabled={checkingCoupon}
-                  className="bg-white text-black px-5 rounded-lg font-semibold hover:bg-gray-300 transition cursor-pointer"
+                  className="
+            w-full sm:w-auto
+            bg-white text-black
+            px-6 py-3
+            rounded-lg font-semibold
+            hover:bg-gray-300 transition
+            cursor-pointer
+          "
                 >
                   {checkingCoupon ? "Checking..." : "Apply"}
                 </button>
@@ -792,7 +812,7 @@ const PlaceOrder = () => {
             </div>
           )}
         </div>
-        
+
         {/* ================= PAYMENT METHOD ================= */}
         <div className="mt-8 bg-[#121212] p-5 rounded-xl border border-white/10">
           <p className="text-lg font-semibold mb-4">Payment Method</p>

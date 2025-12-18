@@ -25,6 +25,7 @@ const Setting = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -64,6 +65,8 @@ const Setting = () => {
     }
 
     try {
+      setIsUpdatingPassword(true); // 🔥 START LOADING
+
       const res = await axios.post(
         `${backendUrl}/api/merchant/update-password`,
         { oldPassword, newPassword },
@@ -73,22 +76,22 @@ const Setting = () => {
           },
         }
       );
+
       if (res.data.success) {
         toast.success("Password updated! Please login again.");
 
-        // Clear merchant token
         localStorage.removeItem("merchantToken");
 
-        // Redirect after short delay
         setTimeout(() => {
-          window.location.href = "/merchant-login"; // update path if needed
+          window.location.href = "/";
         }, 1500);
       } else {
         toast.error(res.data.message);
       }
     } catch (err) {
-      console.log("ERROR RESPONSE:", err.response?.data);
       toast.error("Failed to change password");
+    } finally {
+      setIsUpdatingPassword(false); // 🔥 STOP LOADING
     }
   };
 
@@ -285,9 +288,26 @@ const Setting = () => {
             {/* UPDATE BUTTON */}
             <button
               onClick={updatePassword}
-              className="bg-yellow-600 hover:bg-yellow-700 px-5 py-3 rounded-lg cursor-pointer font-semibold w-full"
+              disabled={isUpdatingPassword}
+              className={`
+    px-5 py-3 rounded-lg font-semibold w-full
+    flex items-center justify-center gap-3
+    transition cursor-pointer
+    ${
+      isUpdatingPassword
+        ? "bg-gray-600 cursor-not-allowed"
+        : "bg-yellow-600 hover:bg-yellow-700"
+    }
+  `}
             >
-              Update Password
+              {isUpdatingPassword ? (
+                <>
+                  <span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
+                  Updating...
+                </>
+              ) : (
+                "Update Password"
+              )}
             </button>
           </section>
 

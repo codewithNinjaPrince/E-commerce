@@ -369,4 +369,3 @@ useEffect(() => {
 };
 
 export default Product;
-

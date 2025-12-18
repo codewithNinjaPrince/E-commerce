@@ -14,6 +14,7 @@ const Profile = () => {
 
   const [merchant, setMerchant] = useState(null);
   const [editMode, setEditMode] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -23,6 +24,21 @@ const Profile = () => {
     storeDescription: "",
     address: "",
   });
+
+  const firstName = merchant?.firstName || "";
+  const lastName = merchant?.lastName || "";
+  const profileImage = merchant?.profileImage || "";
+
+  const initials =
+    firstName || lastName
+      ? `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase()
+      : merchant?.name
+          ?.trim()
+          ?.split(" ")
+          ?.filter(Boolean)
+          ?.map((w) => w[0])
+          ?.join("")
+          ?.toUpperCase();
 
   // FETCH PROFILE
   const fetchProfile = async () => {
@@ -61,6 +77,20 @@ const Profile = () => {
       );
 
       if (res.data.success) {
+        localStorage.setItem("merchantName", res.data.merchant.name || "");
+        localStorage.setItem(
+          "merchantFirstName",
+          res.data.merchant.firstName || ""
+        );
+        localStorage.setItem(
+          "merchantLastName",
+          res.data.merchant.lastName || ""
+        );
+        localStorage.setItem(
+          "merchantProfileImage",
+          res.data.merchant.profileImage || ""
+        );
+
         toast.success("Profile Updated!");
         setEditMode(false);
         fetchProfile();
@@ -93,8 +123,17 @@ const Profile = () => {
         <div className="bg-[#151515] p-6 sm:p-7 rounded-xl border border-[#222] shadow-xl w-full">
           {/* TOP SECTION */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-5">
-            <div className="w-20 h-20 bg-gray-700 rounded-full flex items-center justify-center text-3xl font-bold">
-              {merchant.name?.charAt(0)}
+            <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center text-3xl font-bold">
+              {profileImage && !imageError ? (
+                <img
+                  src={profileImage}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                  onError={() => setImageError(true)}
+                />
+              ) : (
+                <span className="text-white">{initials}</span>
+              )}
             </div>
 
             <div className="flex-1 min-w-0">

@@ -45,6 +45,7 @@ app.use("/api/product", productRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/order", orderRouter);
 app.use("/api/email", emailRouter);
+app.use("/api/form",chatRouter);
 
 // Merchant
 app.use("/api/merchant", merchantRouter);
@@ -52,7 +53,6 @@ app.use("/api/merchant/kyc", merchantKycRouter);
 app.use("/api/merchant/product", merchantProductRouter);
 app.use("/api/merchant/dashboard", merchantDashboardRouter);
 app.use("/api/merchant/notifications", notificationRouter);
-app.use("/api/chat", chatRouter);
 
 // Root
 app.get("/", (req, res) => {

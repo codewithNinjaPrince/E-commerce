@@ -95,6 +95,11 @@ export const loginMerchant = async (req, res) => {
         storeName: merchant.storeName,
         isVerified: merchant.isVerified,
         status: merchant.status,
+
+        // 🔥 ADD THESE (VERY IMPORTANT)
+        profileImage: merchant.profileImage || "",
+        firstName: merchant.firstName || "",
+        lastName: merchant.lastName || "",
       },
     });
   } catch (error) {
@@ -216,7 +221,6 @@ export const getSingleMerchantProduct = async (req, res) => {
   }
 };
 
-
 // --------------------------------------------------
 // LIST MERCHANT PRODUCTS
 // --------------------------------------------------
@@ -270,7 +274,7 @@ export const updateMerchantProduct = async (req, res) => {
       bestseller,
       existingImages,
       review,
-      noOfPeopleReviewed
+      noOfPeopleReviewed,
     } = req.body;
 
     if (!productId) {
@@ -348,7 +352,6 @@ export const updateMerchantProduct = async (req, res) => {
   }
 };
 
-
 //For merchant profile update
 export const updateMerchantProfile = async (req, res) => {
   try {
@@ -384,7 +387,6 @@ export const updateMerchantProfile = async (req, res) => {
 };
 
 export const updateMerchantPassword = async (req, res) => {
-
   try {
     const merchantId = req.merchantId;
 
@@ -452,7 +454,9 @@ export const verifyMerchantPassword = async (req, res) => {
 
     const merchant = await merchantModel.findById(merchantId);
     if (!merchant) {
-      return res.status(404).json({ success: false, message: "Merchant not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Merchant not found" });
     }
 
     const isMatch = await bcrypt.compare(password, merchant.password);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   FaHome,
   FaBox,
@@ -8,25 +8,41 @@ import {
   FaCog,
   FaSignOutAlt,
   FaTimes,
-  FaShieldAlt
+  FaShieldAlt,
 } from "react-icons/fa";
 
 import { NavLink, useNavigate } from "react-router-dom";
 
-const Sidebar = ({ sidebarOpen, setSidebarOpen, setMerchantToken, unreadCount = 0 }) => {
+const Sidebar = ({
+  sidebarOpen,
+  setSidebarOpen,
+  setMerchantToken,
+  unreadCount = 0,
+}) => {
   const navigate = useNavigate();
 
   const [logoutModal, setLogoutModal] = useState(false);
   const [loadingLogout, setLoadingLogout] = useState(false);
-
+const [imageError, setImageError] = useState(false);
   const merchantName = localStorage.getItem("merchantName") || "Merchant";
 
   // Initials: "Prince Dixit" => "PD"
-  const initials = merchantName
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
+  const firstName = localStorage.getItem("merchantFirstName") || "";
+  const lastName = localStorage.getItem("merchantLastName") || "";
+const [merchantImage, setMerchantImage] = useState(
+  localStorage.getItem("merchantProfileImage") || ""
+);
+
+  const initials =
+    firstName || lastName
+      ? `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase()
+      : merchantName
+          .trim()
+          .split(" ")
+          .filter(Boolean)
+          .map((w) => w[0])
+          .join("")
+          .toUpperCase();
 
   const logoutNow = () => {
     setLoadingLogout(true);
@@ -34,6 +50,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, setMerchantToken, unreadCount = 
     setTimeout(() => {
       localStorage.removeItem("merchantToken");
       localStorage.removeItem("merchantName");
+      localStorage.removeItem("merchantProfileImage");
+      localStorage.removeItem("merchantFirstName");
+      localStorage.removeItem("merchantLastName");
       setMerchantToken("");
       navigate("/login");
     }, 300);
@@ -45,10 +64,20 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, setMerchantToken, unreadCount = 
     { label: "Orders", icon: <FaShoppingCart />, path: "/orders" },
     { label: "Support", icon: <FaHeadset />, path: "/support" },
     { label: "Notification", icon: <FaBell />, path: "/notification" },
-    { label: "Kyc", icon: <FaShieldAlt />, path: "/kyc" },    
-    { label: "Settings", icon: <FaCog />, path: "/setting" },    
-
+    { label: "Kyc", icon: <FaShieldAlt />, path: "/kyc" },
+    { label: "Settings", icon: <FaCog />, path: "/setting" },
   ];
+
+  useEffect(() => {
+  const syncImage = () => {
+    setMerchantImage(localStorage.getItem("merchantProfileImage") || "");
+  };
+
+  window.addEventListener("storage", syncImage);
+  syncImage();
+
+  return () => window.removeEventListener("storage", syncImage);
+}, []);
 
   return (
     <>
@@ -89,9 +118,20 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, setMerchantToken, unreadCount = 
               setSidebarOpen(false);
             }}
           >
-            <div className="w-12 h-12 bg-gray-700 text-white rounded-full flex items-center justify-center text-lg font-bold">
-              {initials}
-            </div>
+            <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center">
+  {merchantImage && !imageError ? (
+    <img
+      src={merchantImage}
+      alt="Profile"
+      className="w-full h-full object-cover"
+      onError={() => setImageError(true)}
+    />
+  ) : (
+    <span className="text-white text-lg font-bold">
+      {initials}
+    </span>
+  )}
+</div>
 
             <div>
               <p className="text-white font-semibold">{merchantName}</p>

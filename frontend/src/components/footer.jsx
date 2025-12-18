@@ -4,7 +4,7 @@ import { assets } from "../assets/assets";
 
 const Footer = () => {
   return (
-    <footer className="mt-32 w-full bg-black text-gray-300 px-6 py-14">
+    <footer className="mt-10 w-full bg-black text-gray-300 px-6 py-14">
       {/* MAIN FOOTER CONTENT */}
       <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-x-12 gap-y-10">
 

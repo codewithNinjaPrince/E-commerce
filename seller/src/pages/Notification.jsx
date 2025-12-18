@@ -26,10 +26,9 @@ const Notification = () => {
       }
 
       // 🔹 2. Background API sync
-      const res = await axios.get(
-        `${backendUrl}/api/merchant/notifications`,
-        { headers: { token } }
-      );
+      const res = await axios.get(`${backendUrl}/api/merchant/notifications`, {
+        headers: { token },
+      });
 
       if (res.data.success) {
         setNotifications(res.data.notifications);
@@ -121,51 +120,48 @@ const Notification = () => {
   };
 
   const handleNotificationClick = (n) => {
-    // 🔹 mark read locally
     setNotifications((prev) => {
       const updated = prev.map((x) =>
         x._id === n._id ? { ...x, read: true } : x
       );
-
-      sessionStorage.setItem(
-        "merchantNotifications",
-        JSON.stringify(updated)
-      );
-
+      sessionStorage.setItem("merchantNotifications", JSON.stringify(updated));
       return updated;
     });
 
-    // 🔥 redirect rule
     if (n.type === "NEW_ORDER") {
       navigate("/orders");
     }
   };
 
   const unreadCount = notifications.filter((n) => !n.read).length;
-
   /* =====================================================
      UI (UNCHANGED)
   ===================================================== */
   return (
-    <div className="
+    <div
+      className="
       w-full max-w-[1600px] mx-auto 
       p-4 sm:p-6 text-white 
       pt-[30px] sm:pt-[60px] lg:pt-[50px]
-    ">
+    "
+    >
       <div className="max-w-4xl mx-auto">
-
         {/* HEADER */}
-        <div className="
+        <div
+          className="
           flex flex-col sm:flex-row 
           sm:justify-between sm:items-center 
           gap-4 mb-6
-        ">
-          <h1 className="
+        "
+        >
+          <h1
+            className="
             text-3xl sm:text-4xl font-extrabold 
             bg-gradient-to-r from-white via-gray-300 to-gray-500 
             bg-clip-text text-transparent
             flex items-center gap-3
-          ">
+          "
+          >
             Notifications
             {unreadCount > 0 && (
               <span className="bg-red-600 text-white text-xs px-2 py-1 rounded-full shadow">
@@ -243,7 +239,6 @@ const Notification = () => {
             </div>
           ))}
         </div>
-
       </div>
     </div>
   );

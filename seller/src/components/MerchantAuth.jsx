@@ -4,6 +4,7 @@ import React, { useState, useRef } from "react";
 import { toast } from "react-toastify";
 import { backendUrl } from "../App";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 const SUPPORT_PHONE = "8736852549";
 const SUPPORT_EMAIL = "brawly@gmail.com";
@@ -22,6 +23,7 @@ const MerchantAuth = ({ setMerchantToken }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
+  const navigate = useNavigate();
 
   // eye states
   const [showPass, setShowPass] = useState(false);
@@ -165,14 +167,21 @@ const MerchantAuth = ({ setMerchantToken }) => {
 
       if (isLogin) {
         toast.success("Login successful 🎉");
+
         setMerchantToken(res.data.token);
         localStorage.setItem("merchantToken", res.data.token);
         localStorage.setItem("merchantName", res.data.merchant?.name || "");
         localStorage.setItem("merchantId", res.data.merchantId);
+        localStorage.setItem("merchantProfileImage",res.data.merchant?.profileImage || "");
+        localStorage.setItem("merchantFirstName", res.data.merchant?.firstName || "");
+        localStorage.setItem("merchantLastName",res.data.merchant?.lastName || ""
+        );
+
         socket.connect();
         socket.emit("join_merchant", res.data.merchantId);
 
-
+        // 🔥 NAVIGATE TO DASHBOARD
+        navigate("/dashboard", { replace: true });
       } else {
         toast.success("Merchant registered successfully! Please login.");
         setIsLogin(true);
