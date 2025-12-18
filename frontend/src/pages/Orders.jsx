@@ -1306,6 +1306,7 @@ const TIMELINE_STAGES = [
   "Shipped",
   "Out for Delivery",
   "Delivered",
+  "Cancelled",
 ];
 
 const Orders = () => {
@@ -1328,8 +1329,11 @@ const Orders = () => {
     return idx === -1 ? 0 : idx;
   };
 
-  const getItemStatus = (order, item) =>
-    item.itemStatus || item.status || order.status || "Order Placed";
+  const getItemStatus = (order, item) => {
+    if (item.itemStatus === "Cancelled") return "Cancelled";
+    if (order.status === "Cancelled") return "Cancelled";
+    return item.itemStatus || item.status || order.status || "Order Placed";
+  };
 
   // --------------------------- LOAD ORDERS --------------------------
   const loadOrders = async () => {
@@ -1550,16 +1554,16 @@ const Orders = () => {
                   const status = getItemStatus(order, item);
                   const statusIdx = stageIndex(status);
                   const animate = isAnimated(order._id, item.productId);
+                  const isCancelled = status === "Cancelled";
 
                   const loadingTrack =
                     actionLoading[`${order._id}-track`]?.track || false;
                   const loadingCancel = actionLoading[itemKey]?.cancel || false;
 
                   const imageSrc =
-    Array.isArray(item.image) && item.image.length > 0
-      ? item.image[0]
-      : "https://via.placeholder.com/150?text=No+Image";
-
+                    Array.isArray(item.image) && item.image.length > 0
+                      ? item.image[0]
+                      : "https://via.placeholder.com/150?text=No+Image";
 
                   return (
                     <div
@@ -1568,11 +1572,11 @@ const Orders = () => {
                     >
                       <div className="flex-shrink-0">
                         <img
-          src={imageSrc}
-          alt={item.name}
-          className="w-24 h-24 md:w-28 md:h-28 rounded-lg object-cover border border-gray-700"
-          loading="lazy"
-        />
+                          src={imageSrc}
+                          alt={item.name}
+                          className="w-24 h-24 md:w-28 md:h-28 rounded-lg object-cover border border-gray-700"
+                          loading="lazy"
+                        />
                       </div>
 
                       <div className="flex-1 flex flex-col justify-between">
@@ -1618,18 +1622,32 @@ const Orders = () => {
                                   <div className="flex flex-col items-center">
                                     <div
                                       className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                                        done ? "bg-green-500" : "bg-gray-600"
+                                        isCancelled
+                                          ? "bg-red-600"
+                                          : done
+                                          ? "bg-green-500"
+                                          : "bg-gray-600"
                                       }`}
                                     >
-                                      {done && (
-                                        <FaCheckCircle className="text-white text-[12px]" />
+                                      {isCancelled ? (
+                                        <span className="text-white text-xs font-bold">
+                                          ✕
+                                        </span>
+                                      ) : (
+                                        done && (
+                                          <FaCheckCircle className="text-white text-[12px]" />
+                                        )
                                       )}
                                     </div>
 
                                     {sIdx < TIMELINE_STAGES.length - 1 && (
                                       <div
                                         className={`w-[2px] h-6 mt-1 ${
-                                          done ? "bg-green-500" : "bg-gray-700"
+                                          isCancelled
+                                            ? "bg-red-600"
+                                            : done
+                                            ? "bg-green-500"
+                                            : "bg-gray-700"
                                         }`}
                                       />
                                     )}
@@ -1677,11 +1695,21 @@ const Orders = () => {
                                 >
                                   <div
                                     className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                                      done ? "bg-green-500" : "bg-gray-600"
+                                      isCancelled
+                                        ? "bg-red-600"
+                                        : done
+                                        ? "bg-green-500"
+                                        : "bg-gray-600"
                                     }`}
                                   >
-                                    {done && (
-                                      <FaCheckCircle className="text-white text-[12px]" />
+                                    {isCancelled ? (
+                                      <span className="text-white text-xs font-bold">
+                                        ✕
+                                      </span>
+                                    ) : (
+                                      done && (
+                                        <FaCheckCircle className="text-white text-[12px]" />
+                                      )
                                     )}
                                   </div>
 
@@ -1698,7 +1726,11 @@ const Orders = () => {
                                   {sIdx < TIMELINE_STAGES.length - 1 && (
                                     <div
                                       className={`h-[2px] w-full mt-2 ${
-                                        done ? "bg-green-500" : "bg-gray-700"
+                                        isCancelled
+                                          ? "bg-red-600"
+                                          : done
+                                          ? "bg-green-500"
+                                          : "bg-gray-700"
                                       }`}
                                     />
                                   )}
@@ -1728,8 +1760,14 @@ const Orders = () => {
                         {/* TRACK BUTTON */}
                         <button
                           onClick={() => trackOrder(order._id)}
-                          disabled={loadingTrack}
-                          className="cursor-pointer flex-1 md:flex-none px-4 py-2 bg-white text-black rounded-md text-sm font-semibold hover:bg-gray-300 transition flex items-center justify-center gap-2"
+                          disabled={loadingTrack || isCancelled}
+                          className={`cursor-pointer flex-1 md:flex-none px-4 py-2 rounded-md text-sm font-semibold transition flex items-center justify-center gap-2
+  ${
+    isCancelled
+      ? "bg-gray-600 text-gray-300 cursor-not-allowed"
+      : "bg-white text-black hover:bg-gray-300"
+  }
+`}
                         >
                           {loadingTrack ? (
                             <div className="w-4 h-4 border-2 border-gray-400 border-t-black rounded-full animate-spin" />
@@ -1741,7 +1779,7 @@ const Orders = () => {
                         </button>
 
                         {/* CANCEL BUTTON — ONLY IF ORDER PLACED */}
-                        {status === "Order Placed" && (
+                        {status === "Order Placed" && !isCancelled && (
                           <button
                             onClick={() =>
                               setCancelModal({

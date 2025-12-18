@@ -96,6 +96,17 @@ const Collections = () => {
     }
   }, [products]);
 
+  useEffect(() => {
+  document.title =
+    "Shop Fashion, Electronics & More | Brawvly Collections";
+}, []);
+
+<meta
+  name="description"
+  content="Explore fashion, electronics, watches, shoes & more from trusted local sellers across India on Brawvly."
+/>
+
+
   return (
     <div className="pt-10 border-t text-white min-h-screen">
       {/* =================== SHOW LOADER ONLY FIRST TIME =================== */}

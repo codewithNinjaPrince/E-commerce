@@ -273,6 +273,7 @@ const App = () => {
     localStorage.getItem("merchantToken") || ""
   );
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
 
   const location = useLocation();
 

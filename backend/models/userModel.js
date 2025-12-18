@@ -75,7 +75,11 @@ const userSchema = new mongoose.Schema(
     },
 
     /* ---------------- CART ---------------- */
-    cartData: { type: Object, default: {} },
+    cartData: {
+      type: Map,
+      of: Map,
+      default: {},
+    },
   },
   { timestamps: true }
 );

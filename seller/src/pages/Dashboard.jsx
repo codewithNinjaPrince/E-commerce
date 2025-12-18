@@ -120,18 +120,24 @@ const Dashboard = () => {
               <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-4">
                 {stats.recentOrders.map((order) => {
                   const date = new Date(order.date);
-                  const firstItem = order.items[0];
                   const customer =
                     order.address?.firstName + " " + order.address?.lastName;
+
+                  const merchantOrderTotal = order.items.reduce(
+                    (sum, item) =>
+                      sum +
+                      Number(item.discountedPrice || item.price || 0) *
+                        item.quantity,
+                    0
+                  );
 
                   return (
                     <div
                       key={order._id}
                       className="p-4 bg-black/30 rounded-lg border border-white/10 
-            hover:border-blue-500 cursor-pointer flex justify-between items-center"
-                      onClick={() => (window.location.href = `/orders`)} // you can change this to specific page
+      hover:border-blue-500 cursor-pointer flex justify-between items-center"
+                      onClick={() => (window.location.href = `/orders`)}
                     >
-                      {/* LEFT DETAILS */}
                       <div>
                         <p className="font-semibold text-white">
                           Order #{order._id.slice(-6).toUpperCase()}
@@ -150,9 +156,8 @@ const Dashboard = () => {
                         </p>
                       </div>
 
-                      {/* RIGHT PRICE */}
                       <p className="text-blue-400 font-semibold text-lg">
-                        ₹{order.amount}
+                        ₹{merchantOrderTotal}
                       </p>
                     </div>
                   );

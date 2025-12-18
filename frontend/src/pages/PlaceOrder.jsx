@@ -583,17 +583,12 @@ const PlaceOrder = () => {
         paymentMethod: method,
       };
 
-      const res = await axios.post(
-        `${backendUrl}/api/order/place`,
-        orderData,
-        { headers: { token } }
-      );
+      const res = await axios.post(`${backendUrl}/api/order/place`, orderData, {
+        headers: { token },
+      });
 
       if (res.data.success) {
-        localStorage.setItem(
-          "checkoutAddress",
-          JSON.stringify(formData)
-        );
+        localStorage.setItem("checkoutAddress", JSON.stringify(formData));
         setCartItems({});
         toast.success("Order Placed Successfully!");
         setTimeout(() => navigate("/orders"), 800);
@@ -638,35 +633,119 @@ const PlaceOrder = () => {
         </button>
 
         <div className="flex gap-3">
-          <input required name="firstName" value={formData.firstName} onChange={onChangeHandler} className="input-box" placeholder="First Name" />
-          <input required name="lastName" value={formData.lastName} onChange={onChangeHandler} className="input-box" placeholder="Last Name" />
+          <input
+            required
+            name="firstName"
+            value={formData.firstName}
+            onChange={onChangeHandler}
+            className="input-box"
+            placeholder="First Name"
+          />
+          <input
+            required
+            name="lastName"
+            value={formData.lastName}
+            onChange={onChangeHandler}
+            className="input-box"
+            placeholder="Last Name"
+          />
         </div>
 
         <div className="flex gap-3">
-          <input required name="phone" value={formData.phone} onChange={onChangeHandler} className="input-box" placeholder="Phone No." />
-          <input required name="email" value={formData.email} onChange={onChangeHandler} className="input-box" placeholder="Email Address" />
+          <input
+            required
+            name="phone"
+            value={formData.phone}
+            onChange={onChangeHandler}
+            className="input-box"
+            placeholder="Phone No."
+          />
+          <input
+            required
+            name="email"
+            value={formData.email}
+            onChange={onChangeHandler}
+            className="input-box"
+            placeholder="Email Address"
+          />
         </div>
 
-        <input required name="houseNo" value={formData.houseNo} onChange={onChangeHandler} className="input-box" placeholder="House / Flat / Apartment No" />
-        <input required name="street" value={formData.street} onChange={onChangeHandler} className="input-box" placeholder="Street" />
-        <input name="locality" value={formData.locality} onChange={onChangeHandler} className="input-box" placeholder="Locality / Area (optional)" />
+        <input
+          required
+          name="houseNo"
+          value={formData.houseNo}
+          onChange={onChangeHandler}
+          className="input-box"
+          placeholder="House / Flat / Apartment No"
+        />
+        <input
+          required
+          name="street"
+          value={formData.street}
+          onChange={onChangeHandler}
+          className="input-box"
+          placeholder="Street"
+        />
+        <input
+          name="locality"
+          value={formData.locality}
+          onChange={onChangeHandler}
+          className="input-box"
+          placeholder="Locality / Area (optional)"
+        />
 
         <div className="flex gap-3">
-          <input required name="city" value={formData.city} onChange={onChangeHandler} className="input-box" placeholder="City" />
-          <input required name="pincode" value={formData.pincode} onChange={onChangeHandler} className="input-box" placeholder="Pin Code" />
+          <input
+            required
+            name="city"
+            value={formData.city}
+            onChange={onChangeHandler}
+            className="input-box"
+            placeholder="City"
+          />
+          <input
+            required
+            name="pincode"
+            value={formData.pincode}
+            onChange={onChangeHandler}
+            className="input-box"
+            placeholder="Pin Code"
+          />
         </div>
 
-        <input required name="district" value={formData.district} onChange={onChangeHandler} className="input-box" placeholder="District" />
+        <input
+          required
+          name="district"
+          value={formData.district}
+          onChange={onChangeHandler}
+          className="input-box"
+          placeholder="District"
+        />
 
         <div className="flex gap-3">
-          <select required name="state" value={formData.state} onChange={onChangeHandler} className="input-box">
+          <select
+            required
+            name="state"
+            value={formData.state}
+            onChange={onChangeHandler}
+            className="input-box"
+          >
             <option value="">Select State</option>
             {INDIAN_STATES.map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <option key={s} value={s}>
+                {s}
+              </option>
             ))}
           </select>
 
-          <input required name="country" value={formData.country} onChange={onChangeHandler} className="input-box" placeholder="Country" />
+          <input
+            required
+            name="country"
+            value={formData.country}
+            onChange={onChangeHandler}
+            className="input-box"
+            placeholder="Country"
+          />
           <div className="flex-1"></div>
         </div>
       </div>
@@ -674,6 +753,154 @@ const PlaceOrder = () => {
       {/* ================= RIGHT SECTION ================= */}
       <div className="flex-1 px-3 flex flex-col pb-28 lg:pb-0">
         <CartTotal />
+
+        {/* ================= COUPON SECTION ================= */}
+        <div className="mt-6">
+          <button
+            type="button"
+            onClick={() => setShowCouponBox(!showCouponBox)}
+            className="text-blue-400 text-sm hover:text-white cursor-pointer"
+          >
+            {showCouponBox ? "Hide Coupon" : "Have a coupon?"}
+          </button>
+
+          {showCouponBox && (
+            <div className="mt-4 bg-[#121212] p-4 rounded-xl border border-white/10">
+              <div className="flex gap-3">
+                <input
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value)}
+                  className="flex-1 bg-black text-white p-2 rounded-lg border border-white/20"
+                  placeholder="Enter coupon code"
+                />
+
+                <button
+                  type="button"
+                  onClick={applyCoupon}
+                  disabled={checkingCoupon}
+                  className="bg-white text-black px-5 rounded-lg font-semibold hover:bg-gray-300 transition cursor-pointer"
+                >
+                  {checkingCoupon ? "Checking..." : "Apply"}
+                </button>
+              </div>
+
+              {couponDiscount > 0 && (
+                <p className="text-green-400 text-sm mt-3">
+                  🎉 Coupon Applied: {couponDiscount}% OFF
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+        
+        {/* ================= PAYMENT METHOD ================= */}
+        <div className="mt-8 bg-[#121212] p-5 rounded-xl border border-white/10">
+          <p className="text-lg font-semibold mb-4">Payment Method</p>
+
+          <div className="flex flex-col gap-3">
+            {/* ================= COD ================= */}
+            <label
+              className={`flex items-center gap-3 p-4 rounded-lg cursor-pointer border transition
+        ${
+          method === "cod"
+            ? "border-green-500 bg-green-500/10"
+            : "border-white/10 hover:border-white/30"
+        }
+      `}
+            >
+              <input
+                type="radio"
+                name="payment"
+                value="cod"
+                checked={method === "cod"}
+                onChange={() => setMethod("cod")}
+              />
+              <span className="font-medium">Cash on Delivery</span>
+              <span className="ml-auto text-sm text-gray-400">₹20 COD fee</span>
+            </label>
+
+            {/* ================= RAZORPAY ================= */}
+            <label
+              className={`flex items-center gap-3 p-4 rounded-lg cursor-pointer border transition
+        ${
+          method === "razorpay"
+            ? "border-blue-500 bg-blue-500/10"
+            : "border-white/10 hover:border-white/30"
+        }
+      `}
+            >
+              <input
+                type="radio"
+                name="payment"
+                value="razorpay"
+                checked={method === "razorpay"}
+                onChange={() => setMethod("razorpay")}
+              />
+              <img src={assets.razorpay_logo} alt="Razorpay" className="h-5" />
+              <span className="ml-auto text-sm text-gray-400">
+                UPI / Card / Netbanking
+              </span>
+            </label>
+
+            {/* ================= ONLINE (GENERIC / FUTURE) ================= */}
+            <label
+              className={`flex items-center gap-3 p-4 rounded-lg cursor-pointer border transition
+        ${
+          method === "online"
+            ? "border-purple-500 bg-purple-500/10"
+            : "border-white/10 hover:border-white/30"
+        }
+      `}
+            >
+              <input
+                type="radio"
+                name="payment"
+                value="online"
+                checked={method === "online"}
+                onChange={() => {
+                  toast.info("Online payment coming soon 🚀");
+                  setMethod("online");
+                }}
+              />
+              <span className="font-medium">Online Payment</span>
+              <span className="ml-auto text-sm text-gray-400">
+                Wallets / UPI / Cards
+              </span>
+            </label>
+          </div>
+        </div>
+
+        {/* ================= PRICE SUMMARY ================= */}
+        <div className="mt-6 bg-[#121212] p-5 rounded-xl border border-white/10">
+          <div className="flex justify-between text-sm text-gray-400">
+            <span>Subtotal</span>
+            <span>₹{cartAmount}</span>
+          </div>
+
+          <div className="flex justify-between text-sm text-gray-400 mt-2">
+            <span>Delivery Fee</span>
+            <span>{deliveryFee === 0 ? "FREE" : `₹${deliveryFee}`}</span>
+          </div>
+
+          {method === "cod" && (
+            <div className="flex justify-between text-sm text-gray-400 mt-2">
+              <span>COD Fee</span>
+              <span>₹20</span>
+            </div>
+          )}
+
+          {couponDiscount > 0 && (
+            <div className="flex justify-between text-sm text-green-400 mt-2">
+              <span>Coupon Discount</span>
+              <span>-{couponDiscount}%</span>
+            </div>
+          )}
+
+          <div className="flex justify-between text-lg font-semibold mt-4">
+            <span>Total</span>
+            <span>₹{finalAmount}</span>
+          </div>
+        </div>
 
         {/* COUPON, PAYMENT, SUMMARY — UNCHANGED */}
         {/* SAME AS YOUR CODE */}
@@ -720,4 +947,3 @@ const PlaceOrder = () => {
 };
 
 export default PlaceOrder;
-

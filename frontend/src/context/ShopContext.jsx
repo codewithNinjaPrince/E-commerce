@@ -19,36 +19,37 @@ const ShopContextProvider = (props) => {
 
   /* ---------------------- ADD TO CART ---------------------- */
   const addToCart = async (itemId, size) => {
-    if (!size) {
-      toast.error("Select Product Size");
-      return;
+  if (!size) {
+    toast.error("Select Product Size");
+    return;
+  }
+
+  let cartData = structuredClone(cartItems);
+
+  if (cartData[itemId]) {
+    cartData[itemId][size] = (cartData[itemId][size] || 0) + 1;
+  } else {
+    cartData[itemId] = { [size]: 1 };
+  }
+
+  setCartItems(cartData);
+
+  const storedToken = localStorage.getItem("token"); // ✅ FIX
+
+  if (storedToken) {
+    try {
+      await axios.post(
+        backendUrl + "/api/cart/add",
+        { itemId, size },
+        { headers: { token: storedToken } }
+      );
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to save cart");
     }
+  }
+};
 
-    let cartData = structuredClone(cartItems);
-
-    if (cartData[itemId]) {
-      cartData[itemId][size] = (cartData[itemId][size] || 0) + 1;
-    } else {
-      cartData[itemId] = { [size]: 1 };
-    }
-
-    setCartItems(cartData);
-
-    if (token) {
-      try {
-        await axios.post(
-          backendUrl + "/api/cart/add",
-          { itemId, size },
-          { headers: { token } }
-        );
-      } catch (error) {
-        console.log(error);
-        toast.error(error.message);
-      }
-    } else {
-      toast.success("Item added to cart");
-    }
-  };
 
   /* ---------------------- CART COUNT ---------------------- */
   const getCartCount = () => {
@@ -65,24 +66,25 @@ const ShopContextProvider = (props) => {
 
   /* ---------------------- UPDATE QUANTITY ---------------------- */
   const updateQuantity = async (itemId, size, quantity) => {
-    let cartData = structuredClone(cartItems);
-    cartData[itemId][size] = quantity;
+  let cartData = structuredClone(cartItems);
+  cartData[itemId][size] = quantity;
+  setCartItems(cartData);
 
-    setCartItems(cartData);
+  const storedToken = localStorage.getItem("token"); // 🔥 FIX
 
-    if (token) {
-      try {
-        await axios.post(
-          backendUrl + "/api/cart/update",
-          { itemId, size, quantity },
-          { headers: { token } }
-        );
-      } catch (error) {
-        console.log(error);
-        toast.error(error.message);
-      }
+  if (storedToken) {
+    try {
+      await axios.post(
+        backendUrl + "/api/cart/update",
+        { itemId, size, quantity },
+        { headers: { token: storedToken } }
+      );
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to update cart");
     }
-  };
+  }
+};
 
   /* ---------------------- TOTAL CART AMOUNT (UPDATED MODEL) ---------------------- */
   const getCartAmount = () => {
@@ -154,11 +156,12 @@ const ShopContextProvider = (props) => {
 
  useEffect(() => {
   const saved = localStorage.getItem("token");
-  if (!token && saved) {
+  if (saved && products.length > 0) {
     setToken(saved);
     getUserCart(saved);
   }
-}, [token]);
+}, [products]);
+
 
 
   /* ---------------------- CONTEXT VALUE ---------------------- */

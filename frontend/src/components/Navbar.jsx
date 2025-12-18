@@ -1136,6 +1136,7 @@ const Navbar = ({ showNavbar }) => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+  
 
   return (
     <>
@@ -1149,6 +1150,8 @@ const Navbar = ({ showNavbar }) => {
 };
 
 export default Navbar;
+
+
 
 
 

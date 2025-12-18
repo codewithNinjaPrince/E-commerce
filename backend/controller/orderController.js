@@ -2,6 +2,7 @@ import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
 import productModel from "../models/productModel.js";
 import notificationModel from "../models/notificationModel.js";
+import { emitMerchantNotification } from "../utils/emitNotification.js";
 
 //Global Variables
 const currency = "inr";
@@ -17,7 +18,6 @@ const deliveryCharge = 10;
 //placeorder COD
 // -------------------- PLACE ORDER (COD) --------------------
 const placeOrder = async (req, res) => {
-  console.log("🔥 placeOrder route hit");
   try {
     const userId = req.userId; // from auth middleware
     const { items, amount, address } = req.body;
@@ -26,42 +26,48 @@ const placeOrder = async (req, res) => {
       return res.json({ success: false, message: "No items in order" });
     }
 
-    // 📌 ENRICH ALL CART ITEMS WITH PRODUCT DATA
+    /* =====================================================
+       1️⃣ ENRICH CART ITEMS WITH PRODUCT DATA
+    ===================================================== */
     const enrichedItems = await Promise.all(
       items.map(async (cartItem) => {
         const product = await productModel.findById(cartItem.productId);
 
-        if (!product)
-          throw new Error("Product not found: " + cartItem.productId);
+        if (!product) {
+          throw new Error(`Product not found: ${cartItem.productId}`);
+        }
 
         return {
           productId: product._id.toString(),
-          name: product.name,
-          sellerId: product.sellerId?.toString() || "", // FIXED
+          sellerId: product.sellerId?.toString(),
           shopId: product.shopId || "",
+
+          name: product.name,
+          brandName: product.brandName,
 
           actualPrice: product.actualPrice,
           discountedPrice: product.discountedPrice,
           price: product.discountedPrice,
-          brandName: product.brandName,
-          sizes: product.sizes,
-          offerCode: product.offerCode,
-
-          description: product.description,
-          category: product.category,
-          subCategory: product.subCategory,
 
           quantity: cartItem.quantity,
           size: cartItem.size,
 
+          category: product.category,
+          subCategory: product.subCategory,
+          offerCode: product.offerCode || "",
+
           image: Array.isArray(product.image) ? product.image : [],
           productDate: product.date,
+
+          itemStatus: "Order Placed",
         };
       })
     );
 
-    // 📌 COMBINED ORDER OBJECT (ONE ORDER)
-    const orderData = {
+    /* =====================================================
+       2️⃣ CREATE SINGLE COMBINED ORDER
+    ===================================================== */
+    const newOrder = await orderModel.create({
       userId,
       items: enrichedItems,
       amount,
@@ -70,34 +76,46 @@ const placeOrder = async (req, res) => {
       payment: false,
       status: "Order Placed",
       date: Date.now(),
-    };
+    });
 
-    // Save the combined order
-    const newOrder = await orderModel.create(orderData);
-
-    // Clear user cart
+    /* =====================================================
+       3️⃣ CLEAR USER CART
+    ===================================================== */
     await userModel.findByIdAndUpdate(userId, { cartData: {} });
 
-    // 📌 SEND NOTIFICATIONS TO MERCHANTS
+    /* =====================================================
+       4️⃣ CREATE + EMIT MERCHANT NOTIFICATIONS
+    ===================================================== */
     for (const item of enrichedItems) {
-      try {
-        if (item.sellerId) {
-          await notificationModel.create({
-            merchantId: item.sellerId,
-            title: "New Order Received",
-            message: `You received an order for ${item.name} (Qty: ${item.quantity}, Size: ${item.size}).`,
-            read: false,
-            date: Date.now(),
-          });
-        }
-      } catch (err) {
-        console.log("Merchant notification error:", err);
-      }
+      if (!item.sellerId) continue;
+
+      // save notification in DB
+      const notificationDoc = await notificationModel.create({
+        merchantId: item.sellerId,
+        type: "NEW_ORDER",
+        title: "New Order Received",
+        message: `${item.name} (Qty ${item.quantity}, Size ${item.size})`,
+        read: false,
+        date: Date.now(),
+      });
+
+      // 🔥 convert to plain object before socket emit
+      emitMerchantNotification(
+        item.sellerId,
+        notificationDoc.toObject()
+      );
     }
 
-    res.json({ success: true, message: "Order Placed", orderId: newOrder._id });
+    /* =====================================================
+       5️⃣ RESPONSE
+    ===================================================== */
+    res.json({
+      success: true,
+      message: "Order placed successfully",
+      orderId: newOrder._id,
+    });
   } catch (error) {
-    console.log("ORDER ERROR:", error);
+    console.log("PLACE ORDER ERROR:", error);
     res.json({ success: false, message: error.message });
   }
 };

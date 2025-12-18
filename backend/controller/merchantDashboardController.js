@@ -6,45 +6,60 @@ import productModel from "../models/productModel.js";
    ========================================================= */
 export const getMerchantDashboard = async (req, res) => {
   try {
-    const merchantId = req.merchant;
+    const merchantId = req.merchantId;
 
-    // TOTAL PRODUCTS
+    /* ---------------- PRODUCTS ---------------- */
     const totalProducts = await productModel.countDocuments({
       sellerId: merchantId,
     });
 
-    // RECENT PRODUCTS
     const recentProducts = await productModel
       .find({ sellerId: merchantId })
       .sort({ createdAt: -1 })
       .limit(5);
 
-    // ORDERS OF THIS MERCHANT
-    const orders = await orderModel
-      .find({ "items.sellerId": merchantId })
-      .sort({ date: -1 });
+    /* ---------------- ORDERS ---------------- */
+    const orders = await orderModel.find({
+      "items.sellerId": merchantId,
+    });
 
-    const totalOrders = orders.length;
-
-    // RECENT ORDERS (first 3)
-    const recentOrders = orders.slice(0, 3);
-
-    // REVENUE & EARNINGS
-    let totalRevenue = 0;
+    let totalOrders = 0; // ✅ ALL orders (any status)
+    let totalRevenue = 0; // ✅ ONLY delivered revenue
 
     orders.forEach((order) => {
       order.items.forEach((item) => {
-        if (item.sellerId === merchantId) {
-          const itemPrice = Number(item.discountedPrice || item.price || 0);
-          const qty = Number(item.quantity || 1);
+        if (item.sellerId?.toString() !== merchantId.toString()) return;
 
-          totalRevenue += itemPrice * qty;
+        // ✅ COUNT EVERY ORDER (except cancelled if you want)
+        if (item.itemStatus !== "Cancelled") {
+          totalOrders += 1;
+        }
+
+        // ✅ REVENUE ONLY WHEN DELIVERED
+        if (item.itemStatus === "Delivered") {
+          const price = Number(item.discountedPrice || item.price || 0);
+          const qty = Number(item.quantity || 1);
+          totalRevenue += price * qty;
         }
       });
     });
 
+    /* ---------------- EARNINGS ---------------- */
     const commission = 0.03;
     const earnings = Math.floor(totalRevenue * (1 - commission));
+
+    /* ---------------- RECENT ORDERS ---------------- */
+    const recentOrders = orders
+      .map((order) => ({
+        ...order.toObject(),
+        items: order.items.filter(
+          (item) =>
+            item.sellerId?.toString() === merchantId.toString() &&
+            item.itemStatus !== "Cancelled"
+        ),
+      }))
+      .filter((o) => o.items.length > 0)
+      .slice(0, 3);
 
     res.json({
       success: true,
@@ -57,7 +72,7 @@ export const getMerchantDashboard = async (req, res) => {
     });
   } catch (error) {
     console.log("DASHBOARD ERROR:", error);
-    res.json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -67,85 +82,63 @@ export const getMerchantDashboard = async (req, res) => {
 
 export const getMerchantOrders = async (req, res) => {
   try {
-    const merchantId = req.merchantId.toString();
+    const merchantId = req.merchantId;
 
-    // Fetch all orders
-    const orders = await orderModel.find({}).sort({ date: -1 }).lean();
+    const orders = await orderModel
+      .find({ "items.sellerId": merchantId })
+      .sort({ createdAt: -1 });
 
-    // Filter orders for this merchant
-    const merchantOrders = orders
-      .map((order) => {
-        const merchantItems = order.items.filter(
-          (item) => item.sellerId?.toString() === merchantId
-        );
+    // 🔥 ONLY MERCHANT ITEMS
+    const filteredOrders = orders.map((order) => {
+      const merchantItems = order.items.filter(
+        (item) => item.sellerId?.toString() === merchantId.toString()
+      );
 
-        if (merchantItems.length === 0) return null;
+      return {
+        ...order.toObject(),
+        items: merchantItems,
+      };
+    });
 
-        return {
-          _id: order._id,
-          userId: order.userId,
-          paymentMethod: order.paymentMethod,
-          payment: order.payment,
-          date: order.date,
-          status: order.status,
-          amount: order.amount,
-          address: order.address,
-          items: merchantItems,   // Only THIS merchant’s items
-        };
-      })
-      .filter(Boolean);
-
-    res.json({ success: true, orders: merchantOrders });
+    res.json({ success: true, orders: filteredOrders });
   } catch (err) {
-    console.log("MERCHANT ORDER ERROR:", err);
-    res.json({ success: false, message: "Unable to fetch orders" });
+    console.log("GET MERCHANT ORDERS ERROR:", err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
-
 export const updateMerchantItemStatus = async (req, res) => {
   try {
-    const merchantId = req.merchant;
+    const merchantId = req.merchantId;
     const { orderId, productId, status } = req.body;
 
     const order = await orderModel.findById(orderId);
-    if (!order) {
-      return res.json({ success: false, message: "Order not found" });
-    }
-
-    if (order.status === "Cancelled") {
-      return res.status(400).json({
-        success: false,
-        message: "Cancelled orders cannot be updated",
-      });
-    }
+    if (!order) return res.json({ success: false, message: "Order not found" });
 
     let itemFound = false;
 
     order.items.forEach((item) => {
-      // Ignore items without sellerId
-      if (!item?.sellerId) return;
-
-      // Find matching item for this merchant
       if (
-        item?.productId?.toString() === productId?.toString() &&
-        item?.sellerId?.toString() === merchantId?.toString()
+        item.productId?.toString() === productId?.toString() &&
+        item.sellerId?.toString() === merchantId.toString()
       ) {
         itemFound = true;
         item.itemStatus = status;
       }
     });
-    
 
     if (!itemFound) {
-      return res.json({ success: false, message: "Item not accessible" });
+      return res.json({
+        success: false,
+        message: "Item does not belong to this merchant",
+      });
     }
 
     await order.save();
-    res.json({ success: true, message: "Status updated", order });
 
+    res.json({ success: true, order });
   } catch (err) {
-    console.log("UPDATE MERCHANT STATUS ERROR:", err);
-    res.json({ success: false, message: err.message });
+    console.log("UPDATE STATUS ERROR:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };

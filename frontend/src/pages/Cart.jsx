@@ -822,16 +822,16 @@ const Cart = () => {
               <div
                 key={index}
                 className="
-                  bg-[#1a1a1a] border border-white/10
-                  p-4 rounded-xl
-                  grid grid-cols-[4fr_1fr_0.5fr]
-                  sm:grid-cols-[4fr_2fr_0.5fr]
-                  items-center gap-6
-                  hover:border-white/20 transition
-                "
+  bg-[#1a1a1a] border border-white/10
+  p-4 rounded-xl
+  flex flex-col gap-4
+  sm:grid sm:grid-cols-[4fr_2fr_0.5fr]
+  sm:items-center sm:gap-6
+  hover:border-white/20 transition
+"
               >
                 {/* LEFT */}
-                <div className="flex items-start gap-6">
+                <div className="flex gap-4 sm:gap-6 items-start">
                   <img
                     className="w-20 h-24 object-cover rounded-lg"
                     src={productData.image[0]}
@@ -845,7 +845,7 @@ const Cart = () => {
                       {productData.brandName}
                     </p>
 
-                    <div className="flex items-center gap-3 mt-2">
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
                       <p className="text-green-500 font-semibold">
                         {currency}
                         {productData.discountedPrice}
@@ -861,25 +861,26 @@ const Cart = () => {
                       </p>
                     </div>
 
-                    <p className="text-sm mt-2 bg-white/10 border border-white/20 px-2 py-1 rounded-md inline-block">
+                    <p className="text-xs sm:text-sm mt-2 bg-white/10 border border-white/20 px-2 py-1 rounded-md inline-block max-w-fit">
                       Size: {item.size}
                     </p>
                   </div>
                 </div>
 
                 {/* QUANTITY */}
-                <QuantityInput item={item} updateQuantity={updateQuantity} />
+                <div className="flex items-center justify-between sm:justify-center gap-6">
+                  <QuantityInput item={item} updateQuantity={updateQuantity} />
 
-                {/* DELETE */}
-                <img
-                  src={assets.bin_icon}
-                  alt="delete"
-                  onClick={() => {
-                    setDeleteItem(item);
-                    setConfirmOpen(true);
-                  }}
-                  className="w-6 invert cursor-pointer opacity-70 hover:opacity-100 hover:scale-110 transition"
-                />
+                  <img
+                    src={assets.bin_icon}
+                    alt="delete"
+                    onClick={() => {
+                      setDeleteItem(item);
+                      setConfirmOpen(true);
+                    }}
+                    className="w-6 invert cursor-pointer opacity-70 hover:opacity-100 hover:scale-110 transition"
+                  />
+                </div>
               </div>
             );
           })}

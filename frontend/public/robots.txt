@@ -2,3 +2,14 @@ User-agent: *
 Allow: /
 
 Sitemap: https://brawvly.com/sitemap.xml
+
+# Block unnecessary URLs (optional but good)
+Disallow: /login
+Disallow: /verify
+Disallow: /forgot-password
+Disallow: /cart
+Disallow: /orders
+Disallow: /user
+
+# Sitemap location
+Sitemap: https://www.brawvly.com/sitemap.xml

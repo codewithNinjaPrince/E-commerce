@@ -1,4 +1,5 @@
 import axios from "axios";
+import { socket } from "../socket";
 import React, { useState, useRef } from "react";
 import { toast } from "react-toastify";
 import { backendUrl } from "../App";
@@ -167,6 +168,11 @@ const MerchantAuth = ({ setMerchantToken }) => {
         setMerchantToken(res.data.token);
         localStorage.setItem("merchantToken", res.data.token);
         localStorage.setItem("merchantName", res.data.merchant?.name || "");
+        localStorage.setItem("merchantId", res.data.merchantId);
+        socket.connect();
+        socket.emit("join_merchant", res.data.merchantId);
+
+
       } else {
         toast.success("Merchant registered successfully! Please login.");
         setIsLogin(true);
