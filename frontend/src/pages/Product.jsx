@@ -28,24 +28,64 @@ const Product = () => {
   // SEO Meta Update
 
   useEffect(() => {
+    if (!productData) return;
+
+    document.title = `${productData.name} | Brawvly`;
+
+    const metaDesc = document.querySelector("meta[name='description']");
+    if (metaDesc) {
+      metaDesc.setAttribute(
+        "content",
+        productData.description.slice(0, 150)
+      );
+    }
+  }, [productData]);
+
+  useEffect(() => {
   if (!productData) return;
 
-  document.title = `${productData.name} | Brawvly`;
+  const script = document.createElement("script");
+  script.type = "application/ld+json";
+  script.innerHTML = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: productData.name,
+    image: Array.isArray(productData.image)
+      ? productData.image
+      : [productData.image],
+    description: productData.description,
+    brand: {
+      "@type": "Brand",
+      name: productData.brandName || "Brawvly"
+    },
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "INR",
+      price: productData.discountedPrice,
+      availability: "https://schema.org/InStock"
+    }
+  });
 
-  let metaDesc = document.querySelector("meta[name='description']");
-  if (!metaDesc) {
-    metaDesc = document.createElement("meta");
-    metaDesc.name = "description";
-    document.head.appendChild(metaDesc);
+  document.head.appendChild(script);
+  return () => document.head.removeChild(script);
+}, [productData]);
+
+useEffect(() => {
+  if (!productData) return;
+
+  let link = document.querySelector("link[rel='canonical']");
+  if (!link) {
+    link = document.createElement("link");
+    link.rel = "canonical";
+    document.head.appendChild(link);
   }
-
-  metaDesc.setAttribute(
-    "content",
-    productData.description?.slice(0, 150) || ""
-  );
+  link.href = `https://www.brawvly.com/product/${productData._id}`;
 }, [productData]);
 
 
+  if (!productData) return <div className="opacity-0"></div>;
+
+  /* ------------ Add To Cart ------------ */
   /* ------------ Add To Cart (With Login Redirect) ------------ */
   const handleAddToCart = () => {
     const token = localStorage.getItem("token"); // user token
@@ -69,38 +109,7 @@ const Product = () => {
       setAdding(false);
       toast.success("Added to cart");
     }, 900);
-  }
-
-  useEffect(() => {
-  if (!productData) return;
-
-  const script = document.createElement("script");
-  script.type = "application/ld+json";
-  script.innerHTML = JSON.stringify({
-    "@context": "https://schema.org/",
-    "@type": "Product",
-    name: productData.name,
-    image: productData.image,
-    description: productData.description,
-    brand: {
-      "@type": "Brand",
-      name: productData.brandName || "Brawvly",
-    },
-    offers: {
-      "@type": "Offer",
-      url: `https://www.brawvly.com/product/${productData._id}`,
-      priceCurrency: "INR",
-      price: productData.discountedPrice || productData.price,
-      availability: "https://schema.org/InStock",
-    },
-  });
-
-  document.head.appendChild(script);
-
-  return () => {
-    document.head.removeChild(script);
   };
-}, [productData]);
 
   return (
     <div className="border-t-2 bg-black pt-0">
