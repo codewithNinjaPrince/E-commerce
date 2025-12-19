@@ -10,8 +10,8 @@ const BottomSheet = ({ open, onClose, children }) => {
   const raf = useRef(null);
 
   /* 📏 Instagram-style ratios */
-  const DEFAULT_RATIO = 0.75; // default open
-  const MAX_RATIO = 0.9;      // max expand
+  const DEFAULT_RATIO = 0.65; // default open
+  const MAX_RATIO = 0.8;      // max expand
   const MIN_RATIO = 0.03;     // min drag down
 
   const ratioRef = useRef(DEFAULT_RATIO);
@@ -112,6 +112,7 @@ const BottomSheet = ({ open, onClose, children }) => {
         ref={sheetRef}
         className="
           absolute bottom-0 left-0 w-full
+          max-h-[80vh]
           bg-[#111]
           rounded-t-2xl
           flex flex-col
