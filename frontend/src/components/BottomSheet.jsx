@@ -3,138 +3,107 @@ import { useEffect, useRef, useState } from "react";
 const BottomSheet = ({ open, onClose, children }) => {
   const contentRef = useRef(null);
   const startY = useRef(0);
-  const isDragging = useRef(false);
+  const dragging = useRef(false);
 
-  const [translateY, setTranslateY] = useState(0);
+  // Ratios (viewport based)
+  const DEFAULT = 0.75; // open height (75%)
+  const MAX = 0.9;      // expanded
+  const CLOSE = 0.4;    // close threshold
 
-  const MIN_Y = 0;       // fully open
-  const MAX_Y = 300;     // close threshold distance
+  const [ratio, setRatio] = useState(DEFAULT);
 
-  /* 🌍 GLOBAL SCROLL → MOVE SHEET */
-  const handleGlobalScroll = (e) => {
-    if (isDragging.current) return;
+  const translateY = (1 - ratio) * window.innerHeight;
 
-    e.preventDefault();
+  /* 🔒 Lock background */
+  useEffect(() => {
+    if (!open) return;
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
 
-    const delta =
-      e.deltaY ||
-      (e.touches && startY.current - e.touches[0].clientY) ||
-      0;
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.touchAction = "";
+    };
+  }, [open]);
 
-    setTranslateY((prev) => {
-      // ✅ FIXED DIRECTION (natural)
-      let next = prev - delta * 0.6;
+  /* Reset on open */
+  useEffect(() => {
+    if (open) setRatio(DEFAULT);
+  }, [open]);
 
-      if (next < MIN_Y) next = MIN_Y;
-      if (next > MAX_Y) next = MAX_Y;
+  /* Touch start (anywhere on sheet header / backdrop) */
+  const onTouchStart = (e) => {
+    dragging.current = true;
+    startY.current = e.touches[0].clientY;
+  };
 
+  /* Touch move */
+  const onTouchMove = (e) => {
+    if (!dragging.current) return;
+
+    const currentY = e.touches[0].clientY;
+    const diff = startY.current - currentY;
+
+    setRatio((prev) => {
+      let next = prev + diff * 0.0008;
+      if (next > MAX) next = MAX;
+      if (next < 0.3) next = 0.3;
       return next;
     });
   };
 
-  /* 🔒 LOCK BACKGROUND COMPLETELY */
-  useEffect(() => {
-    if (!open) return;
-
-    document.body.style.overflow = "hidden";
-    document.body.style.height = "100vh";
-
-    window.addEventListener("wheel", handleGlobalScroll, { passive: false });
-    window.addEventListener("touchmove", handleGlobalScroll, {
-      passive: false,
-    });
-
-    return () => {
-      document.body.style.overflow = "";
-      document.body.style.height = "";
-
-      window.removeEventListener("wheel", handleGlobalScroll);
-      window.removeEventListener("touchmove", handleGlobalScroll);
-    };
-  }, [open]);
-
-  /* RESET ON OPEN */
-  useEffect(() => {
-    if (open) setTranslateY(0);
-  }, [open]);
-
-  /* 👆 TOUCH START (ANYWHERE ON SCREEN) */
-  const onTouchStart = (e) => {
-    isDragging.current = true;
-    startY.current = e.touches[0].clientY;
-  };
-
-  /* 👆 TOUCH MOVE */
-  const onTouchMove = (e) => {
-    if (!isDragging.current) return;
-
-    const currentY = e.touches[0].clientY;
-    const diff = currentY - startY.current;
-
-    const content = contentRef.current;
-
-    // Allow content scroll first
-    if (content && content.scrollTop > 0 && diff > 0) return;
-
-    if (diff >= 0) {
-      setTranslateY(diff);
-    }
-  };
-
-  /* 👆 TOUCH END */
+  /* Touch end */
   const onTouchEnd = () => {
-    isDragging.current = false;
+    dragging.current = false;
 
-    if (translateY > MAX_Y * 0.6) {
-      onClose();
+    if (ratio < CLOSE) {
+      onClose(); // close sheet
     } else {
-      setTranslateY(MIN_Y);
+      setRatio(DEFAULT); // snap back
     }
   };
 
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-[999]"
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-    >
-      {/* BACKDROP (DRAGGABLE, NOT CLICK-CLOSE) */}
-      <div className="absolute inset-0 bg-black/70" />
+    <div className="fixed inset-0 z-[999]">
+      {/* BACKDROP (tap to close) */}
+      <div
+        className="absolute inset-0 bg-black/60"
+        onClick={onClose}
+      />
 
       {/* SHEET */}
       <div
-        style={{
-          transform: `translateY(${translateY}px)`,
-          willChange: "transform",
-        }}
+        style={{ transform: `translateY(${translateY}px)` }}
         className="
           absolute bottom-0 left-0 w-full
-          h-[50vh]
           bg-[#111]
           rounded-t-2xl
-          transition-transform duration-200 ease-out
+          transition-transform duration-300 ease-out
           flex flex-col
-          touch-pan-y
         "
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
       >
-        {/* DRAG HANDLE (VISUAL ONLY) */}
-        <div className="py-3 flex justify-center">
-          <div className="w-12 h-1.5 rounded-full bg-white/30" />
+        {/* DRAG HANDLE */}
+        <div className="pt-3 pb-2 flex justify-center">
+          <div className="w-10 h-1.5 rounded-full bg-white/40" />
         </div>
 
-        {/* CONTENT (ONLY THIS SCROLLS) */}
+        {/* TITLE */}
+        <div className="text-center text-white font-semibold pb-2">
+          Filter
+        </div>
+
+        {/* DIVIDER */}
+        <div className="h-px bg-white/10 w-full" />
+
+        {/* CONTENT (scrollable) */}
         <div
           ref={contentRef}
-          className="
-            flex-1 overflow-y-auto px-5 pb-6
-            overscroll-contain
-            touch-pan-y
-          "
-          onWheel={(e) => e.stopPropagation()}
-          onTouchMove={(e) => e.stopPropagation()}
+          className="flex-1 overflow-y-auto px-5 py-4 overscroll-contain"
         >
           {children}
         </div>
