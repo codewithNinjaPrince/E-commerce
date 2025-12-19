@@ -10,23 +10,21 @@ const BottomSheet = ({ open, onClose, children }) => {
   const raf = useRef(null);
 
   /* 📏 Instagram-style ratios */
-  const DEFAULT_RATIO = 0.75; // 75% open
-  const MAX_RATIO = 0.9;      // expand up
-  const CLOSE_RATIO = 0.4;    // close if below this
+  const DEFAULT_RATIO = 0.75; // default open
+  const MAX_RATIO = 0.9;      // max expand
+  const MIN_RATIO = 0.03;     // min drag down
 
-  const [ratio, setRatio] = useState(DEFAULT_RATIO);
   const ratioRef = useRef(DEFAULT_RATIO);
-
   const vh = window.innerHeight;
 
-  /* Apply transform directly (smooth) */
+  /* Apply transform */
   const applyTransform = (r) => {
     if (!sheetRef.current) return;
     const y = (1 - r) * vh;
     sheetRef.current.style.transform = `translateY(${y}px)`;
   };
 
-  /* 🔒 HARD LOCK BACKGROUND SCROLL */
+  /* 🔒 Lock background scroll */
   useEffect(() => {
     if (!open) return;
 
@@ -47,29 +45,27 @@ const BottomSheet = ({ open, onClose, children }) => {
   useEffect(() => {
     if (open) {
       ratioRef.current = DEFAULT_RATIO;
-      setRatio(DEFAULT_RATIO);
       requestAnimationFrame(() => applyTransform(DEFAULT_RATIO));
     }
   }, [open]);
 
-  /* RAF update for smoothness */
+  /* RAF smooth update */
   const updateRatio = (next) => {
     ratioRef.current = next;
     if (raf.current) cancelAnimationFrame(raf.current);
     raf.current = requestAnimationFrame(() => {
       applyTransform(next);
-      setRatio(next);
     });
   };
 
-  /* 👆 TOUCH START (header / backdrop area) */
+  /* 👆 TOUCH START (ONLY HEADER AREA) */
   const onTouchStart = (e) => {
     dragging.current = true;
     startY.current = e.touches[0].clientY;
     lastY.current = startY.current;
   };
 
-  /* 👆 TOUCH MOVE */
+  /* 👆 TOUCH MOVE (ONLY HEADER AREA) */
   const onTouchMove = (e) => {
     if (!dragging.current) return;
 
@@ -77,15 +73,10 @@ const BottomSheet = ({ open, onClose, children }) => {
     const diff = lastY.current - currentY;
     lastY.current = currentY;
 
-    const content = contentRef.current;
-
-    // Allow content scroll first when scrolling down
-    if (content && content.scrollTop > 0 && diff < 0) return;
-
     let next = ratioRef.current + diff / vh;
 
     if (next > MAX_RATIO) next = MAX_RATIO;
-    if (next < 0.25) next = 0.25;
+    if (next < MIN_RATIO) next = MIN_RATIO;
 
     updateRatio(next);
   };
@@ -94,18 +85,23 @@ const BottomSheet = ({ open, onClose, children }) => {
   const onTouchEnd = () => {
     dragging.current = false;
 
-    if (ratioRef.current < CLOSE_RATIO) {
+    const r = ratioRef.current;
+
+    // ❌ Close if dragged down enough
+    if (r <= 0.35) {
       onClose();
-    } else {
-      updateRatio(DEFAULT_RATIO);
+      return;
     }
+
+    // 🔁 Otherwise snap back
+    updateRatio(DEFAULT_RATIO);
   };
 
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-[999]">
-      {/* BACKDROP (tap anywhere to close) */}
+      {/* BACKDROP */}
       <div
         className="absolute inset-0 bg-black/60"
         onClick={onClose}
@@ -114,9 +110,6 @@ const BottomSheet = ({ open, onClose, children }) => {
       {/* SHEET */}
       <div
         ref={sheetRef}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
         className="
           absolute bottom-0 left-0 w-full
           bg-[#111]
@@ -125,17 +118,25 @@ const BottomSheet = ({ open, onClose, children }) => {
           will-change-transform
         "
       >
-        {/* DRAG HANDLE */}
-        <div className="pt-3 pb-2 flex justify-center">
-          <div className="w-10 h-1.5 rounded-full bg-white/40" />
+        {/* HEADER / DRAG AREA */}
+        <div
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+          className="pt-3 pb-2 flex flex-col items-center"
+        >
+          {/* DRAG HANDLE */}
+          <div className="flex justify-center pb-2">
+            <div className="w-10 h-1.5 rounded-full bg-white/40" />
+          </div>
+
+          {/* TITLE */}
+          <div className="text-center text-white font-semibold pb-2">
+            Filter
+          </div>
         </div>
 
-        {/* TITLE */}
-        <div className="text-center text-white font-semibold pb-2">
-          Filter
-        </div>
-
-        {/* SCROLLABLE AREA (DIVIDER + FILTER CONTENT) */}
+        {/* SCROLLABLE CONTENT AREA */}
         <div
           ref={contentRef}
           className="flex-1 overflow-y-auto overscroll-contain"
@@ -154,4 +155,3 @@ const BottomSheet = ({ open, onClose, children }) => {
 };
 
 export default BottomSheet;
-
