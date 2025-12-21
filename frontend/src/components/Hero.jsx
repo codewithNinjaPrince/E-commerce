@@ -7,12 +7,12 @@ const Hero = () => {
     <NavLink to="/collections">
       <div
         className="
-          flex flex-col sm:flex-row 
+          flex flex-col sm:flex-row
           bg-gradient-to-r from-[#111] via-[#151515] to-[#1c1c1c]
           border border-white/10
           rounded-xl overflow-hidden
           shadow-[0_0_40px_rgba(255,255,255,0.06)]
-          mt-6
+          section-top-gap
           cursor-pointer
         "
       >
@@ -29,7 +29,7 @@ const Hero = () => {
 
             <h1
               className="
-                text-4xl md:text-5xl lg:text-6xl 
+                text-4xl md:text-5xl lg:text-6xl
                 font-semibold leading-tight prata-regular
                 drop-shadow-[0_4px_15px_rgba(255,255,255,0.12)]
               "
@@ -60,7 +60,3 @@ const Hero = () => {
 };
 
 export default Hero;
-
-
-
-

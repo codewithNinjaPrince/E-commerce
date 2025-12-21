@@ -112,7 +112,7 @@ useEffect(() => {
   };
 
   return (
-    <div className="border-t-2 bg-black pt-0">
+    <div className="border-t-2 bg-black pt-5">
       {/* ⭐ MOBILE NAVBAR (CUSTOM SURPRISE NAVBAR) ⭐ */}
       <div className="w-full sticky top-0 z-50 bg-black/40 backdrop-blur-xl px-4 py-3 flex items-center justify-between border-b border-white/10 sm:hidden">
         {/* Back */}

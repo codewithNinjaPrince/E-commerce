@@ -161,6 +161,3 @@ const IconButton = ({ children, onClick, badge }) => (
 );
 
 export default Navbar;
-
-
-

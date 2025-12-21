@@ -9,7 +9,7 @@ const LatestCollection = () => {
   const [visibleCount, setVisibleCount] = useState(15);
   const [latestProducts, setLatestProducts] = useState([]);
 
-  const scrollRef = useRef(null); // 🔥 SCROLL TARGET
+  const scrollRef = useRef(null);
 
   useEffect(() => {
     if (products.length > 0) {
@@ -24,7 +24,6 @@ const LatestCollection = () => {
   const handleHide = () => {
     setVisibleCount(15);
 
-    // Smooth scroll to just above the grid (not entire section top)
     setTimeout(() => {
       scrollRef.current?.scrollIntoView({
         behavior: "smooth",
@@ -34,9 +33,10 @@ const LatestCollection = () => {
   };
 
   return (
-    <div className="my-0">
-      <div className="relative left-1/2 right-1/2 -mx-[50vw] w-screen bg-black/90 py-16">
+    <section className="section-top-gap">
+      <div className="relative left-1/2 right-1/2 -mx-[50vw] w-screen bg-black/90">
         <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-10">
+          
           <div className="text-center text-white text-3xl py-8">
             <Title text1="Latest" text2="Collection" />
             <p className="w-3/4 mx-auto text-xs sm:text-base text-gray-400">
@@ -49,7 +49,7 @@ const LatestCollection = () => {
             </p>
           </div>
 
-          {/* 🔥 SCROLL TARGET JUST BEFORE GRID */}
+          {/* SCROLL TARGET */}
           <div ref={scrollRef}></div>
 
           <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
@@ -63,7 +63,7 @@ const LatestCollection = () => {
                   actualPrice={item.actualPrice}
                   discountedPrice={item.discountedPrice}
                   review={item.review}
-                  noOfPeopleReviewed={item.noOfPeopleReviewed}// << FIXED
+                  noOfPeopleReviewed={item.noOfPeopleReviewed}
                 />
               </div>
             ))}
@@ -73,7 +73,7 @@ const LatestCollection = () => {
             {visibleCount < latestProducts.length && (
               <button
                 onClick={handleShowMore}
-                className="text-white border border-white/30 px-6 py-2 rounded-lg hover:bg-white hover:text-black cursor-pointer transition"
+                className="text-white border border-white/30 px-6 py-2 rounded-lg hover:bg-white hover:text-black transition"
               >
                 Show More
               </button>
@@ -82,7 +82,7 @@ const LatestCollection = () => {
             {visibleCount > 15 && (
               <button
                 onClick={handleHide}
-                className="text-red-400 border border-red-400 px-6 py-2 rounded-lg hover:bg-red-400 hover:text-black cursor-pointer transition"
+                className="text-red-400 border border-red-400 px-6 py-2 rounded-lg hover:bg-red-400 hover:text-black transition"
               >
                 Hide
               </button>
@@ -90,7 +90,7 @@ const LatestCollection = () => {
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 

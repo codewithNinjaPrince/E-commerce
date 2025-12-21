@@ -85,9 +85,19 @@ const Collections = () => {
     if (products.length) setTimeout(() => setLoading(false), 400);
   }, [products]);
 
-  useEffect(() => {
-    document.title = "Shop Fashion, Electronics & More | Brawvly Collections";
-  }, []);
+ useEffect(() => {
+  document.title = "Shop Fashion, Electronics & More | Brawvly Collections";
+
+  let meta = document.querySelector("meta[name='description']");
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.name = "description";
+    document.head.appendChild(meta);
+  }
+  meta.content =
+    "Explore fashion, electronics, watches, shoes & more from trusted local sellers across India on Brawvly.";
+}, []);
+
 
   <meta
     name="description"
@@ -95,7 +105,7 @@ const Collections = () => {
   />;
 
   return (
-    <div className="pt-10 border-t text-white min-h-screen pb-24 sm:pb-0">
+    <div className=" mt-6 pt-6 border-t text-white min-h-screen ">
       {/* =================== SHOW LOADER ONLY FIRST TIME =================== */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-40">
@@ -436,41 +446,58 @@ const Collections = () => {
           </BottomSheet>
 
           {/* MOBILE SORT DRAWER */}
-          <BottomSheet
-            open={showMobileSort}
-            onClose={() => setShowMobileSort(false)}
-          >
-            <h2 className="text-lg font-semibold mb-4">Sort By</h2>
+          {showMobileSort && (
+            <div className="fixed bottom-0 left-0 w-full bg-[#111] border-t border-white/10 p-5 rounded-t-2xl z-50 animate-slide-up">
+              {/* HEADER */}
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold text-white">Sort By</h2>
+                <button
+                  onClick={() => setShowMobileSort(false)}
+                  className="text-gray-400 text-xl"
+                >
+                  ✖
+                </button>
+              </div>
 
-            <div className="space-y-4 text-sm">
-              <p
-                className={`cursor-pointer ${
-                  sortType === "relevant" && "text-green-400"
-                }`}
-                onClick={() => setSortType("relevant")}
-              >
-                Relevant
-              </p>
+              {/* SORT OPTIONS – FILTER STYLE */}
+              <div className="space-y-3 text-sm">
+                {[
+                  { label: "Relevant", value: "relevant" },
+                  { label: "Price: Low → High", value: "low-high" },
+                  { label: "Price: High → Low", value: "high-low" },
+                ].map((opt) => {
+                  const active = sortType === opt.value;
 
-              <p
-                className={`cursor-pointer ${
-                  sortType === "low-high" && "text-green-400"
-                }`}
-                onClick={() => setSortType("low-high")}
-              >
-                Price: Low → High
-              </p>
+                  return (
+                    <label
+                      key={opt.value}
+                      onClick={() => {
+                        setSortType(opt.value);
+                        setShowMobileSort(false); // optional: auto close
+                      }}
+                      className="flex items-center gap-3 cursor-pointer"
+                    >
+                      {/* CHECKBOX */}
+                      <div
+                        className={`w-5 h-5 rounded border flex items-center justify-center
+                ${active ? "bg-green-400 border-green-400" : "border-white/30"}
+              `}
+                      >
+                        {active && (
+                          <span className="text-black text-sm font-bold">
+                            ✓
+                          </span>
+                        )}
+                      </div>
 
-              <p
-                className={`cursor-pointer ${
-                  sortType === "high-low" && "text-green-400"
-                }`}
-                onClick={() => setSortType("high-low")}
-              >
-                Price: High → Low
-              </p>
+                      {/* LABEL */}
+                      <span className="text-gray-300">{opt.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
-          </BottomSheet>
+          )}
         </>
       )}
     </div>

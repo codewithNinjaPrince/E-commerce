@@ -1,38 +1,4 @@
-/* @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Prata&display=swap');
-@import "tailwindcss";
 
-a.active hr{
-   display: block;
-}
-
-*{
-   font-family: Outfit;
-}
-
-.prata-regular {
-  font-family: "Prata", serif;
-  font-weight: 400;
-  font-style: normal;
-}
-
-::-webkit-scrollbar{
-   display: none;
-}
-
-@media (max-width:640px) {
-   a.active{
-      background-color: black;
-      text-color:white;
-   }
-   
-}
-
-@keyframes fadeOut {
-  from { opacity: 1; }
-  to { opacity: 0; }
-} */
-
-/* Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Prata&display=swap');
 @import "tailwindcss";
 
@@ -166,4 +132,59 @@ body {
   max-width: 100%;
   overflow-x: hidden;
 }
+
+/* ======================================================
+   GLOBAL LAYOUT SYSTEM — NAVBAR + SEARCHBAR SAFE
+   ====================================================== */
+
+/* MOBILE: Navbar (64px) + Searchbar (~56px) */
+.page-wrapper {
+  padding-top: 120px;
+}
+
+/* Desktop (no mobile searchbar, taller navbar) */
+@media (min-width: 1024px) {
+  .page-wrapper {
+    padding-top: 72px;
+  }
+}
+
+/* Pages that must ignore navbar/search offset */
+.no-navbar-offset {
+  padding-top: 0 !important;
+}
+
+/* Horizontal padding */
+.page-container {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 768px) {
+  .page-container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* Max width */
+.page-max {
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Universal section gap */
+.section-top-gap {
+  margin-top: 2.5rem; /* mt-10 */
+}
+
+
 

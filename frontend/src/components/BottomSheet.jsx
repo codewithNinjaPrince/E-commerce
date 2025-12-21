@@ -10,9 +10,9 @@ const BottomSheet = ({ open, onClose, children }) => {
   const raf = useRef(null);
 
   /* 📏 Instagram-style ratios */
-  const DEFAULT_RATIO = 0.65; // default open
-  const MAX_RATIO = 0.8;      // max expand
-  const MIN_RATIO = 0.03;     // min drag down
+  const DEFAULT_RATIO = 0.65;
+  const MAX_RATIO = 0.8;
+  const MIN_RATIO = 0.03;
 
   const ratioRef = useRef(DEFAULT_RATIO);
   const vh = window.innerHeight;
@@ -53,28 +53,34 @@ const BottomSheet = ({ open, onClose, children }) => {
   const updateRatio = (next) => {
     ratioRef.current = next;
     if (raf.current) cancelAnimationFrame(raf.current);
-    raf.current = requestAnimationFrame(() => {
-      applyTransform(next);
-    });
+    raf.current = requestAnimationFrame(() => applyTransform(next));
   };
 
-  /* 👆 TOUCH START (ONLY HEADER AREA) */
+  /* 👆 TOUCH START */
   const onTouchStart = (e) => {
+    if (contentRef.current && contentRef.current.scrollTop > 0) {
+      dragging.current = false;
+      return;
+    }
     dragging.current = true;
     startY.current = e.touches[0].clientY;
     lastY.current = startY.current;
   };
 
-  /* 👆 TOUCH MOVE (ONLY HEADER AREA) */
+  /* 👆 TOUCH MOVE */
   const onTouchMove = (e) => {
     if (!dragging.current) return;
+
+    if (contentRef.current && contentRef.current.scrollTop > 0) {
+      dragging.current = false;
+      return;
+    }
 
     const currentY = e.touches[0].clientY;
     const diff = lastY.current - currentY;
     lastY.current = currentY;
 
     let next = ratioRef.current + diff / vh;
-
     if (next > MAX_RATIO) next = MAX_RATIO;
     if (next < MIN_RATIO) next = MIN_RATIO;
 
@@ -85,15 +91,11 @@ const BottomSheet = ({ open, onClose, children }) => {
   const onTouchEnd = () => {
     dragging.current = false;
 
-    const r = ratioRef.current;
-
-    // ❌ Close if dragged down enough
-    if (r <= 0.35) {
+    if (ratioRef.current <= 0.35) {
       onClose();
       return;
     }
 
-    // 🔁 Otherwise snap back
     updateRatio(DEFAULT_RATIO);
   };
 
@@ -102,53 +104,42 @@ const BottomSheet = ({ open, onClose, children }) => {
   return (
     <div className="fixed inset-0 z-[999]">
       {/* BACKDROP */}
-      <div
-        className="absolute inset-0 bg-black/60"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
 
       {/* SHEET */}
       <div
         ref={sheetRef}
         className="
           absolute bottom-0 left-0 w-full
-          max-h-[80vh]
+          max-h-[95vh]
           bg-[#111]
           rounded-t-2xl
           flex flex-col
           will-change-transform
         "
       >
-        {/* HEADER / DRAG AREA */}
+        {/* HEADER */}
         <div
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
           className="pt-3 pb-2 flex flex-col items-center"
         >
-          {/* DRAG HANDLE */}
           <div className="flex justify-center pb-2">
             <div className="w-10 h-1.5 rounded-full bg-white/40" />
           </div>
-
-          {/* TITLE */}
           <div className="text-center text-white font-semibold pb-2">
             Filter
           </div>
         </div>
 
-        {/* SCROLLABLE CONTENT AREA */}
+        {/* CONTENT */}
         <div
           ref={contentRef}
-          className="flex-1 overflow-y-auto overscroll-contain"
+          className="flex-1 overflow-y-auto overscroll-contain touch-pan-y"
         >
-          {/* DIVIDER */}
           <div className="h-px bg-white/10 w-full" />
-
-          {/* FILTER CONTENT */}
-          <div className="px-5 py-4">
-            {children}
-          </div>
+          <div className="px-5 py-4">{children}</div>
         </div>
       </div>
     </div>

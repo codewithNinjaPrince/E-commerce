@@ -3,7 +3,7 @@ import EmailOtp from "../models/emailOtpModel.js";
 import PhoneOtp from "../models/phoneOtpModel.js";
 import userModel from "../models/userModel.js";
 import transporter from "../config/email.js";
-import sendSms from "../config/sms.js";
+// import sendSms from "../config/sms.js";
 
 /* ---------------- HELPERS ---------------- */
 const generateOtp = () =>
@@ -58,7 +58,7 @@ export const sendOtp = async (req, res) => {
         { upsert: true, new: true }
       );
 
-      await transporter.sendMail({
+     try{ await transporter.sendMail({
         from: `"Brawvly Support" <${process.env.EMAIL_USER}>`,
         to: identifier,
         subject: "Your Brawvly Verification Code",
@@ -86,46 +86,62 @@ export const sendOtp = async (req, res) => {
   </div>
 </div>`,
       });
-
+    }catch(mailError){
+      console.error("EMAIL SEND WARNING:", mailError);
+      //
+    }
       return res.json({ success: true, message: "OTP sent to email" });
     }
 
-    /* ---------------- PHONE OTP ---------------- */
-    if (type === "phone") {
-      const existingUser = await userModel.findOne({ phone: identifier });
-      if (existingUser && existingUser.password) {
-        return res.status(409).json({
-          success: false,
-          code: "PHONE_EXISTS",
-          message: "Phone already exists. Please login.",
-        });
-      }
+ /* ---------------- PHONE OTP ---------------- */
+if (type === "phone") {
+  let sendSms;
 
-      const lastOtp = await PhoneOtp.findOne({ phone: identifier });
-      if (lastOtp && lastOtp.updatedAt > Date.now() - OTP_COOLDOWN) {
-        return res.status(429).json({
-          success: false,
-          code: "TOO_MANY_REQUESTS",
-          message: "Please wait before requesting another OTP",
-        });
-      }
+  try {
+    // 🔹 Lazy import (prevents email OTP from failing)
+    sendSms = (await import("../config/sms.js")).default;
+  } catch (importError) {
+    console.error("SMS MODULE LOAD ERROR:", importError);
+    return res.status(503).json({
+      success: false,
+      message: "Phone OTP service is currently unavailable",
+    });
+  }
 
-      const otp = generateOtp();
+  const existingUser = await userModel.findOne({ phone: identifier });
+  if (existingUser && existingUser.password) {
+    return res.status(409).json({
+      success: false,
+      code: "PHONE_EXISTS",
+      message: "Phone already exists. Please login.",
+    });
+  }
 
-      await PhoneOtp.findOneAndUpdate(
-        { phone: identifier },
-        {
-          otp,
-          expiresAt: new Date(Date.now() + OTP_EXPIRY),
-          verified: false,
-        },
-        { upsert: true, new: true }
-      );
+  const lastOtp = await PhoneOtp.findOne({ phone: identifier });
+  if (lastOtp && lastOtp.updatedAt > Date.now() - OTP_COOLDOWN) {
+    return res.status(429).json({
+      success: false,
+      code: "TOO_MANY_REQUESTS",
+      message: "Please wait before requesting another OTP",
+    });
+  }
 
-      // 🔔 SMS / WhatsApp Provider Integration Here
-      await sendSms(
-        identifier,
-        `Brawvly Verification Code
+  const otp = generateOtp();
+
+  await PhoneOtp.findOneAndUpdate(
+    { phone: identifier },
+    {
+      otp,
+      expiresAt: new Date(Date.now() + OTP_EXPIRY),
+      verified: false,
+    },
+    { upsert: true, new: true }
+  );
+
+  try {
+    await sendSms(
+      identifier,
+      `Brawvly Verification Code
 
 Hi ${firstName || "there"} 👋,
 
@@ -137,19 +153,33 @@ ${otp}
 🚫 Do not share this code with anyone.
 
 — Team Brawvly`
-      );
-      return res.json({ success: true, message: "OTP sent to phone" });
-    }
+    );
+  } catch (smsError) {
+    console.error("SMS SEND WARNING:", smsError);
+    // ⚠️ OTP already saved, so DO NOT fail the request
+  }
 
-    res.status(400).json({ success: false, message: "Invalid type" });
+  return res.json({
+    success: true,
+    message: "OTP sent to phone",
+  });
+}
+
+    return res.status(400).json({
+      success: false,
+      message: "Invalid OTP type",
+    });
   } catch (error) {
     console.error("SEND OTP ERROR:", error);
     res.status(500).json({
       success: false,
-      message: "Currently Phone Otp is disabled will work soon",
+      message: "Unable to process OTP request. Please try again.",
     });
   }
 };
+
+
+
 
 /* =========================================================
    VERIFY OTP (SIGNUP)

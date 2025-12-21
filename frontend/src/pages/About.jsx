@@ -34,21 +34,24 @@ export default function About() {
 
   // Preloader Screen
   if (loading) {
-    return (
-      <div className="h-screen flex flex-col items-center justify-center bg-black/95 animate-fade">
-        <div className="w-16 h-16 rounded-full border-4 border-white border-t-transparent animate-spin mb-6"></div>
-        <p className="text-white font-semibold opacity-80 animate-pulse">
+  return (
+    <div className="fixed inset-0 z-999 flex items-center justify-center bg-black/95">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-16 h-16 rounded-full border-4 border-white border-t-transparent animate-spin" />
+        <p className="text-white font-semibold opacity-80 text-sm text-center">
           Brawvly — Where India shops, stories connect...
         </p>
       </div>
-    );
-  }
+    </div>
+  );
+}
+
 
   return (
-    <div className="w-full flex flex-col gap-20 text-gray-300 bg-black py-10 cursor-pointer">
+<div className="w-full flex flex-col gap-16 text-gray-300 bg-black py-6">
 
       {/* Header */}
-      <div className="text-center pt-10 text-2xl text-white">
+      <div className="text-center text-2xl text-white">
         <Title text1="About" text2="Brawvly" />
         <p className="text-gray-400 mt-4 text-sm md:text-base max-w-2xl mx-auto">
           The story of a local dream becoming a marketplace for every Indian heart.
