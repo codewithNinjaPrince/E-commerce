@@ -39,15 +39,8 @@ const Login = () => {
   const location = useLocation();
   const redirectPath = new URLSearchParams(location.search).get("redirect");
 
-  const {
-  token,
-  setToken,
-  navigate,
-  backendUrl,
-  getUserCart,
-  fetchFavorites,
-} = useContext(ShopContext);
-
+  const { token, setToken, navigate, backendUrl, getUserCart, fetchFavorites } =
+    useContext(ShopContext);
 
   // Form states
   const [firstName, setFirstName] = useState("");
@@ -69,7 +62,8 @@ const Login = () => {
 
   /* ---------------- OTP HANDLERS ---------------- */
   const sendOtp = async () => {
-    const type = detectIdentifier(identifier);
+    const normalized = normalizeIdentifier(identifier);
+    const type = detectIdentifier(normalized);
 
     if (type === "invalid") {
       toast.error("Enter a valid email or 10-digit phone number");
@@ -87,8 +81,8 @@ const Login = () => {
       setOtpLoading(true);
 
       await axios.post(`${backendUrl}/api/user/send-otp`, {
-        type, // "email" or "phone"
-        identifier, // actual value
+        type,
+        identifier: normalized,
         firstName,
       });
 
@@ -129,10 +123,13 @@ const Login = () => {
 
     try {
       setLoading(true);
+      const normalized = normalizeIdentifier(identifier);
+
       await axios.post(`${backendUrl}/api/user/verify-otp`, {
-        identifier,
+        identifier: normalized,
         otp,
       });
+
       setOtpVerified(true);
       toast.success("Verified successfully ✅");
     } catch (err) {
@@ -143,6 +140,8 @@ const Login = () => {
 
   /* ---------------- SUBMIT ---------------- */
   const onSubmitHandler = async (e) => {
+    const normalized = normalizeIdentifier(identifier);
+
     e.preventDefault();
     if (loading) return;
 
@@ -178,11 +177,11 @@ const Login = () => {
           ? await axios.post(`${backendUrl}/api/user/register`, {
               firstName,
               lastName,
-              identifier,
+              identifier: normalized,
               password,
             })
           : await axios.post(`${backendUrl}/api/user/login`, {
-              identifier,
+              identifier: normalized,
               password,
             });
 
@@ -204,7 +203,6 @@ const Login = () => {
       await getUserCart(res.data.token);
       await fetchFavorites();
 
-
       if (redirectPath && redirectPath.startsWith("/")) {
         navigate(redirectPath);
       } else {
@@ -222,6 +220,20 @@ const Login = () => {
     }
 
     setLoading(false);
+  };
+
+  const normalizeIdentifier = (value) => {
+    if (!value) return "";
+
+    // remove all spaces
+    const cleaned = value.replace(/\s+/g, "");
+
+    // if email → lowercase
+    if (isValidEmail(cleaned)) {
+      return cleaned.toLowerCase();
+    }
+
+    return cleaned; // phone stays as-is
   };
 
   useEffect(() => {
@@ -286,7 +298,10 @@ const Login = () => {
       {/* EMAIL and Phone Number */}
       <input
         value={identifier}
-        onChange={(e) => setIdentifier(e.target.value.trim())}
+        onChange={(e) => {
+          const raw = e.target.value;
+          setIdentifier(normalizeIdentifier(raw));
+        }}
         placeholder="Email address"
         className="dark-input"
         required
