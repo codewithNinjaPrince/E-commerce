@@ -39,8 +39,15 @@ const Login = () => {
   const location = useLocation();
   const redirectPath = new URLSearchParams(location.search).get("redirect");
 
-  const { token, setToken, navigate, backendUrl, getUserCart } =
-    useContext(ShopContext);
+  const {
+  token,
+  setToken,
+  navigate,
+  backendUrl,
+  getUserCart,
+  fetchFavorites,
+} = useContext(ShopContext);
+
 
   // Form states
   const [firstName, setFirstName] = useState("");
@@ -195,6 +202,8 @@ const Login = () => {
       }
 
       await getUserCart(res.data.token);
+      await fetchFavorites();
+
 
       if (redirectPath && redirectPath.startsWith("/")) {
         navigate(redirectPath);

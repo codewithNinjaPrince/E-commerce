@@ -13,6 +13,8 @@ import productRouter from "./routes/productRoute.js";
 import cartRouter from "./routes/cartRoute.js";
 import orderRouter from "./routes/orderRoute.js";
 import emailRouter from "./routes/emailRoute.js";
+import favoriteRoute from "./routes/favoriteRoute.js";
+
 
 // Merchant Routes
 import merchantRouter from "./routes/merchantRoute.js";
@@ -46,6 +48,8 @@ app.use("/api/cart", cartRouter);
 app.use("/api/order", orderRouter);
 app.use("/api/email", emailRouter);
 app.use("/api/form",chatRouter);
+app.use("/api/favorites", favoriteRoute);
+
 
 // Merchant
 app.use("/api/merchant", merchantRouter);

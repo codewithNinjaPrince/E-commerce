@@ -26,6 +26,7 @@ import RefundReturnPolicy from "./pages/RefundReturnPolicy";
 import ShippingDelivery from "./pages/ShippingDelivery";
 import TermsConditions from "./pages/TermsConditions";
 import SearchPage from "./pages/SearchPage";
+import Favorites from "./pages/Favorites";
 
 import { ShopContext } from "./context/ShopContext";
 
@@ -59,7 +60,11 @@ const App = () => {
   const isSearchPage = pathname === "/search";
   const isUserPage = pathname === "/user";
 
-  const showSearchBar = ["/", "/collections"].includes(pathname);
+const showSearchBar =
+  pathname === "/" ||
+  pathname === "/collections" ||
+  pathname.startsWith("/product") ||
+  pathname === "/favorites";
 
   /* 🔥 HIDE FOOTER ON THESE ROUTES */
   const hideFooterRoutes = ["/search", "/user", "/cart", "/placeorder"];
@@ -162,6 +167,7 @@ const App = () => {
 
                     {/* SHOP */}
                     <Route path="/cart" element={<Cart />} />
+                    <Route path="/favorites" element={<Favorites />} />
                     <Route path="/orders" element={<Orders />} />
                     <Route path="/placeorder" element={<PlaceOrder />} />
 

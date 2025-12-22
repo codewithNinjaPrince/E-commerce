@@ -111,7 +111,7 @@ const BottomSheet = ({ open, onClose, children }) => {
         ref={sheetRef}
         className="
           absolute bottom-0 left-0 w-full
-          max-h-[95vh]
+h-[100dvh] max-h-[100dvh]
           bg-[#111]
           rounded-t-2xl
           flex flex-col

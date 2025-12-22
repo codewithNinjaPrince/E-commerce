@@ -5,13 +5,13 @@ import { assets } from "../assets/assets";
 const Footer = () => {
   return (
     <section className="section-top-gap">
-      <footer className="w-full bg-black text-gray-300 px-6 py-14">
+      <footer className="w-full bg-black text-gray-300 px-4 sm:px-6 lg:px-10 py-12">
         
         {/* MAIN FOOTER CONTENT */}
-        <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-x-12 gap-y-10">
+        <div className="max-w-9xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-x-8 gap-y-10">
 
           {/* BRAND INFO */}
-          <div className="transition hover:-translate-y-1 hover:bg-white/5 rounded-xl p-4">
+          <div className="transition hover:-translate-y-1 hover:bg-white/5 rounded-xl p-3 sm:p-4">
             <img src={assets.logo} className="mb-5 w-40 invert" alt="logo" />
             <p className="leading-6 text-gray-400">
               Discover fashion that celebrates you while uplifting the people
@@ -25,7 +25,7 @@ const Footer = () => {
           </div>
 
           {/* QUICK LINKS */}
-          <div className="transition hover:-translate-y-1 hover:bg-white/5 rounded-xl p-4">
+          <div className="transition hover:-translate-y-1 hover:bg-white/5 rounded-xl p-3 sm:p-4">
             <p className="text-xl font-semibold mb-5 text-white">Quick Links</p>
             <ul className="flex flex-col gap-3">
               <li>
@@ -52,7 +52,7 @@ const Footer = () => {
           </div>
 
           {/* POLICIES */}
-          <div className="transition hover:-translate-y-1 hover:bg-white/5 rounded-xl p-4">
+          <div className="transition hover:-translate-y-1 hover:bg-white/5 rounded-xl p-3 sm:p-4">
             <p className="text-xl font-semibold mb-5 text-white">Policies</p>
             <ul className="flex flex-col gap-3">
               <li>
@@ -79,7 +79,7 @@ const Footer = () => {
           </div>
 
           {/* CONTACT */}
-          <div className="transition hover:-translate-y-1 hover:bg-white/5 rounded-xl p-4">
+          <div className="transition hover:-translate-y-1 hover:bg-white/5 rounded-xl p-3 sm:p-4">
             <p className="text-xl font-semibold mb-5 text-white">Get In Touch</p>
 
             <ul className="flex flex-col gap-3">
@@ -90,8 +90,8 @@ const Footer = () => {
               </li>
 
               <li>
-                <a href="mailto:dixitprince895@gmail.com" className="hover:text-blue-300 transition">
-                  dixitprince895@gmail.com
+                <a href="mailto:support@brawvly.com" className="hover:text-blue-300 transition">
+                  support@brawvly.com
                 </a>
               </li>
 
@@ -124,9 +124,9 @@ const Footer = () => {
         </div>
 
         {/* FOOTER BOTTOM */}
-        <div className="mt-12">
+        <div className="mt-10">
           <hr className="border-gray-700" />
-          <p className="py-5 text-center text-white text-sm hover:text-blue-300 transition">
+          <p className="py-4 text-center text-white text-xs sm:text-sm hover:text-blue-300 transition">
             © 2025 Brawvly Marketplace — All Rights Reserved.
           </p>
         </div>
@@ -136,4 +136,3 @@ const Footer = () => {
 };
 
 export default Footer;
-

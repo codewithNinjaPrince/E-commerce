@@ -14,6 +14,8 @@ const ShopContextProvider = (props) => {
   const [cartItems, setCartItems] = useState({});
   const [products, setProducts] = useState([]);
   const [token, setToken] = useState("");
+  const [favorites, setFavorites] = useState([]);
+  const [favoritesLoading, setFavoritesLoading] = useState(true);
 
   const navigate = useNavigate();
 
@@ -49,6 +51,53 @@ const ShopContextProvider = (props) => {
     }
   }
 };
+
+/* ---------------- ADD TO FAVORITES ---------------- */
+const addToFavorites = async (productId) => {
+  if (!token) {
+    toast.info("Please login to save favorites ❤️");
+    navigate("/login");
+    return;
+  }
+
+  if (favorites.includes(productId)) return;
+
+  setFavorites((prev) => [...prev, productId]); // optimistic
+
+  try {
+    await axios.post(
+      `${backendUrl}/api/favorites/add`,
+      { productId },
+      { headers: { token } }
+    );
+  } catch (error) {
+    setFavorites((prev) => prev.filter((id) => id !== productId)); // rollback
+  }
+};
+
+
+
+/* ---------------- REMOVE FROM FAVORITES ---------------- */
+const removeFromFavorites = async (productId) => {
+  if (!token) return;
+
+  setFavorites((prev) => prev.filter((id) => id !== productId));
+
+  try {
+    await axios.post(
+      `${backendUrl}/api/favorites/remove`,
+      { productId },
+      { headers: { token } }
+    );
+  } catch (error) {
+    setFavorites((prev) => [...prev, productId]); // rollback
+  }
+};
+
+const getFavoriteCount = () => {
+  return favorites.length;
+};
+
 
 
   /* ---------------------- CART COUNT ---------------------- */
@@ -149,19 +198,66 @@ const ShopContextProvider = (props) => {
     }
   };
 
+  /* ---------------------- FETCH FAVORITES ---------------------- */
+/* ---------------- FETCH FAVORITES (CART-STYLE) ---------------- */
+const fetchFavorites = async (authToken) => {
+  if (!authToken) return;
+
+  setFavoritesLoading(true);
+
+  try {
+    const res = await axios.post(
+      `${backendUrl}/api/favorites/get`,
+      {},
+      { headers: { token: authToken } }
+    );
+
+    if (res.data.success) {
+      setFavorites(res.data.favorites || []);
+    }
+  } catch (error) {
+    console.error("FETCH FAVORITES ERROR:", error);
+  } finally {
+    setFavoritesLoading(false);
+  }
+};
+
   /* ---------------------- EFFECTS ---------------------- */
   useEffect(() => {
     getProductsData();
   }, []);
 
- useEffect(() => {
-  const saved = localStorage.getItem("token");
-  if (saved && products.length > 0) {
-    setToken(saved);
-    getUserCart(saved);
-  }
-}, [products]);
+//  useEffect(() => {
+//   const saved = localStorage.getItem("token");
+//   if (saved && products.length > 0) {
+//     setToken(saved);
+//     getUserCart(saved);
+//   }
+// }, [products]);
 
+// useEffect(() => {
+//   const saved = localStorage.getItem("token");
+//   if (saved) {
+//     fetchFavorites(saved);
+//   }
+// }, []);
+
+useEffect(() => {
+  const saved = localStorage.getItem("token");
+  if (saved) setToken(saved);
+}, []);
+
+
+useEffect(() => {
+  if (token) {
+    getUserCart(token);
+    fetchFavorites(token);
+  } else {
+    // logout / no token
+    setCartItems({});
+    setFavorites([]);
+  }
+}, [token]);
 
 
   /* ---------------------- CONTEXT VALUE ---------------------- */
@@ -184,6 +280,12 @@ const ShopContextProvider = (props) => {
     token,
     setToken,
     setCartItems,
+    favorites,
+    favoritesLoading,
+  fetchFavorites,
+  addToFavorites,
+  removeFromFavorites,
+  getFavoriteCount,
   };
 
   return (

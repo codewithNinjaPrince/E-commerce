@@ -12,8 +12,6 @@ userRouter.post("/verify-otp", verifyOtp);
 userRouter.post("/forgot-password/send-otp", sendForgotOtp);
 userRouter.post("/forgot-password/verify-otp", verifyForgotOtp);
 userRouter.post("/forgot-password/reset", resetPassword);
-
-
 userRouter.post('/register', registerUser)
 userRouter.post('/login', loginUser)
 userRouter.post('/admin', adminLogin)
