@@ -47,34 +47,37 @@ const updateCart = async (req, res) => {
       return res.json({ success: false, message: "User not found" });
     }
 
-    const cartData = user.cartData || {};
+    const cartData = user.cartData; // 🔥 THIS IS A MAP
 
-    // ❌ Remove item
     if (quantity <= 0) {
-      if (cartData[itemId]) {
-        delete cartData[itemId][size];
+      // ❌ remove size
+      if (cartData.has(itemId)) {
+        const sizeMap = cartData.get(itemId);
+        sizeMap.delete(size);
 
-        if (Object.keys(cartData[itemId]).length === 0) {
-          delete cartData[itemId];
+        // ❌ remove productId if empty
+        if (sizeMap.size === 0) {
+          cartData.delete(itemId);
         }
       }
-    } 
-    // ✅ Update quantity
-    else {
-      if (!cartData[itemId]) cartData[itemId] = {};
-      cartData[itemId][size] = quantity;
+    } else {
+      // ✅ update quantity
+      if (!cartData.has(itemId)) {
+        cartData.set(itemId, new Map());
+      }
+      cartData.get(itemId).set(size, quantity);
     }
 
-    user.cartData = cartData;
-    user.markModified("cartData"); // 🔥 VERY IMPORTANT
+    user.markModified("cartData"); // 🔥 REQUIRED
     await user.save();
 
-    return res.json({ success: true, cartData });
+    return res.json({ success: true });
   } catch (error) {
     console.log("UPDATE CART ERROR:", error);
     return res.json({ success: false, message: "Something went wrong" });
   }
 };
+
 
 /* --------------------------------------------------
    GET USER CART (REFRESH SAFE)

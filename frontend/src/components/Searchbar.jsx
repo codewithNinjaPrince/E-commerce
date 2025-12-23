@@ -12,7 +12,7 @@ const Searchbar = ({ showNavbar }) => {
         fixed w-full z-40
         bg-black/90 backdrop-blur-md
         border-b border-white/10
-        px-4 py-3
+        px-2 py-2
         transition-all duration-300
         ${showNavbar ? "top-[64px]" : "top-0"}
       `}

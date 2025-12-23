@@ -145,7 +145,7 @@ body {
 /* Desktop (no mobile searchbar, taller navbar) */
 @media (min-width: 1024px) {
   .page-wrapper {
-    padding-top: 72px;
+    padding-top: 68px;
   }
 }
 
@@ -156,23 +156,24 @@ body {
 
 /* Horizontal padding */
 .page-container {
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding-left: 2px;
+  padding-right: 2px;
 }
 
 @media (min-width: 768px) {
   .page-container {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
+    padding-left: 6px;
+    padding-right: 6px;
   }
 }
 
 @media (min-width: 1024px) {
   .page-container {
-    padding-left: 2rem;
-    padding-right: 2rem;
+    padding-left: 8px;
+    padding-right: 8px;
   }
 }
+
 
 /* Max width */
 .page-max {

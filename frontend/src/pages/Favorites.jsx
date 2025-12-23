@@ -66,8 +66,8 @@ const Favorites = () => {
 
   /* -------- FAVORITES LIST -------- */
   return (
-    <div className="px-4 sm:px-[5vw] pt-14 pb-20 text-white">
-      <div className="text-3xl mb-6">
+    <div className="px-2 sm:px-[2] md:px-[4] pt-6 sm:pt-[8] md:pt-[10] pb-12 sm:pb-[6] md:pb-[8] text-white">
+      <div className="text-3xl mb-3 sm:mb-[5] lg:mb-8 text-center">
         <Title text1="Your" text2="Favorites" />
       </div>
 

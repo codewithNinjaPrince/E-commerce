@@ -38,7 +38,7 @@ const SearchRouteGuard = ({ children }) => {
   const location = useLocation();
   const from = location.state?.from;
 
-  if (from !== "/" && from !== "/collections") {
+  if (from !== "/" && from !== "/collections" && !from?.startsWith("/product")) {
     return <Navigate to="/" replace />;
   }
 
@@ -60,11 +60,11 @@ const App = () => {
   const isSearchPage = pathname === "/search";
   const isUserPage = pathname === "/user";
 
-const showSearchBar =
-  pathname === "/" ||
-  pathname === "/collections" ||
-  pathname.startsWith("/product") ||
-  pathname === "/favorites";
+  const showSearchBar =
+    pathname === "/" ||
+    pathname === "/collections" ||
+    pathname.startsWith("/product") ||
+    pathname === "/favorites";
 
   /* 🔥 HIDE FOOTER ON THESE ROUTES */
   const hideFooterRoutes = ["/search", "/user", "/cart", "/placeorder"];
@@ -120,7 +120,9 @@ const showSearchBar =
 
       {/* ================= SEARCHBAR ================= */}
       {showSearchBar && !isSearchPage && isMobileOrTablet && (
-        <Searchbar showNavbar={showNavbar} />
+        <div className="w-screen max-w-none px-0">
+          <Searchbar showNavbar={showNavbar} />
+        </div>
       )}
 
       {/* ================= ROUTES ================= */}

@@ -116,10 +116,24 @@ const getFavoriteCount = () => {
   /* ---------------------- UPDATE QUANTITY ---------------------- */
   const updateQuantity = async (itemId, size, quantity) => {
   let cartData = structuredClone(cartItems);
-  cartData[itemId][size] = quantity;
+
+  if (quantity === 0) {
+    // ❌ remove size
+    delete cartData[itemId]?.[size];
+
+    // ❌ if no sizes left, remove productId
+    if (cartData[itemId] && Object.keys(cartData[itemId]).length === 0) {
+      delete cartData[itemId];
+    }
+  } else {
+    // ✅ normal update
+    if (!cartData[itemId]) cartData[itemId] = {};
+    cartData[itemId][size] = quantity;
+  }
+
   setCartItems(cartData);
 
-  const storedToken = localStorage.getItem("token"); // 🔥 FIX
+  const storedToken = localStorage.getItem("token");
 
   if (storedToken) {
     try {
@@ -134,6 +148,7 @@ const getFavoriteCount = () => {
     }
   }
 };
+
 
   /* ---------------------- TOTAL CART AMOUNT (UPDATED MODEL) ---------------------- */
   const getCartAmount = () => {

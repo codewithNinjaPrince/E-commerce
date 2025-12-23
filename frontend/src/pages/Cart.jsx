@@ -799,8 +799,15 @@ const Cart = () => {
 
   return (
     <>
-      <div className="border-t pt-14 text-white pb-28 md:pb-0">
-        <div className="text-3xl mb-6">
+      <div
+        className="
+  border-t
+  pt-6 sm:pt-10 lg:pt-14
+  text-white
+  pb-28 md:pb-0
+"
+      >
+        <div className="text-3xl mb-6 text-center sm:text-left">
           <Title text1="Your" text2="Cart" />
         </div>
 
@@ -928,13 +935,13 @@ const Cart = () => {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setConfirmOpen(false)}
-                className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20"
+                className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600"
+                className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 cursor-pointer"
               >
                 Remove
               </button>

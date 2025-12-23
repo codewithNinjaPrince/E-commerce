@@ -38,7 +38,7 @@ const Navbar = ({ showNavbar }) => {
           bg-black/80 backdrop-blur-xl
           border-b border-white/10
           h-[64px]
-          px-4
+          px-2
           flex items-center justify-between
           transition-transform duration-300
           ${showNavbar ? "translate-y-0" : "-translate-y-full"}

@@ -74,10 +74,17 @@ const SearchPage = () => {
   return (
     <div className="min-h-screen w-full bg-black text-white">
       {/* 🔍 FLAT SEARCH HEADER */}
-      <div
-        className="flex items-center gap-5 px-4 sm:px-6 md:px-8 lg:px-12
- py-5 border-b border-white/10"
-      >
+      
+        <div
+  className="
+    flex items-center gap-5
+    px-4 sm:px-6
+    md:px-4
+    lg:px-4
+    py-5
+    border-b border-white/10
+  "
+>
         {/* BACK */}
         <button onClick={() => navigate(-1)} className="shrink-0 text-white/80">
           <FaArrowLeft size={18} />
