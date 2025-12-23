@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { NavLink, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ShopContext } from "../context/ShopContext";
 import {
   FaHome,
@@ -13,9 +14,46 @@ import {
 const Navbar = ({ showNavbar }) => {
   const { getCartCount, navigate, token, getFavoriteCount } =
     useContext(ShopContext);
+  const { logout } = useContext(ShopContext);
+
   const [open, setOpen] = useState(false);
 
   const userName = localStorage.getItem("userName") || "Friend";
+
+  const Section = ({ title, children }) => (
+    <div>
+      <p className="text-[11px] uppercase tracking-wider text-gray-500 mb-1">
+        {title}
+      </p>
+      <div className="flex flex-col gap-1">{children}</div>
+    </div>
+  );
+
+  const DrawerLink = ({ to, label, setOpen }) => {
+    const navigate = useNavigate();
+
+    return (
+      <button
+        onClick={() => {
+          navigate(to); // page open
+          setOpen(false); // 🔥 hamburger close
+        }}
+        className="
+        w-full text-left
+        py-2 px-3
+        rounded-lg
+        text-sm
+        text-gray-300
+        hover:bg-[#1f1f1f]
+        hover:text-white
+        transition
+        cursor-pointer
+      "
+      >
+        {label}
+      </button>
+    );
+  };
 
   /* 🔒 Lock scroll when drawer open */
   useEffect(() => {
@@ -123,34 +161,83 @@ const Navbar = ({ showNavbar }) => {
         </div>
 
         {/* NAV ITEMS */}
-        <nav className="px-5 py-8 flex flex-col gap-3">
-          {[
-            { name: "Home", path: "/" },
-            { name: "Collections", path: "/collections" },
-            { name: "Favorites", path: "/favorites" },
-            { name: "About Us", path: "/about" },
-            { name: "Contact Us", path: "/contact" },
-          ].map((item) => (
-            <NavLink
-              key={item.name}
-              to={item.path}
-              onClick={() => setOpen(false)}
-              className={({ isActive }) =>
-                `
-                flex items-center
-                py-3 px-4 rounded-xl text-sm font-medium
-                transition
-                ${
-                  isActive
-                    ? "bg-white text-black"
-                    : "bg-[#151515] text-gray-300 hover:bg-[#1f1f1f] hover:text-white"
-                }
-              `
-              }
-            >
-              {item.name}
-            </NavLink>
-          ))}
+        <nav className="px-4 py-4 flex flex-col gap-4 overflow-y-auto h-[calc(100vh-64px)]">
+          {/* 🔹 MAIN */}
+          <Section title="Explore">
+            <DrawerLink to="/" label="Home" setOpen={setOpen} />
+            <DrawerLink
+              to="/collections"
+              label="Collections"
+              setOpen={setOpen}
+            />
+            <DrawerLink to="/favorites" label="Favorites" setOpen={setOpen} />
+            <DrawerLink to="/cart" label="Cart" setOpen={setOpen} />
+          </Section>
+
+          {/* 🔹 ACCOUNT */}
+          {token && (
+            <Section title="My Account">
+              <DrawerLink to="/user" label="My Profile" setOpen={setOpen} />
+              <DrawerLink to="/orders" label="My Orders" setOpen={setOpen} />
+            </Section>
+          )}
+
+          {/* 🔹 SUPPORT */}
+          <Section title="Support">
+            <DrawerLink to="/about" label="About Us" setOpen={setOpen} />
+            <DrawerLink to="/contact" label="Contact Us" setOpen={setOpen} />
+            <DrawerLink to="/sell-with-us" label="Sell With Us" setOpen={setOpen} />
+          </Section>
+
+          {/* 🔹 LEGAL */}
+          <Section title="Legal">
+            <DrawerLink
+              to="/privacy-policy"
+              label="Privacy Policy"
+              setOpen={setOpen}
+            />
+            <DrawerLink
+              to="/terms-conditions"
+              label="Terms & Conditions"
+              setOpen={setOpen}
+            />
+            <DrawerLink
+              to="/refund-return"
+              label="Refund & Return Policy"
+              setOpen={setOpen}
+            />
+            <DrawerLink
+              to="/shipping-delivery"
+              label="Shipping & Delivery"
+              setOpen={setOpen}
+            />
+          </Section>
+
+          {/* 🔹 AUTH */}
+          <div className="mt-6">
+            {token ? (
+              <button
+                onClick={() => {
+                  logout();
+                  setOpen(false);
+                  navigate("/login");
+                }}
+                className="w-full py-3 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition"
+              >
+                Logout
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  navigate("/login");
+                }}
+                className="w-full py-3 rounded-xl bg-white text-black font-semibold hover:bg-gray-300 transition"
+              >
+                Login / Sign Up
+              </button>
+            )}
+          </div>
         </nav>
       </aside>
     </>

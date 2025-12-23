@@ -130,42 +130,54 @@ const Contact = () => {
   };
 
   return (
-    <div className="px-4 md:px-10 bg-black text-gray-300 py-[-5]">
-      {/* SELLER QUICK NOTICE */}
-      <div
-        className="
-    sticky 
-    top-[64px] 
-    z-40 
+  <section className="
+  bg-black/90
+  border border-white/10
+  rounded-xl
+  shadow-[0_0_40px_rgba(255,255,255,0.06)]
+  mt-20 mb-4
+  sm:mt-22 sm:mb-6
+  lg:mt-26 lg:mb-8
+  m-1 sm:m-2 lg:m-4
+  p-1 sm:p-2 lg:p-4
+">
+
+     {/* SELLER QUICK NOTICE — STICKY */}
+<div
+  className="
+    sticky
+    top-[64px]        /* navbar height */
     bg-gradient-to-r from-[#111] via-[#151515] to-[#0d0d0d]
     border-b border-white/10
     backdrop-blur
   "
-      >
-        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-2 text-sm">
-          {/* LEFT TEXT */}
-          <span className="text-gray-300 flex items-center gap-2">
-            <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-            Are you a seller or business owner?
-          </span>
+>
+  <div className="max-w-7xl mx-auto px-2 py-5 rounded-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-sm">
 
-          {/* CTA */}
-          <button
-            onClick={() => navigate("/sell-with-us")}
-            className="group flex items-center gap-2 font-medium text-green-400 hover:text-green-300 transition cursor-pointer"
-          >
-            <span className="relative">
-              Start selling on Brawvly
-              <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-green-400 transition-all duration-300 group-hover:w-full"></span>
-            </span>
+    {/* LEFT */}
+    <span className="text-gray-300 flex items-center gap-2">
+      <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+      Are you a seller or business owner?
+    </span>
 
-            {/* Animated Arrow */}
-            <span className="transform transition-transform duration-300 group-hover:translate-x-1">
-              →
-            </span>
-          </button>
-        </div>
-      </div>
+    {/* CTA */}
+    <button
+      onClick={() => navigate("/sell-with-us")}
+      className="group flex items-center gap-2 font-medium text-green-400 hover:text-green-300 transition cursor-pointer"
+    >
+      <span className="relative">
+        Start selling on Brawvly
+        <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-green-400 transition-all duration-300 group-hover:w-full"></span>
+      </span>
+
+      <span className="transform transition-transform duration-300 group-hover:translate-x-1">
+        →
+      </span>
+    </button>
+
+  </div>
+</div>
+
 
       {/* PAGE HEADER */}
       <div className="text-center pt-6 text-2xl max-w-3xl mx-auto">
@@ -479,7 +491,7 @@ const Contact = () => {
       </div>
 
       <NewsLetter />
-    </div>
+    </section>
   );
 };
 

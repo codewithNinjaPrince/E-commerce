@@ -131,7 +131,12 @@ const Login = () => {
       });
 
       setOtpVerified(true);
-      toast.success("Verified successfully ✅");
+      toast.success(`Welcome back, ${name} 😎`, {
+              position: "top-center",
+              autoClose: 2000,
+              hideProgressBar: true,
+              theme: "dark",
+            });
     } catch (err) {
       toast.error(err?.response?.data?.message || "Invalid OTP");
     }
@@ -210,10 +215,20 @@ const Login = () => {
       }
 
       if (mode === "Sign Up") {
-        toast.success("Account created 🎉");
+        toast.success("Account created 🎉", {
+              position: "top-center",
+              autoClose: 2000,
+              hideProgressBar: true,
+              theme: "dark",
+            });
       } else {
         const name = res.data?.user?.firstName || "there";
-        toast.success(`Welcome back, ${name} 😎`);
+        toast.success(`Welcome back, ${name} 😎`, {
+              position: "top-center",
+              autoClose: 2000,
+              hideProgressBar: true,
+              theme: "dark",
+            });
       }
     } catch (err) {
       toast.error(err?.response?.data?.message || "Something went wrong");
@@ -255,8 +270,8 @@ const Login = () => {
     <form
       onSubmit={onSubmitHandler}
       className="
-  w-[92%] sm:max-w-[420px] mx-auto
-  mt-12  sm:mt-14  lg:mt-20
+  w-[92%] max-w-[420px] sm:max-w-[520px] mx-auto
+  mt-20  sm:mt-22  lg:mt-26
   bg-white/5 backdrop-blur-xl
   border border-white/10 rounded-2xl
   p-6 sm:p-8

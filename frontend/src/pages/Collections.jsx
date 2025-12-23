@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { ShopContext } from "../context/ShopContext";
 import Title from "../components/Title";
 import ProductItem from "../components/ProductItem";
-import BottomSheet from "../components/BottomSheet";
+import SideSheet from "../components/SideSheet";
 
 const Collections = () => {
   const { products, search, showSearch } = useContext(ShopContext);
@@ -105,7 +105,7 @@ const Collections = () => {
   />;
 
   return (
-    <div className=" mt-6 pt-6 border-t text-white min-h-screen ">
+    <div className=" mt-6 pt-3 sm:pt-5 lg:pt-6 border-t text-white min-h-screen ">
       {/* =================== SHOW LOADER ONLY FIRST TIME =================== */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-40">
@@ -333,117 +333,108 @@ const Collections = () => {
 
           {/* MOBILE FILTER DRAWER */}
 
-          <BottomSheet
-            open={showMobileFilter}
-            onClose={() => setShowMobileFilter(false)}
-          >
-            <h2 className="text-lg font-semibold mb-4">Filters</h2>
+          <SideSheet
+  open={showMobileFilter}
+  onClose={() => setShowMobileFilter(false)}
+  title="Filters"
+>
+  {/* GENDER */}
+  <div className="bg-[#151515] border border-white/10 rounded-xl p-4 mb-4">
+    <p className="text-xs uppercase tracking-wide text-gray-400 mb-3">
+      Gender
+    </p>
+    <div className="space-y-3 text-sm">
+      {["Men", "Women", "Kids"].map((cat) => (
+        <label key={cat} className="flex gap-3">
+          <input
+            type="checkbox"
+            checked={category.includes(cat)}
+            onChange={() => toggleValue(setCategory, cat)}
+            className="accent-green-400"
+          />
+          {cat}
+        </label>
+      ))}
+    </div>
+  </div>
 
-            <div className="space-y-6">
-              {/* GENDER */}
-              <div className="bg-[#151515] border border-white/10 rounded-xl p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400 mb-3">
-                  Gender
-                </p>
-                <div className="space-y-3 text-sm">
-                  {["Men", "Women", "Kids"].map((cat) => (
-                    <label key={cat} className="flex gap-3">
-                      <input
-                        type="checkbox"
-                        checked={category.includes(cat)}
-                        onChange={() => toggleValue(setCategory, cat)}
-                        className="accent-green-400"
-                      />
-                      {cat}
-                    </label>
-                  ))}
-                </div>
-              </div>
+  {/* TYPE */}
+  <div className="bg-[#151515] border border-white/10 rounded-xl p-4 mb-4">
+    <p className="text-xs uppercase tracking-wide text-gray-400 mb-3">
+      Type
+    </p>
+    <div className="space-y-3 text-sm">
+      {["Topwear", "Bottomwear", "Winterwear"].map((sub) => (
+        <label key={sub} className="flex gap-3">
+          <input
+            type="checkbox"
+            checked={subCategory.includes(sub)}
+            onChange={() => toggleValue(setSubCategory, sub)}
+            className="accent-green-400"
+          />
+          {sub}
+        </label>
+      ))}
+    </div>
+  </div>
 
-              {/* TYPE */}
-              <div className="bg-[#151515] border border-white/10 rounded-xl p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400 mb-3">
-                  Type
-                </p>
-                <div className="space-y-3 text-sm">
-                  {["Topwear", "Bottomwear", "Winterwear"].map((sub) => (
-                    <label
-                      key={sub}
-                      className="flex items-center gap-3 cursor-pointer hover:text-white transition"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={subCategory.includes(sub)}
-                        onChange={() => toggleValue(setSubCategory, sub)}
-                        className="accent-green-400 cursor-pointer"
-                      />
-                      <span>{sub}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+  {/* PRICE */}
+  <div className="bg-[#151515] border border-white/10 rounded-xl p-4 mb-4">
+    <p className="text-xs uppercase tracking-wide text-gray-400 mb-3">
+      Price
+    </p>
+    <div className="space-y-3 text-sm">
+      {[
+        { label: "₹999 & below", value: "below-999" },
+        { label: "₹1000 – ₹2999", value: "1000-2999" },
+        { label: "₹3000 & above", value: "above-3000" },
+      ].map((p) => (
+        <label key={p.value} className="flex gap-3">
+          <input
+            type="checkbox"
+            checked={priceRange.includes(p.value)}
+            onChange={() => toggleValue(setPriceRange, p.value)}
+            className="accent-green-400"
+          />
+          {p.label}
+        </label>
+      ))}
+    </div>
+  </div>
 
-              {/* PRICE */}
-              <div className="bg-[#151515] border border-white/10 rounded-xl p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400 mb-3">
-                  Price
-                </p>
-                <div className="space-y-3 text-sm">
-                  {[
-                    { label: "₹999 & below", value: "below-999" },
-                    { label: "₹1000 – ₹2999", value: "1000-2999" },
-                    { label: "₹3000 & above", value: "above-3000" },
-                  ].map((p) => (
-                    <label
-                      key={p.value}
-                      className="flex items-center gap-3 cursor-pointer hover:text-white transition"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={priceRange.includes(p.value)}
-                        onChange={() => toggleValue(setPriceRange, p.value)}
-                        className="accent-green-400 cursor-pointer"
-                      />
-                      <span>{p.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* SIZE */}
-              <div className="bg-[#151515] border border-white/10 rounded-xl p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-400 mb-3">
-                  Size
-                </p>
-
-                <div className="grid grid-cols-3 gap-3 text-sm">
-                  {["S", "M", "L", "XL", "XXL", "XXXL"].map((s) => {
-                    const active = sizes.includes(s);
-                    return (
-                      <label
-                        key={s}
-                        className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition
+  {/* SIZE */}
+  <div className="bg-[#151515] border border-white/10 rounded-xl p-4">
+    <p className="text-xs uppercase tracking-wide text-gray-400 mb-3">
+      Size
+    </p>
+    <div className="grid grid-cols-3 gap-3 text-sm">
+      {["S", "M", "L", "XL", "XXL", "XXXL"].map((s) => {
+        const active = sizes.includes(s);
+        return (
+          <label
+            key={s}
+            className={`flex items-center justify-center px-3 py-2 rounded-lg border cursor-pointer transition
               ${
                 active
                   ? "bg-green-400 text-black border-green-400"
-                  : "border-white/20 hover:border-white/40 text-gray-300"
+                  : "border-white/20 text-gray-300"
               }
             `}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={active}
-                          onChange={() => toggleValue(setSizes, s)}
-                          className="hidden"
-                        />
-                        {s}
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </BottomSheet>
+          >
+            <input
+              type="checkbox"
+              checked={active}
+              onChange={() => toggleValue(setSizes, s)}
+              className="hidden"
+            />
+            {s}
+          </label>
+        );
+      })}
+    </div>
+  </div>
+</SideSheet>
+
 
           {/* MOBILE SORT DRAWER */}
           {showMobileSort && (

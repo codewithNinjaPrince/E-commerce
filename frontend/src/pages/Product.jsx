@@ -35,6 +35,26 @@ const Product = () => {
   const [lens, setLens] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
 
+  const handleShare = async () => {
+  const shareUrl = window.location.href;
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: productData.name,
+        text: productData.description?.slice(0, 100),
+        url: shareUrl,
+      });
+    } catch (err) {
+      // user cancelled → ignore
+    }
+  } else {
+    await navigator.clipboard.writeText(shareUrl);
+    toast.success("Product link copied!", { autoClose: 2000 });
+  }
+};
+
+
   const handleMouseMove = (e) => {
     if (!isDesktop) return;
 
@@ -162,7 +182,37 @@ const Product = () => {
   }, [productData]);
 
   /* ---------------- GUARD ---------------- */
-  if (!productData) return <div className="opacity-0"></div>;
+  if (!productData) {
+  return (
+    <div className="bg-[#0e0e0e] text-white p-4 animate-pulse">
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* IMAGE SKELETON */}
+        <div className="w-full lg:w-[520px] h-[700px] bg-white/10 rounded-xl" />
+
+        {/* RIGHT CONTENT */}
+        <div className="flex-1 space-y-5">
+          <div className="h-6 w-40 bg-white/10 rounded" />
+          <div className="h-8 w-3/4 bg-white/10 rounded" />
+
+          <div className="flex gap-3">
+            <div className="h-8 w-28 bg-white/10 rounded" />
+            <div className="h-8 w-24 bg-white/10 rounded" />
+          </div>
+
+          <div className="flex gap-3 mt-4">
+            <div className="h-10 w-16 bg-white/10 rounded" />
+            <div className="h-10 w-16 bg-white/10 rounded" />
+            <div className="h-10 w-16 bg-white/10 rounded" />
+          </div>
+
+          <div className="h-4 w-full bg-white/10 rounded mt-6" />
+          <div className="h-4 w-5/6 bg-white/10 rounded" />
+          <div className="h-4 w-4/6 bg-white/10 rounded" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
   /* ---------------- SAFE DERIVED VALUES ---------------- */
   const images = Array.isArray(productData.image)
@@ -319,7 +369,7 @@ const Product = () => {
               >
                 {/* IMAGE */}
                 <div
-                  className="relative w-full"
+                  className="relative w-full cursor-pointer"
                   onMouseEnter={() => isDesktop && setIsHovering(true)}
                   onMouseLeave={() => isDesktop && setIsHovering(false)}
                   onMouseMove={handleMouseMove}
@@ -385,17 +435,18 @@ const Product = () => {
 
                 {/* SHARE */}
                 <button
-                  className="
-        absolute top-3 right-3
-        bg-black/60 p-2 rounded-full
-        hover:bg-black/80 hover:scale-110
-        transition z-10 cursor-pointer
-      "
-                >
-                  <FaShareAlt />
-                </button>
+  onClick={handleShare}
+  className="
+    absolute top-3 right-3
+    bg-black/60 p-2 rounded-full
+    hover:bg-black/80 hover:scale-110
+    transition z-10 cursor-pointer
+  "
+>
+  <FaShareAlt />
+</button>
 
-                {/* FAVORITE */}
+
                 {/* FAVORITE */}
                 <button
                   onClick={() => {

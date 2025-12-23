@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
 import { ShopContext } from "../context/ShopContext";
 import Title from "./Title";
 import ProductItem from "./ProductItem";
@@ -22,7 +22,6 @@ const BestSeller = () => {
 
   const handleHide = () => {
     setVisibleCount(10);
-
     setTimeout(() => {
       scrollRef.current?.scrollIntoView({
         behavior: "smooth",
@@ -32,24 +31,57 @@ const BestSeller = () => {
   };
 
   return (
-    <section className="section-top-gap">
-      <div className="relative left-1/2 right-1/2 -mx-[50vw] w-screen bg-black/90">
-        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-10">
+    <section>
+      <div
+        className="
+          bg-black/90
+          border border-white/10
+          rounded-xl
+          overflow-hidden
+          shadow-[0_0_40px_rgba(255,255,255,0.06)]
 
-          {/* TITLE (same as LatestCollection) */}
-          <div className="text-center text-white text-3xl py-8">
-            <Title text1="Best" text2="Seller" />
-            <p className="w-3/4 mx-auto text-xs sm:text-base text-gray-400">
-              Top-selling essentials and trending favourites curated from
-              trusted local shops.
+          mt-4 mb-4
+          sm:mt-6 sm:mb-6
+          lg:mt-8 lg:mb-8
+        "
+      >
+        <div className="w-full sm:px-2 md:px-3 lg:px-4">
+          {/* HEADER */}
+          <div className="text-center text-white py-4 sm:py-6 md:py-8">
+            <div className="text-2xl sm:text-3xl md:text-4xl">
+              <Title text1="Best" text2="Seller" />
+            </div>
+
+            <p
+              className="
+                mt-3
+                w-full sm:w-4/5 md:w-3/4
+                mx-auto
+                text-sm sm:text-base md:text-lg
+                leading-relaxed
+                text-gray-400
+              "
+            >
+              Top-selling essentials and trending favourites, carefully
+              handpicked from trusted local shops. 🛍️✨ Discover quality
+              products loved by customers for their value, style, and
+              reliability. From everyday needs to special finds, these best
+              sellers are chosen to elevate your shopping experience. 💫🔥
             </p>
           </div>
 
           {/* SCROLL TARGET */}
           <div ref={scrollRef}></div>
 
-          {/* GRID (same spacing & cols) */}
-          <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+          {/* PRODUCTS GRID */}
+          <div
+            className="
+    mt-6
+    grid
+    grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5
+    gap-4 sm:gap-5 
+  "
+          >
             {bestSeller.slice(0, visibleCount).map((item) => (
               <div key={item._id} className="bg-[#2a2a2a] rounded-xl p-2">
                 <ProductItem
@@ -66,12 +98,20 @@ const BestSeller = () => {
             ))}
           </div>
 
-          {/* ACTION BUTTONS (same spacing) */}
-          <div className="text-center mt-10 flex justify-center gap-4">
+          {/* ACTION BUTTONS */}
+          <div className="text-center mt-8 sm:mt-10 pb-2 sm:pb-4 md:pb-6 flex justify-center gap-4">
             {visibleCount < bestSeller.length && (
               <button
                 onClick={handleShowMore}
-                className="text-white border border-white/30 px-6 py-2 rounded-lg hover:bg-white hover:text-black transition"
+                className="
+                  text-white
+                  border border-white/30
+                  px-6 py-2
+                  rounded-lg
+                  hover:bg-white hover:text-black
+                  transition
+                  cursor-pointer
+                "
               >
                 Show More
               </button>
@@ -80,13 +120,20 @@ const BestSeller = () => {
             {visibleCount > 10 && (
               <button
                 onClick={handleHide}
-                className="text-red-400 border border-red-400 px-6 py-2 rounded-lg hover:bg-red-400 hover:text-black transition"
+                className="
+                  text-red-400
+                  border border-red-400
+                  px-6 py-2
+                  rounded-lg
+                  hover:bg-red-400 hover:text-black
+                  transition
+                  cursor-pointer
+                "
               >
                 Hide
               </button>
             )}
           </div>
-
         </div>
       </div>
     </section>

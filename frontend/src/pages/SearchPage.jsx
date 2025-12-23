@@ -18,21 +18,31 @@ const SearchPage = () => {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState([]);
   const [recent, setRecent] = useState([]);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  /* Load recent searches */
+  /* -------------------- LOAD RECENT -------------------- */
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("recentSearches")) || [];
     setRecent(stored);
   }, []);
 
-  /* Search logic */
+    /* -------------------- DEBOUNCE -------------------- */
   useEffect(() => {
-    if (!search.trim()) {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  /* -------------------- SEARCH LOGIC -------------------- */
+  useEffect(() => {
+    if (!debouncedSearch) {
       setResults([]);
       return;
     }
 
-    const q = search.toLowerCase();
+    const q = debouncedSearch.toLowerCase();
 
     const filtered = products.filter((p) =>
       [p.name, p.brandName, p.category, p.subCategory]
@@ -41,33 +51,57 @@ const SearchPage = () => {
         .includes(q)
     );
 
-    setResults(filtered);
-  }, [search, products]);
+    setResults(filtered.slice(0, 20));
+  }, [debouncedSearch, products]);
 
-  /* Save recent */
+  /* -------------------- ANALYTICS -------------------- */
+  const trackSearch = (term) => {
+    if (!term) return;
+
+    const data =
+      JSON.parse(localStorage.getItem("searchAnalytics")) || {};
+
+    data[term] = (data[term] || 0) + 1;
+
+    localStorage.setItem("searchAnalytics", JSON.stringify(data));
+  };
+
+  /* -------------------- RECENT SAVE -------------------- */
   const saveRecent = (value) => {
-    let updated = [value, ...recent.filter((r) => r !== value)];
-    updated = updated.slice(0, 6);
+    trackSearch(value);
+
+    const updated = [value, ...recent.filter((r) => r !== value)].slice(0, 6);
     setRecent(updated);
     localStorage.setItem("recentSearches", JSON.stringify(updated));
   };
 
+useEffect(() => {
+  const timer = setTimeout(() => {
+    setDebouncedSearch(search.trim());
+  }, 300);
+
+  return () => clearTimeout(timer);
+}, [search]);
+
+ /* -------------------- HANDLERS -------------------- */
   const onSelectProduct = (id) => {
     saveRecent(search);
     navigate(`/product/${id}`);
   };
 
+  const onKeywordClick = (value) => {
+    saveRecent(value);
+    setSearch(value);
+  };
+
+   /* -------------------- AUTO CLOSE ON DESKTOP -------------------- */
   useEffect(() => {
     const handleResize = () => {
-      // lg breakpoint (Tailwind = 1024px)
-      if (window.innerWidth >= 1024) {
-        navigate(-1); // go back to previous page
-      }
+      if (window.innerWidth >= 1024) navigate(-1);
     };
 
     handleResize();
     window.addEventListener("resize", handleResize);
-
     return () => window.removeEventListener("resize", handleResize);
   }, [navigate]);
 
@@ -93,9 +127,14 @@ const SearchPage = () => {
         {/* SEARCH / TEXT */}
         <div className="relative flex-1">
           <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search for products, brands, Shop & more"
+  value={search}
+  onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && results.length > 0) {
+                onSelectProduct(results[0]._id);
+              }
+            }}
+  placeholder="Search for products, brands, Shop & more"
             className="
             w-full
             bg-transparent
@@ -108,7 +147,7 @@ const SearchPage = () => {
 
           {search && (
             <button
-              onClick={() => setSearch("")}
+              onClick={() => onKeywordClick(k)}
               className="
               absolute right-0 top-1/2
               -translate-y-1/2
@@ -153,7 +192,7 @@ const SearchPage = () => {
                   {recent.map((r) => (
                     <button
                       key={r}
-                      onClick={() => setSearch(r)}
+                      onClick={() => onKeywordClick(r)}
                       className="
                       px-3 py-1.5
                       rounded-full

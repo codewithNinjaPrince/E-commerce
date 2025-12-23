@@ -1,8 +1,10 @@
 import React, { useContext } from "react";
 import { ShopContext } from "../context/ShopContext";
 import { useNavigate } from "react-router-dom";
-import { FaShareAlt, FaHeart } from "react-icons/fa";
+import { FaShareAlt, FaHeart,FaShoppingCart } from "react-icons/fa";
 import { FaStar } from "react-icons/fa6";
+import { toast } from "react-toastify";
+
 
 const ProductItem = ({
   _id,
@@ -21,6 +23,9 @@ const ProductItem = ({
     addToFavorites,
     removeFromFavorites,
     token,
+    addToCart,
+    setBuyNowItem,
+    buyNowItem,
   } = useContext(ShopContext);
 
   const navigate = useNavigate();
@@ -100,36 +105,119 @@ const ProductItem = ({
       </div>
 
       {/* DETAILS */}
-      <div className="mt-2">
-        {/* BRAND */}
-        <p className="text-xs text-gray-500 uppercase tracking-wide truncate">
-          {brandName}
-        </p>
+<div className="mt-2 flex flex-col h-full">
+  {/* BRAND */}
+  <p className="text-xs text-gray-500 uppercase tracking-wide truncate">
+    {brandName}
+  </p>
 
-        {/* NAME */}
-        <p className="text-sm font-semibold leading-tight mt-1 line-clamp-2">
-          {name}
-        </p>
+  {/* NAME */}
+  <p className="text-sm font-semibold leading-tight mt-1 line-clamp-2 min-h-[36px]">
+    {name}
+  </p>
 
-        {/* PRICE */}
-        <div className="mt-1 flex items-center gap-2 flex-wrap">
-          {actualPrice && (
-            <span className="text-gray-500 line-through text-sm">
-              {currency} {actualPrice}
-            </span>
-          )}
-          <span className="text-green-600 font-bold text-sm">
-            {currency} {discountedPrice}
-          </span>
-        </div>
+  {/* PRICE */}
+  <div className="mt-1 flex items-center gap-2 flex-wrap">
+    {actualPrice && (
+      <span className="text-gray-500 line-through text-sm">
+        {currency} {actualPrice}
+      </span>
+    )}
+    <span className="text-green-600 font-bold text-sm">
+      {currency} {discountedPrice}
+    </span>
+  </div>
 
-        {/* COLORS */}
-        {colorLabel && (
-          <p className="text-xs text-gray-500 mt-1">
-            Color: <span className="text-gray-700">{colorLabel}</span>
-          </p>
-        )}
-      </div>
+  {/* COLORS */}
+  {colorLabel && (
+    <p className="text-xs text-gray-500 mt-1">
+      Color: <span className="text-gray-700">{colorLabel}</span>
+    </p>
+  )}
+
+  {/* ACTIONS */}
+  <div className="mt-3 flex items-center gap-2">
+    {/* CART ICON */}
+    <button
+  onClick={(e) => {
+    e.stopPropagation();
+
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    addToCart(_id, "M");
+
+    // ✅ TOAST
+    toast.success("Added to cart 🛒", {
+      position: "top-center",
+      autoClose: 2000,
+      hideProgressBar: true,
+      theme: "dark",
+    });
+  }} className="
+        w-10 h-10
+        flex items-center justify-center
+        rounded-lg
+        border border-black/10
+        bg-white
+        text-black
+        transition-all duration-200
+        hover:bg-black hover:text-white
+        hover:scale-105
+        active:scale-95
+        cursor-pointer
+      "
+      title="Add to Cart"
+    >
+      <FaShoppingCart size={16} />
+    </button>
+
+    {/* BUY NOW */}
+      <button
+  onClick={(e) => {
+    e.stopPropagation();
+
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    // ✅ ensure item is in cart
+    const defaultSize = "M"; 
+
+    setBuyNowItem({
+      productId: _id,
+      name,
+      image,
+      price: discountedPrice,
+      actualPrice,
+      quantity: 1,
+      size: defaultSize, // or selected size
+    });
+
+    // ✅ navigate AFTER adding
+    navigate("/placeorder?mode=buynow");
+  }}
+      className="
+        flex-1
+        bg-white text-black
+        py-2
+        rounded-lg
+        text-sm font-semibold
+        transition-all duration-200
+        hover:bg-black hover:text-white
+        hover:scale-[1.02]
+        active:scale-95
+        cursor-pointer
+      "
+    >
+      Buy Now
+    </button>
+  </div>
+</div>
+
     </div>
   );
 };

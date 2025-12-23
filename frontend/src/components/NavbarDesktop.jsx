@@ -545,7 +545,7 @@ const NavbarDesktop = () => {
 
               {/* SEARCH DROPDOWN */}
               {searchOpen && (
-                <div className="absolute left-0 right-0 mt-3 bg-[#0f0f0f] border border-white/10 rounded-xl shadow-2xl p-4 z-50 max-h-[420px] overflow-y-auto">
+                <div className="absolute left-0 right-0 mt-3 bg-[#0f0f0f] border border-white/10 rounded-xl shadow-2xl p-4 z-50 max-h-[420px] overflow-y-auto z-">
                   {!query ? (
                     <>
                       {recent.length > 0 && (

@@ -4,7 +4,7 @@ import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import PreLoader from "./components/PreLoader";
 import Navbar from "./components/Navbar";
 import Searchbar from "./components/Searchbar";
-import Footer from "./components/footer";
+import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 
 import Home from "./pages/Home";
@@ -38,7 +38,11 @@ const SearchRouteGuard = ({ children }) => {
   const location = useLocation();
   const from = location.state?.from;
 
-  if (from !== "/" && from !== "/collections" && !from?.startsWith("/product")) {
+  if (
+    from !== "/" &&
+    from !== "/collections" &&
+    !from?.startsWith("/product")
+  ) {
     return <Navigate to="/" replace />;
   }
 
@@ -113,7 +117,37 @@ const App = () => {
       <PreLoader isLoading={loading} />
 
       {/* ================= TOAST ================= */}
-      <ToastContainer theme="dark" />
+      <ToastContainer
+        position="top-right"
+        autoClose={2000} // ⏱️ 2 seconds
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+        closeButton={({ closeToast }) => (
+          <button
+            onClick={closeToast}
+            style={{
+              position: "absolute",
+              top: "50%",
+              right: "12px", // 👈 always right
+              transform: "translateY(-50%)",
+              fontSize: "18px",
+              color: "#fff",
+              fontWeight: "bold",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            ✕
+          </button>
+        )}
+      />
 
       {/* ================= NAVBAR ================= */}
       {!isSearchPage && <Navbar showNavbar={showNavbar} />}
@@ -137,6 +171,20 @@ const App = () => {
           }
         />
 
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/sell-with-us" element={<SellWithUs />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/orders" element={<Orders />} />
+        <Route path="/placeorder" element={<PlaceOrder />} />
+
+        {/* LEGAL */}
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/refund-return" element={<RefundReturnPolicy />} />
+        <Route path="/shipping-delivery" element={<ShippingDelivery />} />
+        <Route path="/terms-conditions" element={<TermsConditions />} />
+
         {/* 🏠 NORMAL PAGES */}
         <Route
           path="*"
@@ -157,7 +205,7 @@ const App = () => {
                     <Route path="/product/:productId" element={<Product />} />
 
                     {/* AUTH */}
-                    <Route path="/login" element={<Login />} />
+
                     <Route path="/verify" element={<Verify />} />
                     <Route
                       path="/forgot-password"
@@ -168,30 +216,7 @@ const App = () => {
                     <Route path="/user" element={<User />} />
 
                     {/* SHOP */}
-                    <Route path="/cart" element={<Cart />} />
                     <Route path="/favorites" element={<Favorites />} />
-                    <Route path="/orders" element={<Orders />} />
-                    <Route path="/placeorder" element={<PlaceOrder />} />
-
-                    {/* INFO */}
-                    <Route path="/about" element={<About />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="/sell-with-us" element={<SellWithUs />} />
-
-                    {/* LEGAL */}
-                    <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                    <Route
-                      path="/refund-return"
-                      element={<RefundReturnPolicy />}
-                    />
-                    <Route
-                      path="/shipping-delivery"
-                      element={<ShippingDelivery />}
-                    />
-                    <Route
-                      path="/terms-conditions"
-                      element={<TermsConditions />}
-                    />
                   </Routes>
 
                   <ScrollToTop />

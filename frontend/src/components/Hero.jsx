@@ -6,16 +6,20 @@ const Hero = () => {
   return (
     <NavLink to="/collections">
       <div
-        className="
-          flex flex-col sm:flex-row
-          bg-gradient-to-r from-[#111] via-[#151515] to-[#1c1c1c]
-          border border-white/10
-          rounded-xl overflow-hidden
-          shadow-[0_0_40px_rgba(255,255,255,0.06)]
-          section-top-gap
-          cursor-pointer
-        "
-      >
+  className="
+    flex flex-col sm:flex-row
+    bg-gradient-to-r from-[#111] via-[#151515] to-[#1c1c1c]
+    border border-white/10
+    rounded-xl overflow-hidden
+    shadow-[0_0_40px_rgba(255,255,255,0.06)]
+    cursor-pointer
+
+    mt-4 mb-4          /* 📱 mobile: very small gap */
+    sm:mt-6 sm:mb-6    /* 📱 medium: small gap */
+    lg:mt-8 lg:mb-8  /* 🖥 desktop: normal white gap */
+  "
+>
+
         {/* LEFT SIDE */}
         <div className="w-full sm:w-1/2 flex items-center justify-center py-14 px-8 sm:px-12">
           <div className="text-white space-y-4">

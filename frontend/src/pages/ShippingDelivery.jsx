@@ -3,27 +3,27 @@ import Title from "../components/Title";
 
 const ShippingDelivery = () => {
   return (
-    <div
-      className="
-        px-4 md:px-20 py-10
-        bg-black
-        bg-black/90
-        border-t border-white/10
-        border-b border-white/20
-        shadow-[0_0_25px_rgba(255,255,255,0.05)]
-      "
-    >
-      {/* CENTERED CONTENT CONTAINER */}
-      <div className="max-w-[1300px] mx-auto px-6 md:px-12">
+    <section className="pt-20 sm:pt-22 lg:pt-26 pb-16 px-2 sm:px-4 md:px-6">
+      <div
+        className="
+          max-w-7xl mx-auto
+          bg-black/90
+          border border-white/10
+          rounded-2xl
+          shadow-[0_0_40px_rgba(255,255,255,0.06)]
+          overflow-hidden
+        "
+      >
+        <div className="px-4 sm:px-6 md:px-10 py-10 text-white">
 
-        {/* TITLE */}
-        <div className="text-2xl text-center mb-8 text-white">
-        <Title text1={"Shipping &"} text2={"Delivery"}></Title>
-        </div>
+          {/* PAGE TITLE */}
+          <div className="text-2xl text-center mb-10">
+            <Title text1="Shipping &" text2="Delivery" />
+          </div>
 
 
         {/* CONTENT */}
-        <div className="space-y-8 text-white text-sm md:text-base leading-7">
+        <div className=" max-w-5xl mx-auto space-y-8 text-white text-sm md:text-base leading-7 text-gray-300">
 
           <p>
             At <span className="font-semibold text-white">Brawvly</span>, we work with trusted delivery
@@ -90,16 +90,33 @@ const ShippingDelivery = () => {
           </div>
 
           {/* Section 7 */}
-          <div>
-            <h2 className="text-xl font-semibold text-white mb-2">7. Contact for Delivery Issues</h2>
+          <div className="pt-4 border-t border-white/10">
+              <h3 className="text-lg font-semibold text-white mb-2">
+                7. Contact for Delivery Issues
+              </h3>
             <p className="text-gray-300">
-              Email: <span className="font-semibold text-white">dixitprince895@gmail.com</span>
-            </p>
+                Email:{" "}
+                <a
+                  href="mailto:support@brawvly.com"
+                  className="hover:text-blue-400 font-medium"
+                >
+                  support@brawvly.com
+                  <br />
+                </a>
+                Phone:{" "}
+                <a
+                  href="tel:+918736852549"
+                  className="hover:text-blue-400 font-medium"
+                >
+                  +91 87368 52549
+                </a>
+              </p>
           </div>
 
         </div>
       </div>
     </div>
+    </section>
   );
 };
 

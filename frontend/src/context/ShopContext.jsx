@@ -16,8 +16,27 @@ const ShopContextProvider = (props) => {
   const [token, setToken] = useState("");
   const [favorites, setFavorites] = useState([]);
   const [favoritesLoading, setFavoritesLoading] = useState(true);
+  const [buyNowItem, setBuyNowItem] = useState(null);
+
 
   const navigate = useNavigate();
+
+  /* ---------------------- LOGOUT ---------------------- */
+const logout = () => {
+  // 🔥 LocalStorage clear
+  localStorage.removeItem("token");
+  localStorage.removeItem("userName");
+
+  // 🔥 Reset all user-related state
+  setToken("");
+  setCartItems({});
+  setFavorites([]);
+  setSearch("");
+  setShowSearch(false);
+
+  toast.success("Logged out successfully 👋");
+};
+
 
   /* ---------------------- ADD TO CART ---------------------- */
   const addToCart = async (itemId, size) => {
@@ -293,6 +312,7 @@ useEffect(() => {
     navigate,
     backendUrl,
     token,
+    logout,
     setToken,
     setCartItems,
     favorites,
@@ -301,6 +321,9 @@ useEffect(() => {
   addToFavorites,
   removeFromFavorites,
   getFavoriteCount,
+  buyNowItem,
+setBuyNowItem,
+
   };
 
   return (

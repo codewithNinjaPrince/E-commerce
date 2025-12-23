@@ -1,109 +1,138 @@
 import React from "react";
 import { assets } from "../assets/assets";
 import { NavLink } from "react-router-dom";
+import Title from "./Title";
 
 const OurPolicy = () => {
   return (
-    <section className="section-top-gap">
+    <section>
+      {/* HERO-LIKE CARD CONTAINER (same as LatestCollection) */}
       <div
         className="
-          relative left-1/2 right-1/2 
-          -mx-[50vw] 
-          w-screen
           bg-black/90
-          py-16
+          border border-white/10
+          rounded-xl
+          overflow-hidden
+          shadow-[0_0_40px_rgba(255,255,255,0.06)]
+
+          mt-4 mb-4
+          sm:mt-6 sm:mb-6
+          lg:mt-8 lg:mb-8
         "
       >
-        {/* CENTER CONTENT */}
-        <div className="max-w-[1300px] mx-auto px-6 sm:px-10">
+        <div className="w-full">
+          {/* HEADER */}
+          <div className="text-center text-white py-4 sm:py-6 md:py-8">
+            <div className="text-2xl sm:text-3xl md:text-4xl">
+              <Title text1="Our" text2="Policies" />
+            </div>
 
-          {/* ROW */}
-          <div className="flex flex-col sm:flex-row gap-14 text-center items-stretch">
+            <p
+              className="
+                mt-3
+                w-full sm:w-4/5 md:w-3/4
+                mx-auto
+                text-sm sm:text-base md:text-lg
+                leading-relaxed
+                text-gray-400
+              "
+            ></p>
+          </div>
 
+          {/* POLICY GRID — CHIPKA HUA (same logic as LatestCollection) */}
+          <div
+            className="
+              mt-6
+              grid
+              grid-cols-1 sm:grid-cols-3
+              gap-2 sm:gap-3 md:gap-4 lg:gap-5
+              px-1 sm:px-2 md:px-3 lg:px-4
+              pb-4 sm:pb-6 md:pb-8
+            "
+          >
             {/* CARD 1 */}
-            <NavLink to="/shipping-delivery" className="w-full">
+            <NavLink to="/shipping-delivery">
               <div
                 className="
                   h-full
-                  flex flex-col items-center justify-between
-                  cursor-pointer
-                  bg-[#1e1e1e] border border-white/10
-                  rounded-xl p-6
-                  hover:scale-[1.03] hover:border-white/20
+                  bg-[#1e1e1e]
+                  border border-white/10
+                  rounded-xl
+                  p-5 sm:p-6
+                  flex flex-col items-center text-center
+                  hover:scale-[1.03]
+                  hover:border-white/20
                   transition-all duration-300
                 "
               >
-                <div>
-                  <img
-                    src={assets.exchange_icon}
-                    className="w-14 mx-auto mb-4 invert"
-                  />
-                  <p className="font-semibold text-white text-lg">
-                    Quick & Easy Exchange
-                  </p>
-                  <p className="text-gray-400 text-sm mt-1">
-                    Hassle-free size and product exchanges within 48 hours.
-                  </p>
-                </div>
+                <img
+                  src={assets.exchange_icon}
+                  className="w-12 sm:w-14 mb-4 invert"
+                />
+                <p className="font-semibold text-white text-base sm:text-lg">
+                  Quick & Easy Exchange
+                </p>
+                <p className="text-gray-400 text-sm mt-1">
+                  Hassle-free size and product exchanges within 48 hours.
+                </p>
               </div>
             </NavLink>
 
             {/* CARD 2 */}
-            <NavLink to="/refund-return" className="w-full">
+            <NavLink to="/refund-return">
               <div
                 className="
                   h-full
-                  flex flex-col items-center justify-between
-                  cursor-pointer
-                  bg-[#1e1e1e] border border-white/10
-                  rounded-xl p-6
-                  hover:scale-[1.03] hover:border-white/20
+                  bg-[#1e1e1e]
+                  border border-white/10
+                  rounded-xl
+                  p-5 sm:p-6
+                  flex flex-col items-center text-center
+                  hover:scale-[1.03]
+                  hover:border-white/20
                   transition-all duration-300
                 "
               >
-                <div>
-                  <img
-                    src={assets.quality_icon}
-                    className="w-14 mx-auto mb-4 invert"
-                  />
-                  <p className="font-semibold text-white text-lg">
-                    7 Days Return Policy
-                  </p>
-                  <p className="text-gray-400 text-sm mt-1">
-                    Returns accepted only for unused & undamaged product with all tags.
-                  </p>
-                </div>
+                <img
+                  src={assets.quality_icon}
+                  className="w-12 sm:w-14 mb-4 invert"
+                />
+                <p className="font-semibold text-white text-base sm:text-lg">
+                  7 Days Return Policy
+                </p>
+                <p className="text-gray-400 text-sm mt-1">
+                  Returns accepted only for unused & undamaged products.
+                </p>
               </div>
             </NavLink>
 
             {/* CARD 3 */}
-            <NavLink to="/contact" className="w-full">
+            <NavLink to="/contact">
               <div
                 className="
                   h-full
-                  flex flex-col items-center justify-between
-                  cursor-pointer
-                  bg-[#1e1e1e] border border-white/10
-                  rounded-xl p-6
-                  hover:scale-[1.03] hover:border-white/20
+                  bg-[#1e1e1e]
+                  border border-white/10
+                  rounded-xl
+                  p-5 sm:p-6
+                  flex flex-col items-center text-center
+                  hover:scale-[1.03]
+                  hover:border-white/20
                   transition-all duration-300
                 "
               >
-                <div>
-                  <img
-                    src={assets.support_img}
-                    className="w-14 mx-auto mb-4 invert"
-                  />
-                  <p className="font-semibold text-white text-lg">
-                    24/7 Customer Support
-                  </p>
-                  <p className="text-gray-400 text-sm mt-1">
-                    We're always here to help you with orders & issues. Contact us whenever needed.
-                  </p>
-                </div>
+                <img
+                  src={assets.support_img}
+                  className="w-12 sm:w-14 mb-4 invert"
+                />
+                <p className="font-semibold text-white text-base sm:text-lg">
+                  24/7 Customer Support
+                </p>
+                <p className="text-gray-400 text-sm mt-1">
+                  We’re always here to help you with orders & issues.
+                </p>
               </div>
             </NavLink>
-
           </div>
         </div>
       </div>
