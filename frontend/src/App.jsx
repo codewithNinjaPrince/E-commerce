@@ -53,9 +53,19 @@ const App = () => {
   const { products } = useContext(ShopContext);
   const [loading, setLoading] = useState(true);
   const [showNavbar, setShowNavbar] = useState(true);
-  const [isMobileOrTablet, setIsMobileOrTablet] = useState(
-    window.innerWidth < 1024
-  );
+  const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
+
+useEffect(() => {
+  setIsMobileOrTablet(window.innerWidth < 1024);
+
+  const handleResize = () => {
+    setIsMobileOrTablet(window.innerWidth < 1024);
+  };
+
+  window.addEventListener("resize", handleResize);
+  return () => window.removeEventListener("resize", handleResize);
+}, []);
+
 
   const location = useLocation();
   const pathname = location.pathname;
