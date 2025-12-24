@@ -3,6 +3,7 @@ import userModel from "../models/userModel.js";
 import productModel from "../models/productModel.js";
 import notificationModel from "../models/notificationModel.js";
 import { emitMerchantNotification } from "../utils/emitNotification.js";
+import { calculateOrder } from "../utils/calculateOrder.js";
 
 //Global Variables
 const currency = "inr";
@@ -20,11 +21,24 @@ const deliveryCharge = 10;
 const placeOrder = async (req, res) => {
   try {
     const userId = req.userId; // from auth middleware
-    const { items, amount, address } = req.body;
+    const { items, paymentMethod, address, couponCode } = req.body;
 
     if (!items || items.length === 0) {
       return res.json({ success: false, message: "No items in order" });
     }
+
+    /* =====================================================
+       0️⃣ LOAD USER & COUPON
+    ===================================================== */
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    const appliedCoupon = couponCode?.toUpperCase() || null;
+
+    let finalAmount = 0;
+    let couponActuallyUsed = false;
 
     /* =====================================================
        1️⃣ ENRICH CART ITEMS WITH PRODUCT DATA
@@ -36,6 +50,23 @@ const placeOrder = async (req, res) => {
         if (!product) {
           throw new Error(`Product not found: ${cartItem.productId}`);
         }
+
+        let pricePerUnit = product.actualPrice;
+        let couponApplied = false;
+
+        // 🔥 COUPON CHECK (ITEM LEVEL)
+        if (
+          appliedCoupon &&
+          product.offerCode &&
+          product.offerCode.toUpperCase() === appliedCoupon &&
+          !user.usedCoupons.includes(appliedCoupon)
+        ) {
+          pricePerUnit = product.discountedPrice;
+          couponApplied = true;
+          couponActuallyUsed = true;
+        }
+
+        finalAmount += pricePerUnit * cartItem.quantity;
 
         return {
           productId: product._id.toString(),
@@ -55,6 +86,7 @@ const placeOrder = async (req, res) => {
           category: product.category,
           subCategory: product.subCategory,
           offerCode: product.offerCode || "",
+          couponApplied,
 
           image: Array.isArray(product.image) ? product.image : [],
           productDate: product.date,
@@ -64,19 +96,44 @@ const placeOrder = async (req, res) => {
       })
     );
 
+    if (!enrichedItems.length) {
+      return res.json({ success: false, message: "No valid items to order" });
+    }
+
     /* =====================================================
        2️⃣ CREATE SINGLE COMBINED ORDER
     ===================================================== */
+    const calculation = await calculateOrder({
+      items,
+      couponCode,
+      user,
+      paymentMethod,
+      includeCodFee: true,
+    });
+
+    if (!calculation.items.length) {
+      return res.json({ success: false, message: "Invalid order items" });
+    }
+
     const newOrder = await orderModel.create({
       userId,
-      items: enrichedItems,
-      amount,
+      items: calculation.items,
+      amount: calculation.payableAmount,
       address,
-      paymentMethod: "COD",
+      paymentMethod,
       payment: false,
       status: "Order Placed",
       date: Date.now(),
     });
+    /* =====================================================
+       3️⃣ MARK COUPON AS USED (ONLY AFTER SUCCESS)
+    ===================================================== */
+    if (calculation.couponUsed && couponCode) {
+  await userModel.updateOne(
+    { _id: userId },
+    { $addToSet: { usedCoupons: couponCode.toUpperCase() } }
+  );
+}
 
     /* =====================================================
        3️⃣ CLEAR USER CART
@@ -100,10 +157,7 @@ const placeOrder = async (req, res) => {
       });
 
       // 🔥 convert to plain object before socket emit
-      emitMerchantNotification(
-        item.sellerId,
-        notificationDoc.toObject()
-      );
+      emitMerchantNotification(item.sellerId, notificationDoc.toObject());
     }
 
     /* =====================================================
@@ -253,10 +307,22 @@ const updateStatus = async (req, res) => {
 
 const cancelOrder = async (req, res) => {
   try {
+    const userId = req.userId;
     const { orderId, productId } = req.body;
 
     const order = await orderModel.findById(orderId);
     if (!order) return res.json({ success: false, message: "Order not found" });
+
+    if (order.status === "Cancelled") {
+      return res.json({ success: false, message: "Order already cancelled" });
+    }
+
+    if (order.items.some((i) => i.itemStatus === "Delivered")) {
+      return res.json({
+        success: false,
+        message: "Delivered items cannot be cancelled",
+      });
+    }
 
     let updatedItem = null;
 
@@ -272,6 +338,25 @@ const cancelOrder = async (req, res) => {
       return res.json({ success: false, message: "Item not found" });
 
     await order.save();
+
+    /* =====================================================
+   🔒 COUPON ROLLBACK (PARTIAL CANCEL SAFE)
+===================================================== */
+    const couponItems = order.items.filter((item) => item.couponApplied);
+
+    // agar coupon laga hi nahi tha → kuch mat karo
+    if (couponItems.length > 0) {
+      const allCouponItemsCancelled = couponItems.every(
+        (item) => item.itemStatus === "Cancelled"
+      );
+
+      if (allCouponItemsCancelled) {
+        await userModel.updateOne(
+          { _id: userId },
+          { $pull: { usedCoupons: couponItems[0].offerCode.toUpperCase() } }
+        );
+      }
+    }
 
     await notificationModel.create({
       merchantId: updatedItem.sellerId,
@@ -320,6 +405,86 @@ export const trackOrder = async (req, res) => {
   }
 };
 
+const validateCoupon = async (req, res) => {
+  try {
+    const { code } = req.body;
+    const userId = req.userId;
+
+    if (!code) {
+      return res.json({ success: false, message: "Enter coupon code" });
+    }
+
+    const coupon = code.toUpperCase();
+
+    // 1️⃣ User already used?
+    const user = await userModel.findById(userId);
+
+    if (user.usedCoupons.includes(coupon)) {
+      return res.json({
+        success: false,
+        message: "Coupon already used",
+      });
+    }
+
+    // 2️⃣ Merchant-created coupon exists?
+    const productExists = await productModel.exists({
+      offerCode: { $regex: `^${coupon}$`, $options: "i" },
+    });
+
+    if (!productExists) {
+      return res.json({
+        success: false,
+        message: "Invalid coupon code",
+      });
+    }
+
+    // ✅ VALID (but NOT consumed)
+    return res.json({
+      success: true,
+      couponCode: coupon,
+      message: "Coupon applied successfully",
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Coupon check failed" });
+  }
+};
+
+const previewOrder = async (req, res) => {
+  try {
+    const { items, couponCode, paymentMethod } = req.body;
+    const user = req.user; // auth middleware se
+
+    if (couponCode) {
+      const used = user.usedCoupons.includes(couponCode.toUpperCase());
+      if (used) {
+        return res.json({
+          success: false,
+          code: "COUPON_ALREADY_USED",
+          message: "Coupon applied previously",
+        });
+      }
+    }
+
+    const summary = await calculateOrder({
+      items,
+      couponCode,
+      user,
+      paymentMethod,
+    });
+
+    return res.json({
+      success: true,
+      ...summary,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Preview failed",
+    });
+  }
+};
+
+
 export default {
   verifyCashfree,
   placeOrder,
@@ -330,4 +495,6 @@ export default {
   updateStatus,
   cancelOrder,
   trackOrder,
+  validateCoupon,
+  previewOrder,
 };

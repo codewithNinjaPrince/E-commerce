@@ -26,9 +26,20 @@ const RelatedProducts = ({ category, subCategory }) => {
       </div>
 
       {/* GRID */}
-      <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+      <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-5">
         {related.slice(0, visible).map((item) => (
-          <ProductItem key={item._id} {...item} />
+          <div key={item._id} className="bg-[#2a2a2a] rounded-lg p-2">
+            <ProductItem
+                  _id={item._id}
+                  name={item.name}
+                  brandName={item.brandName}
+                  image={item.image}
+                  actualPrice={item.actualPrice}
+                  discountedPrice={item.discountedPrice}
+                  review={item.review}
+                  noOfPeopleReviewed={item.noOfPeopleReviewed}
+                />
+          </div>
         ))}
       </div>
 

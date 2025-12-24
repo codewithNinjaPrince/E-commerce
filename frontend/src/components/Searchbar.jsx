@@ -1,10 +1,23 @@
 import React from "react";
-import { assets } from "../assets/assets";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const Searchbar = ({ showNavbar }) => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // 🔹 common box style (same for both)
+  const boxStyle = `
+    h-[48px]
+    flex items-center
+    bg-[#151515]
+    border border-white/10
+    rounded-xl
+    px-4
+    transition
+    hover:border-white/30
+    hover:bg-[#1a1a1a]
+    active:scale-[0.98]
+  `;
 
   return (
     <div
@@ -12,27 +25,16 @@ const Searchbar = ({ showNavbar }) => {
         fixed w-full z-40
         bg-black/90 backdrop-blur-md
         border-b border-white/10
-        px-1 py-1
+        px-2 py-2
         transition-all duration-300
         ${showNavbar ? "top-[64px]" : "top-0"}
       `}
     >
-      <div className="mx-auto flex items-center gap-2 sm:gap-3 md:gap-4 sm:px-2 md:px-3 lg:px-8">
-
+      <div className="mx-auto flex items-center gap-2 sm:gap-3 lg:px-8">
         {/* BACK BUTTON */}
         <button
           onClick={() => navigate(-1)}
-          className="
-            flex items-center justify-center
-            w-10 h-10
-            rounded-lg
-            bg-[#151515]
-            border border-white/10
-            text-white
-            hover:bg-white hover:text-black
-            transition
-            cursor-pointer
-          "
+          className={`${boxStyle} justify-center w-[48px] text-gray-300 hover:text-white`}
           aria-label="Go back"
         >
           ←
@@ -45,19 +47,10 @@ const Searchbar = ({ showNavbar }) => {
               state: { from: location.pathname },
             })
           }
-          className="
-            flex-1
-            flex items-center gap-3
-            bg-[#151515]
-            border border-white/10
-            rounded-xl px-4 py-3
-            cursor-text
-            hover:border-white/30
-            transition
-          "
+          className={`${boxStyle} flex-1 cursor-text`}
         >
           <p className="text-sm text-gray-400">
-            Search products, brands, categories and more...
+            Search products, brands and more...
           </p>
         </div>
       </div>

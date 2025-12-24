@@ -253,8 +253,10 @@ const Collections = () => {
                   </p>
                 ) : (
                   filterProducts.map((item) => (
+                    <div key={item._id}
+                    className="bg-[#2a2a2a] rounded-xl p-2"
+                    >
                     <ProductItem
-                      key={item._id}
                       _id={item._id}
                       name={item.name}
                       brandName={item.brandName}
@@ -264,6 +266,7 @@ const Collections = () => {
                       review={item.review}
                       noOfPeopleReviewed={item.noOfPeopleReviewed}
                     />
+                    </div>
                   ))
                 )}
               </div>
@@ -271,7 +274,7 @@ const Collections = () => {
           </div>
 
           {/* MOBILE FILTER / SORT BAR */}
-          <div className="sm:hidden fixed bottom-0 left-0 w-full bg-black/95 border-t border-white/10 flex justify-around py-3 z-50">
+          <div className="sm:hidden fixed bottom-0 left-0 w-full bg-black/95 border-t border-white/10 flex justify-around py-1 sm:py-2 z-50">
             {/* FILTER BUTTON */}
             <button
               onClick={() => {
@@ -282,7 +285,7 @@ const Collections = () => {
       ${
         showMobileFilter
           ? "bg-white/10 text-green-400 scale-[1.02] shadow-md"
-          : "text-white"
+          : "text-green-400"
       }
     `}
             >
@@ -321,8 +324,8 @@ const Collections = () => {
               className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-200
       ${
         showMobileSort
-          ? "bg-white/10 text-green-400 scale-[1.02] shadow-md"
-          : "text-white"
+          ? "bg-white/10 text-white scale-[1.02] shadow-md"
+          : "text-red-400"
       }
     `}
             >
@@ -438,57 +441,91 @@ const Collections = () => {
 
           {/* MOBILE SORT DRAWER */}
           {showMobileSort && (
-            <div className="fixed bottom-0 left-0 w-full bg-[#111] border-t border-white/10 p-5 rounded-t-2xl z-50 animate-slide-up">
-              {/* HEADER */}
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-white">Sort By</h2>
-                <button
-                  onClick={() => setShowMobileSort(false)}
-                  className="text-gray-400 text-xl"
-                >
-                  ✖
-                </button>
+  <div className="fixed inset-0 z-50">
+    {/* BACKDROP */}
+    <div
+      className="absolute inset-0 bg-black/60"
+      onClick={() => setShowMobileSort(false)}
+    />
+
+    {/* SORT SHEET */}
+    <div
+      className="absolute bottom-0 left-0 w-full
+        bg-[#111]
+        border-t border-white/10
+        p-5
+        rounded-t-2xl
+        animate-slide-up
+        touch-pan-y
+      "
+      onTouchStart={(e) => {
+        e.currentTarget.startY = e.touches[0].clientY;
+      }}
+      onTouchEnd={(e) => {
+        const endY = e.changedTouches[0].clientY;
+        const diff = endY - e.currentTarget.startY;
+
+        // 👇 swipe down threshold
+        if (diff > 80) {
+          setTimeout(() => {
+            setShowMobileSort(false);
+          }, 100); // 0.10s delay
+        }
+      }}
+    >
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold text-white">Sort By</h2>
+        <button
+          onClick={() => setShowMobileSort(false)}
+          className="text-gray-400 text-xl"
+        >
+          ✖
+        </button>
+      </div>
+
+      {/* SORT OPTIONS */}
+      <div className="space-y-3 text-sm">
+        {[
+          { label: "Relevant", value: "relevant" },
+          { label: "Price: Low → High", value: "low-high" },
+          { label: "Price: High → Low", value: "high-low" },
+        ].map((opt) => {
+          const active = sortType === opt.value;
+
+          return (
+            <label
+              key={opt.value}
+              onClick={() => {
+                setSortType(opt.value);
+                setShowMobileSort(false);
+              }}
+              className="flex items-center gap-3 cursor-pointer"
+            >
+              {/* CHECK */}
+              <div
+                className={`w-5 h-5 rounded border flex items-center justify-center
+                  ${
+                    active
+                      ? "bg-green-400 border-green-400"
+                      : "border-white/30"
+                  }
+                `}
+              >
+                {active && (
+                  <span className="text-black text-sm font-bold">✓</span>
+                )}
               </div>
 
-              {/* SORT OPTIONS – FILTER STYLE */}
-              <div className="space-y-3 text-sm">
-                {[
-                  { label: "Relevant", value: "relevant" },
-                  { label: "Price: Low → High", value: "low-high" },
-                  { label: "Price: High → Low", value: "high-low" },
-                ].map((opt) => {
-                  const active = sortType === opt.value;
+              <span className="text-gray-300">{opt.label}</span>
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  </div>
+)}
 
-                  return (
-                    <label
-                      key={opt.value}
-                      onClick={() => {
-                        setSortType(opt.value);
-                        setShowMobileSort(false); // optional: auto close
-                      }}
-                      className="flex items-center gap-3 cursor-pointer"
-                    >
-                      {/* CHECKBOX */}
-                      <div
-                        className={`w-5 h-5 rounded border flex items-center justify-center
-                ${active ? "bg-green-400 border-green-400" : "border-white/30"}
-              `}
-                      >
-                        {active && (
-                          <span className="text-black text-sm font-bold">
-                            ✓
-                          </span>
-                        )}
-                      </div>
-
-                      {/* LABEL */}
-                      <span className="text-gray-300">{opt.label}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </>
       )}
     </div>

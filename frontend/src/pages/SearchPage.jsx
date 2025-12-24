@@ -19,6 +19,7 @@ const SearchPage = () => {
   const [results, setResults] = useState([]);
   const [recent, setRecent] = useState([]);
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  
 
   /* -------------------- LOAD RECENT -------------------- */
   useEffect(() => {
@@ -146,17 +147,21 @@ useEffect(() => {
           />
 
           {search && (
-            <button
-              onClick={() => onKeywordClick(k)}
-              className="
-              absolute right-0 top-1/2
-              -translate-y-1/2
-              text-gray-400 hover:text-white
-            "
-            >
-              <FaTimes size={14} />
-            </button>
-          )}
+  <button
+    onClick={() => {
+      setSearch("");
+      setResults([]);
+    }}
+    className="
+      absolute right-0 top-1/2
+      -translate-y-1/2
+      text-gray-400 hover:text-white
+    "
+  >
+    <FaTimes size={14} />
+  </button>
+)}
+
         </div>
       </div>
 

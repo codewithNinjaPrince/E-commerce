@@ -55,6 +55,11 @@ const userSchema = new mongoose.Schema(
         ref: "Product",
       },
     ],
+    usedCoupons: {
+  type: [String], // ["PRINCE20", "SAVE10"]
+  default: [],
+},
+
 
   },
   { timestamps: true }

@@ -41,7 +41,8 @@ const SearchRouteGuard = ({ children }) => {
   if (
     from !== "/" &&
     from !== "/collections" &&
-    !from?.startsWith("/product")
+    !from?.startsWith("/product")&&
+    !from?.startsWith("/favorites")
   ) {
     return <Navigate to="/" replace />;
   }

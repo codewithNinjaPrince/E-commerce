@@ -9,7 +9,7 @@ import mongoose from "mongoose";
     description: { type: String, required: true },
     actualPrice: { type: Number, required: true, min: 1 },
     discountedPrice: { type: Number, required: true, min: 1 },
-    offerCode: { type: String,required: false, default: "" },
+    offerCode: { type: String, uppercase: true, trim: true, required: false, default: "" },
     review: { type: Number, default: 0, min: 0, max: 5 },
     noOfPeopleReviewed: { type: Number, default: 0, max: 100 },
     image: {

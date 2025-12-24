@@ -16,6 +16,27 @@ const SideSheet = ({ open, onClose, title = "Filters", children }) => {
 
   if (!open) return null;
 
+   /* 👉 TOUCH HANDLERS */
+  const handleTouchStart = (e) => {
+    startX.current = e.touches[0].clientX;
+    currentX.current = startX.current;
+  };
+
+  const handleTouchMove = (e) => {
+    currentX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    const diff = startX.current - currentX.current;
+
+    // 👈 swipe left threshold (adjust if needed)
+    if (diff > 70) {
+      setTimeout(() => {
+        onClose();
+      }, 100); // ⏱ 0.10s delay
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[999]">
       {/* BACKDROP */}
@@ -33,7 +54,11 @@ const SideSheet = ({ open, onClose, title = "Filters", children }) => {
           shadow-2xl
           flex flex-col
           animate-slide-in-left
+          touch-pan-y
         "
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         {/* HEADER */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">

@@ -6,7 +6,7 @@ import { assets } from "../assets/assets";
 import CartTotal from "../components/CartTotal";
 
 const Cart = () => {
-  const { products, currency, cartItems, updateQuantity, navigate } =
+  const { products, currency, cartItems, updateQuantity, navigate, delivery_fee } =
     useContext(ShopContext);
 
   const cartTotalRef = useRef(null);
@@ -14,34 +14,81 @@ const Cart = () => {
   const [cartData, setCartData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cartOpenKey, setCartOpenKey] = useState(0);
+  const [cartFinalAmount, setCartFinalAmount] = useState(0);
+  const [priceData, setPriceData] = useState(null);
 
   // delete confirmation
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState(null);
 
+  useEffect(() => {
+  const tempData = [];
+
+  for (const productId in cartItems) {
+    for (const size in cartItems[productId]) {
+      const qty = cartItems[productId][size];
+      if (qty > 0) {
+        tempData.push({
+          _id: productId,
+          size,
+          quantity: qty,
+        });
+      }
+    }
+  }
+
+  setCartData(tempData);
+  setLoading(false);
+}, [cartItems, products]);
+
+
   // -------- LOAD CART DATA ----------
   useEffect(() => {
-    setLoading(true);
+  const loadPreview = async () => {
+    const items = [];
 
-    if (products.length > 0) {
-      const tempData = [];
-
-      for (const productId in cartItems) {
-        for (const size in cartItems[productId]) {
-          if (cartItems[productId][size] > 0) {
-            tempData.push({
-              _id: productId,
-              size,
-              quantity: cartItems[productId][size],
-            });
-          }
+    for (const productId in cartItems) {
+      for (const size in cartItems[productId]) {
+        const qty = cartItems[productId][size];
+        if (qty > 0) {
+          items.push({
+            productId,
+            size,
+            quantity: qty,
+          });
         }
       }
-
-      setCartData(tempData);
-      setTimeout(() => setLoading(false), 500);
     }
-  }, [cartItems, products]);
+
+    if (!items.length) {
+      setPriceData(null);
+      return;
+    }
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/order/preview`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          token: localStorage.getItem("token"),
+        },
+        body: JSON.stringify({
+          items,
+          paymentMethod: "preview", // cart page me COD fixed
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setPriceData(data);
+      }
+    } catch (err) {
+      console.log("Cart preview failed", err);
+    }
+  };
+
+  loadPreview();
+}, [cartItems, products]);
 
   // -------- CONFIRM DELETE ----------
   const confirmDelete = () => {
@@ -69,12 +116,15 @@ const Cart = () => {
     }
 
     const FREE_LIMIT = 1000;
-    const shippingFee = discountedTotal >= FREE_LIMIT ? 0 : 50; // or delivery_fee if available
+    const shippingFee =
+  discountedTotal >= FREE_LIMIT ? 0 : delivery_fee;
 
     return discountedTotal + shippingFee;
   };
 
   const finalTotal = computeFinalTotal();
+
+  
 
   // LOADING
   if (loading) {
@@ -320,20 +370,20 @@ const Cart = () => {
                 </div>
 
                 {/* DESKTOP — QUANTITY (CENTER) */}
-<div className="hidden sm:flex justify-center">
-  <QuantityInput item={item} />
-</div>
+                <div className="hidden sm:flex justify-center">
+                  <QuantityInput item={item} />
+                </div>
 
-{/* DESKTOP — DELETE (RIGHT) */}
-<div className="hidden sm:flex justify-end">
-  <img
-    src={assets.bin_icon}
-    alt="delete"
-    onClick={() => {
-      setDeleteItem(item);
-      setConfirmOpen(true);
-    }}
-    className="
+                {/* DESKTOP — DELETE (RIGHT) */}
+                <div className="hidden sm:flex justify-end">
+                  <img
+                    src={assets.bin_icon}
+                    alt="delete"
+                    onClick={() => {
+                      setDeleteItem(item);
+                      setConfirmOpen(true);
+                    }}
+                    className="
       w-6
       invert
       cursor-pointer
@@ -342,9 +392,8 @@ const Cart = () => {
       hover:scale-110
       transition
     "
-  />
-</div>
-
+                  />
+                </div>
               </div>
             );
           })}
@@ -356,7 +405,11 @@ const Cart = () => {
             ref={cartTotalRef}
             className="w-full sm:w-[450px] cursor-pointer"
           >
-            <CartTotal forceOpenKey={cartOpenKey} />
+            <CartTotal
+  forceOpenKey={cartOpenKey}
+  priceData={priceData}
+/>
+
           </div>
         </div>
       </div>
@@ -387,7 +440,7 @@ const Cart = () => {
 
             <p className="text-lg font-bold text-white flex items-center gap-2">
               {currency}
-              {finalTotal}
+              {priceData?.payableAmount ?? finalTotal}
               <FaChevronRight
                 className="
     text-gray-400
