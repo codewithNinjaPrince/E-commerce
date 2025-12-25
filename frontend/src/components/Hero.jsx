@@ -1,29 +1,26 @@
-import React from "react";
+import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { assets } from "../assets/assets";
 
 const Hero = () => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+
   return (
     <NavLink to="/collections">
       <div
-  className="
-    flex flex-col sm:flex-row
-    bg-gradient-to-r from-[#111] via-[#151515] to-[#1c1c1c]
-    border border-white/10
-    rounded-xl overflow-hidden
-    shadow-[0_0_40px_rgba(255,255,255,0.06)]
-    cursor-pointer
-
-    mt-4 mb-4          /* 📱 mobile: very small gap */
-    sm:mt-6 sm:mb-6    /* 📱 medium: small gap */
-    lg:mt-8 lg:mb-8  /* 🖥 desktop: normal white gap */
-  "
->
-
+        className="
+          flex flex-col sm:flex-row
+          bg-gradient-to-r from-[#111] via-[#151515] to-[#1c1c1c]
+          border border-white/10
+          rounded-xl overflow-hidden
+          shadow-[0_0_40px_rgba(255,255,255,0.06)]
+          cursor-pointer
+          mt-4 mb-4 sm:mt-6 sm:mb-6 lg:mt-8 lg:mb-8
+        "
+      >
         {/* LEFT SIDE */}
         <div className="w-full sm:w-1/2 flex items-center justify-center py-14 px-8 sm:px-12">
           <div className="text-white space-y-4">
-
             <div className="flex items-center gap-3 opacity-90">
               <p className="w-10 md:w-14 h-[2px] bg-white/60"></p>
               <p className="text-sm md:text-base font-light tracking-wide">
@@ -31,13 +28,7 @@ const Hero = () => {
               </p>
             </div>
 
-            <h1
-              className="
-                text-4xl md:text-5xl lg:text-6xl
-                font-semibold leading-tight prata-regular
-                drop-shadow-[0_4px_15px_rgba(255,255,255,0.12)]
-              "
-            >
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight prata-regular">
               Latest Arrivals
             </h1>
 
@@ -51,11 +42,21 @@ const Hero = () => {
         </div>
 
         {/* RIGHT SIDE IMAGE */}
-        <div className="w-full sm:w-1/2 relative">
+        <div className="w-full sm:w-1/2 relative min-h-[240px] sm:min-h-full">
+          {/* 🔥 Skeleton */}
+          {!imageLoaded && (
+            <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-[#1a1a1a] via-[#222] to-[#1a1a1a]" />
+          )}
+
           <img
-            className="w-full h-full object-cover brightness-105 hover:brightness-110 transition duration-500"
             src={assets.hero_img}
             alt="hero"
+            onLoad={() => setImageLoaded(true)}
+            className={`
+              w-full h-full object-cover
+              transition-opacity duration-700
+              ${imageLoaded ? "opacity-100" : "opacity-0"}
+            `}
           />
         </div>
       </div>
