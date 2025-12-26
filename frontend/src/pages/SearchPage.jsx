@@ -19,7 +19,21 @@ const SearchPage = () => {
   const [results, setResults] = useState([]);
   const [recent, setRecent] = useState([]);
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    const online = () => setIsOnline(true);
+    const offline = () => setIsOnline(false);
+
+    window.addEventListener("online", online);
+    window.addEventListener("offline", offline);
+
+    return () => {
+      window.removeEventListener("online", online);
+      window.removeEventListener("offline", offline);
+    };
+  }, []);
 
   /* -------------------- LOAD RECENT -------------------- */
   useEffect(() => {
@@ -27,40 +41,38 @@ const SearchPage = () => {
     setRecent(stored);
   }, []);
 
-    /* -------------------- DEBOUNCE -------------------- */
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search.trim());
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [search]);
-
   /* -------------------- SEARCH LOGIC -------------------- */
   useEffect(() => {
     if (!debouncedSearch) {
       setResults([]);
+      setIsSearching(false);
       return;
     }
 
-    const q = debouncedSearch.toLowerCase();
+    setIsSearching(true);
 
-    const filtered = products.filter((p) =>
-      [p.name, p.brandName, p.category, p.subCategory]
-        .join(" ")
-        .toLowerCase()
-        .includes(q)
-    );
+    const timer = setTimeout(() => {
+      const q = debouncedSearch.toLowerCase();
 
-    setResults(filtered.slice(0, 20));
+      const filtered = products.filter((p) =>
+        [p.name, p.brandName, p.category, p.subCategory]
+          .join(" ")
+          .toLowerCase()
+          .includes(q)
+      );
+
+      setResults(filtered.slice(0, 15));
+      setIsSearching(false);
+    }, 500); // ⏳ simulate slow / real delay
+
+    return () => clearTimeout(timer);
   }, [debouncedSearch, products]);
 
   /* -------------------- ANALYTICS -------------------- */
   const trackSearch = (term) => {
     if (!term) return;
 
-    const data =
-      JSON.parse(localStorage.getItem("searchAnalytics")) || {};
+    const data = JSON.parse(localStorage.getItem("searchAnalytics")) || {};
 
     data[term] = (data[term] || 0) + 1;
 
@@ -76,15 +88,15 @@ const SearchPage = () => {
     localStorage.setItem("recentSearches", JSON.stringify(updated));
   };
 
-useEffect(() => {
-  const timer = setTimeout(() => {
-    setDebouncedSearch(search.trim());
-  }, 300);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+    }, 300);
 
-  return () => clearTimeout(timer);
-}, [search]);
+    return () => clearTimeout(timer);
+  }, [search]);
 
- /* -------------------- HANDLERS -------------------- */
+  /* -------------------- HANDLERS -------------------- */
   const onSelectProduct = (id) => {
     saveRecent(search);
     navigate(`/product/${id}`);
@@ -95,10 +107,12 @@ useEffect(() => {
     setSearch(value);
   };
 
-   /* -------------------- AUTO CLOSE ON DESKTOP -------------------- */
+  /* -------------------- AUTO CLOSE ON DESKTOP -------------------- */
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 1024) navigate(-1);
+      if (window.innerWidth >= 1024 && window.history.length > 1) {
+        navigate(-1);
+      }
     };
 
     handleResize();
@@ -109,9 +123,9 @@ useEffect(() => {
   return (
     <div className="min-h-screen w-full bg-black text-white">
       {/* 🔍 FLAT SEARCH HEADER */}
-      
-        <div
-  className="
+
+      <div
+        className="
     flex items-center gap-5
     px-4 sm:px-6
     md:px-4
@@ -119,7 +133,7 @@ useEffect(() => {
     py-5
     border-b border-white/10
   "
->
+      >
         {/* BACK */}
         <button onClick={() => navigate(-1)} className="shrink-0 text-white/80">
           <FaArrowLeft size={18} />
@@ -128,14 +142,14 @@ useEffect(() => {
         {/* SEARCH / TEXT */}
         <div className="relative flex-1">
           <input
-  value={search}
-  onChange={(e) => setSearch(e.target.value)}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && results.length > 0) {
                 onSelectProduct(results[0]._id);
               }
             }}
-  placeholder="Search for products, brands, Shop & more"
+            placeholder="Search for products, brands, Shop & more"
             className="
             w-full
             bg-transparent
@@ -147,21 +161,20 @@ useEffect(() => {
           />
 
           {search && (
-  <button
-    onClick={() => {
-      setSearch("");
-      setResults([]);
-    }}
-    className="
+            <button
+              onClick={() => {
+                setSearch("");
+                setResults([]);
+              }}
+              className="
       absolute right-0 top-1/2
       -translate-y-1/2
       text-gray-400 hover:text-white
     "
-  >
-    <FaTimes size={14} />
-  </button>
-)}
-
+            >
+              <FaTimes size={14} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -215,42 +228,76 @@ useEffect(() => {
         )}
 
         {/* RESULTS */}
+
         {search && (
           <div className="mt-4">
-            {results.map((item) => (
-              <div
-                key={item._id}
-                onClick={() => onSelectProduct(item._id)}
-                className="
-                flex items-center gap-3
-                py-3
-                border-b border-white/10
-                cursor-pointer
-                hover:bg-white/5
-              "
-              >
-                <img
-                  src={item.image[0]}
-                  className="w-10 h-10 rounded object-cover"
-                  alt={item.name}
-                />
-
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm sm:text-base truncate">{item.name}</p>
-                  <p className="text-xs text-gray-400 truncate">
-                    {item.category}
-                  </p>
-                </div>
-
-                <FaChevronRight className="text-gray-400 text-[9px] shrink-0 opacity-70" />
-              </div>
-            ))}
-
-            {results.length === 0 && (
+            {/* ❌ OFFLINE */}
+            {!isOnline && (
               <p className="text-sm text-gray-400 text-center mt-10">
-                No products found 😔
+                You are offline 😔
               </p>
             )}
+
+            {/* 🦴 SKELETON */}
+            {isOnline && isSearching && (
+              <div className="space-y-4 animate-pulse">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 py-3 border-b border-white/10"
+                  >
+                    <div className="w-10 h-10 bg-gray-700/40 rounded" />
+
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 bg-gray-700/40 rounded w-3/4" />
+                      <div className="h-3 bg-gray-700/30 rounded w-1/2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* ✅ RESULTS */}
+            {!isSearching &&
+              isOnline &&
+              results.map((item) => (
+                <div
+                  key={item._id}
+                  onClick={() => onSelectProduct(item._id)}
+                  className="
+            flex items-center gap-3
+            py-3
+            border-b border-white/10
+            cursor-pointer
+            hover:bg-white/5
+          "
+                >
+                  <img
+                    src={item.image?.[0]}
+                    className="w-10 h-10 rounded object-cover"
+                    alt={item.name}
+                  />
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm sm:text-base truncate">{item.name}</p>
+                    <p className="text-xs text-gray-400 truncate">
+                      {item.category}
+                    </p>
+                  </div>
+
+                  <FaChevronRight className="text-gray-400 text-[9px] shrink-0 opacity-70" />
+                </div>
+              ))}
+
+            {/* 😔 EMPTY */}
+            {!isSearching &&
+              isOnline &&
+              products.length > 0 &&
+              results.length === 0 && (
+                <p className="text-sm text-gray-400 text-center mt-10">
+                  No products found 😔
+                </p>
+              )}
           </div>
         )}
       </div>

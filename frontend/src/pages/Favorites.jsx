@@ -3,17 +3,71 @@ import { ShopContext } from "../context/ShopContext";
 import Title from "../components/Title";
 import ProductItem from "../components/ProductItem";
 import { FaHeart } from "react-icons/fa";
+import ProductItemSkeleton from "../components/ProductItemSkeleton";
+
+const FavoritesPageSkeleton = () => {
+  return (
+    <section>
+      <div
+        className="
+          bg-black/90
+          border border-white/10
+          rounded-xl
+          shadow-[0_0_40px_rgba(255,255,255,0.06)]
+          mt-6 mb-6
+          sm:mt-8 sm:mb-8
+          lg:mt-10 lg:mb-10
+        "
+      >
+        <div className="w-full sm:px-2 md:px-3 lg:px-4">
+          {/* HEADER SKELETON */}
+          <div className="text-center py-8 animate-pulse">
+            <div className="h-8 w-64 mx-auto bg-gray-700/40 rounded" />
+            <div className="h-4 w-3/4 mx-auto bg-gray-700/30 rounded mt-4" />
+          </div>
+
+          {/* PRODUCT GRID SKELETON */}
+          <div
+            className="
+              mt-6
+              grid
+              grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5
+              gap-4 sm:gap-5
+            "
+          >
+            {Array.from({ length: 10 }).map((_, i) => (
+              
+                <ProductItemSkeleton />
+            ))}
+          </div>
+
+          <div className="pb-6"></div>
+        </div>
+      </div>
+    </section>
+  );
+};
 
 const Favorites = () => {
-  const {
-    products,
-    favorites,
-    favoritesLoading,
-    token,
-    navigate,
-  } = useContext(ShopContext);
+  const { products, favorites, favoritesLoading, token, navigate } =
+    useContext(ShopContext);
 
   const [favoriteProducts, setFavoriteProducts] = useState([]);
+
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const online = () => setIsOnline(true);
+    const offline = () => setIsOnline(false);
+
+    window.addEventListener("online", online);
+    window.addEventListener("offline", offline);
+
+    return () => {
+      window.removeEventListener("online", online);
+      window.removeEventListener("offline", offline);
+    };
+  }, []);
 
   /* -------- AUTH GUARD -------- */
   useEffect(() => {
@@ -25,24 +79,14 @@ const Favorites = () => {
   /* -------- MAP FAVORITES -------- */
   useEffect(() => {
     if (products.length && favorites.length) {
-      setFavoriteProducts(
-        products.filter((p) => favorites.includes(p._id))
-      );
+      setFavoriteProducts(products.filter((p) => favorites.includes(p._id)));
     } else {
       setFavoriteProducts([]);
     }
   }, [products, favorites]);
 
-  /* -------- LOADING -------- */
-  if (favoritesLoading) {
-    return (
-      <div className="pt-28 flex flex-col items-center justify-center text-white">
-        <div className="w-10 h-10 border-4 border-gray-500 border-t-white rounded-full animate-spin"></div>
-        <p className="mt-4 text-gray-400 text-sm animate-pulse">
-          Loading your favorites… ❤️
-        </p>
-      </div>
-    );
+  if (!isOnline || favoritesLoading) {
+    return <FavoritesPageSkeleton />;
   }
 
   return (
@@ -60,7 +104,6 @@ const Favorites = () => {
         "
       >
         <div className="w-full sm:px-2 md:px-3 lg:px-4">
-
           {/* HEADER */}
           <div className="text-center text-white py-4 sm:py-6 md:py-8">
             <div className="text-2xl sm:text-3xl md:text-4xl">
@@ -68,8 +111,8 @@ const Favorites = () => {
             </div>
 
             <p className="mt-3 w-full sm:w-4/5 md:w-3/4 mx-auto text-sm sm:text-base md:text-lg leading-relaxed text-gray-400">
-              Products you’ve loved and saved for later ❤️  
-              Revisit your favorite picks anytime and never miss out.
+              Products you’ve loved and saved for later ❤️ Revisit your favorite
+              picks anytime and never miss out.
             </p>
           </div>
 
@@ -102,10 +145,7 @@ const Favorites = () => {
               "
             >
               {favoriteProducts.map((item) => (
-                <div
-                  key={item._id}
-                  className="bg-[#2a2a2a] rounded-xl p-2"
-                >
+                <div key={item._id} className="bg-[#2a2a2a] rounded-xl p-2">
                   <ProductItem {...item} />
                 </div>
               ))}
@@ -114,7 +154,6 @@ const Favorites = () => {
 
           {/* FOOT SPACE */}
           <div className="pb-4 sm:pb-6 md:pb-8"></div>
-
         </div>
       </div>
     </section>

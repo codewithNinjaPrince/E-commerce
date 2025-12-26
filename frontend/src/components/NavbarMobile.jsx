@@ -199,7 +199,8 @@ const Navbar = ({ showNavbar }) => {
             {token && (
               <Section title="My Account">
                 <DrawerLink to="/user" label="My Profile" setOpen={setOpen} />
-                <DrawerLink to="/orders" label="My Orders" setOpen={setOpen} />
+                <DrawerLink to="/orders" label="My Orders" setOpen={setOpen} />                
+                <DrawerLink to="/address" label="My Addresses" setOpen={setOpen} />                
               </Section>
             )}
 

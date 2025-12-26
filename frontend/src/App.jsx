@@ -14,6 +14,10 @@ import Contact from "./pages/Contact";
 import Product from "./pages/Product";
 import Cart from "./pages/Cart";
 import Orders from "./pages/Orders";
+import AddressPage from "./pages/AddressPage";
+import AddressForm from "./components/AddressForm";
+import OrderPreview from "./pages/OrderPreview";
+import PaymentPage from "./pages/Paymentpage";
 import PlaceOrder from "./pages/PlaceOrder";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -41,7 +45,7 @@ const SearchRouteGuard = ({ children }) => {
   if (
     from !== "/" &&
     from !== "/collections" &&
-    !from?.startsWith("/product")&&
+    !from?.startsWith("/product") &&
     !from?.startsWith("/favorites")
   ) {
     return <Navigate to="/" replace />;
@@ -56,17 +60,16 @@ const App = () => {
   const [showNavbar, setShowNavbar] = useState(true);
   const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
 
-useEffect(() => {
-  setIsMobileOrTablet(window.innerWidth < 1024);
-
-  const handleResize = () => {
+  useEffect(() => {
     setIsMobileOrTablet(window.innerWidth < 1024);
-  };
 
-  window.addEventListener("resize", handleResize);
-  return () => window.removeEventListener("resize", handleResize);
-}, []);
+    const handleResize = () => {
+      setIsMobileOrTablet(window.innerWidth < 1024);
+    };
 
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const location = useLocation();
   const pathname = location.pathname;
@@ -81,8 +84,23 @@ useEffect(() => {
     pathname.startsWith("/product") ||
     pathname === "/favorites";
 
+  const isAddressFlow =
+    pathname === "/address" ||
+    pathname === "/address/add" ||
+    pathname.startsWith("/address/edit");
+    pathname === "/order-preview" ||
+    pathname === "/placeorder";
+
   /* 🔥 HIDE FOOTER ON THESE ROUTES */
-  const hideFooterRoutes = ["/search", "/user", "/cart", "/placeorder"];
+  const hideFooterRoutes = [
+    "/search",
+    "/user",
+    "/cart",
+    "/placeorder",
+    "/address",
+    "/order-preview",
+    "/payment",
+  ];
 
   const showFooter = !hideFooterRoutes.some((route) =>
     pathname.startsWith(route)
@@ -129,22 +147,23 @@ useEffect(() => {
 
       {/* ================= TOAST ================= */}
       <ToastContainer
-        position="top-right"
+        position="top-center"
         autoClose={2000} // ⏱️ 2 seconds
-        hideProgressBar={false}
+        hideProgressBar
         newestOnTop
         closeOnClick
         rtl={false}
-        pauseOnFocusLoss
+        pauseOnFocusLoss={false}
         draggable
         pauseOnHover
+        toastClassName="!rounded-xl !bg-[#121212] !text-white"
         theme="dark"
         closeButton={({ closeToast }) => (
           <button
             onClick={closeToast}
             style={{
               position: "absolute",
-              top: "50%",
+              top: "20%",
               right: "12px", // 👈 always right
               transform: "translateY(-50%)",
               fontSize: "18px",
@@ -161,13 +180,11 @@ useEffect(() => {
       />
 
       {/* ================= NAVBAR ================= */}
-      {!isSearchPage && <Navbar showNavbar={showNavbar} />}
+      {!isSearchPage && !isAddressFlow && <Navbar showNavbar={showNavbar} />}
 
       {/* ================= SEARCHBAR ================= */}
-      {showSearchBar && !isSearchPage && isMobileOrTablet && (
-        <div className="w-screen max-w-none px-0">
-          <Searchbar showNavbar={showNavbar} />
-        </div>
+      {showSearchBar && !isSearchPage && !isAddressFlow && isMobileOrTablet && (
+        <Searchbar showNavbar={showNavbar} />
       )}
 
       {/* ================= ROUTES ================= */}
@@ -183,12 +200,17 @@ useEffect(() => {
         />
 
         <Route path="/cart" element={<Cart />} />
+        <Route path="/order-preview" element={<OrderPreview />} />
+        <Route path="/payment" element={<PaymentPage />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/sell-with-us" element={<SellWithUs />} />
         <Route path="/login" element={<Login />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/placeorder" element={<PlaceOrder />} />
+        <Route path="/address" element={<AddressPage />} />
+        <Route path="/address/add" element={<AddressForm />} />
+        <Route path="/address/edit/:addressId" element={<AddressForm />} />
 
         {/* LEGAL */}
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />

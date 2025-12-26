@@ -2,138 +2,118 @@ import React, { useContext, useState, useEffect, useRef } from "react";
 import { ShopContext } from "../context/ShopContext";
 import Title from "./Title";
 import ProductItem from "./ProductItem";
+import ProductItemSkeleton from "./ProductItemSkeleton";
 
 const BestSeller = () => {
   const { products } = useContext(ShopContext);
 
   const [visibleCount, setVisibleCount] = useState(10);
   const [bestSeller, setBestSeller] = useState([]);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   const scrollRef = useRef(null);
 
+  /* 🔌 ONLINE / OFFLINE DETECT */
   useEffect(() => {
-    const bestProducts = products.filter((item) => item.bestseller);
-    setBestSeller(bestProducts);
-  }, [products]);
+    const online = () => setIsOnline(true);
+    const offline = () => setIsOnline(false);
 
-  const handleShowMore = () => {
-    setVisibleCount((prev) => prev + 10);
-  };
+    window.addEventListener("online", online);
+    window.addEventListener("offline", offline);
+
+    return () => {
+      window.removeEventListener("online", online);
+      window.removeEventListener("offline", offline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isOnline && products.length > 0) {
+      const bestProducts = products.filter((item) => item.bestseller);
+      setBestSeller(bestProducts);
+    } else {
+      setBestSeller([]); // offline / no data
+    }
+  }, [products, isOnline]);
+
+  const skeletonCount = window.innerWidth < 640 ? 8 : 15;
+  const showSkeleton = !isOnline || products.length === 0;
+
+  const handleShowMore = () => setVisibleCount((p) => p + 10);
 
   const handleHide = () => {
     setVisibleCount(10);
     setTimeout(() => {
-      scrollRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+      scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
   };
 
   return (
     <section>
-      <div
-        className="
-          bg-black/90
-          border border-white/10
-          rounded-xl
-          overflow-hidden
-          shadow-[0_0_40px_rgba(255,255,255,0.06)]
-
-          mt-4 mb-4
-          sm:mt-6 sm:mb-6
-          lg:mt-8 lg:mb-8
-        "
-      >
+      <div className="bg-black/90 border border-white/10 rounded-xl shadow-[0_0_40px_rgba(255,255,255,0.06)] mt-4 mb-4 sm:mt-6 sm:mb-6 lg:mt-8 lg:mb-8">
         <div className="w-full sm:px-2 md:px-3 lg:px-4">
           {/* HEADER */}
-          <div className="text-center text-white py-4 sm:py-6 md:py-8">
-            <div className="text-2xl sm:text-3xl md:text-4xl">
-              <Title text1="Best" text2="Seller" />
-            </div>
-
-            <p
-              className="
-                mt-3
-                w-full sm:w-4/5 md:w-3/4
-                mx-auto
-                text-sm sm:text-base md:text-lg
-                leading-relaxed
-                text-gray-400
-              "
-            >
-              Top-selling essentials and trending favourites, carefully
-              handpicked from trusted local shops. 🛍️✨ Discover quality
-              products loved by customers for their value, style, and
-              reliability. From everyday needs to special finds, these best
-              sellers are chosen to elevate your shopping experience. 💫🔥
-            </p>
+          <div className="text-center text-white py-6 md:py-8">
+            {showSkeleton ? (
+              <>
+                <div className="h-8 w-40 bg-gray-700/40 rounded mx-auto mb-4 animate-pulse" />
+                <div className="h-4 w-3/4 bg-gray-700/30 rounded mx-auto mb-2 animate-pulse" />
+                <div className="h-4 w-2/3 bg-gray-700/30 rounded mx-auto animate-pulse" />
+              </>
+            ) : (
+              <>
+                <div className="text-2xl sm:text-3xl md:text-4xl">
+                  <Title text1="Best" text2="Seller" />
+                </div>
+                <p className="mt-3 w-full sm:w-4/5 md:w-3/4 mx-auto text-gray-400">
+                  Top-selling essentials and trending favourites, carefully
+                  handpicked from trusted local shops. 🛍️✨ Discover quality
+                  products loved by customers for their value, style, and
+                  reliability. From everyday needs to special finds, these best
+                  sellers are chosen to elevate your shopping experience. 💫🔥
+                </p>
+              </>
+            )}
           </div>
 
           {/* SCROLL TARGET */}
           <div ref={scrollRef}></div>
 
           {/* PRODUCTS GRID */}
-          <div
-            className="
-    mt-6
-    grid
-    grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5
-    gap-4 sm:gap-5 
-  "
-          >
-            {bestSeller.slice(0, visibleCount).map((item) => (
-              <div key={item._id} className="bg-[#2a2a2a] rounded-xl p-2">
-                <ProductItem
-                  _id={item._id}
-                  name={item.name}
-                  brandName={item.brandName}
-                  image={item.image}
-                  actualPrice={item.actualPrice}
-                  discountedPrice={item.discountedPrice}
-                  review={item.review}
-                  noOfPeopleReviewed={item.noOfPeopleReviewed}
-                />
-              </div>
-            ))}
+          <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {showSkeleton
+              ? Array.from({ length: skeletonCount }).map((_, i) => (
+                  <ProductItemSkeleton key={i} />
+                ))
+              : bestSeller.slice(0, visibleCount).map((item) => (
+                  <div key={item._id} className="bg-[#2a2a2a] rounded-xl p-2">
+                    <ProductItem {...item} />
+                  </div>
+                ))}
           </div>
 
           {/* ACTION BUTTONS */}
-          <div className="text-center mt-8 sm:mt-10 pb-2 sm:pb-4 md:pb-6 flex justify-center gap-4">
-            {visibleCount < bestSeller.length && (
-              <button
-                onClick={handleShowMore}
-                className="
-                  text-white
-                  border border-white/30
-                  px-6 py-2
-                  rounded-lg
-                  hover:bg-white hover:text-black
-                  transition
-                  cursor-pointer
-                "
-              >
-                Show More
-              </button>
-            )}
+          {!showSkeleton && (
+            <div className="text-center mt-8 pb-6 flex justify-center gap-4">
+              {visibleCount < bestSeller.length && (
+                <button
+                  onClick={handleShowMore}
+                  className="border border-white/30 px-6 py-2 rounded-lg hover:bg-white hover:text-black transition cursor-pointer"
+                >
+                  Show More
+                </button>
+              )}
 
-            {visibleCount > 10 && (
-              <button
-                onClick={handleHide}
-                className="
-                  text-red-400
-                  border border-red-400
-                  px-6 py-2
-                  rounded-lg
-                  hover:bg-red-400 hover:text-black
-                  transition
-                  cursor-pointer
-                "
-              >
-                Hide
-              </button>
-            )}
-          </div>
+              {visibleCount > 10 && (
+                <button
+                  onClick={handleHide}
+                  className="border border-red-400 text-red-400 px-6 py-2 rounded-lg hover:bg-red-400 hover:text-black transition cursor-pointer"
+                >
+                  Hide
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </section>

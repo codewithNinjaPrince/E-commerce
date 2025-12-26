@@ -5,9 +5,50 @@ import Title from "../components/Title";
 import { assets } from "../assets/assets";
 import CartTotal from "../components/CartTotal";
 
+const CartPageSkeleton = () => {
+  return (
+    <div className="pt-20 px-4 sm:px-6 lg:px-10 animate-pulse">
+      {/* TITLE */}
+      <div className="h-8 w-40 bg-gray-700/40 rounded mx-auto mb-8" />
+
+      {/* ITEMS */}
+      <div className="space-y-6">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="bg-[#1a1a1a] border border-white/10 p-4 rounded-xl"
+          >
+            <div className="flex gap-4">
+              <div className="w-20 h-24 bg-gray-700/40 rounded-lg" />
+
+              <div className="flex-1 space-y-3">
+                <div className="h-4 w-2/3 bg-gray-700/40 rounded" />
+                <div className="h-3 w-1/3 bg-gray-700/30 rounded" />
+                <div className="h-4 w-1/2 bg-gray-700/40 rounded" />
+                <div className="h-6 w-20 bg-gray-700/30 rounded" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* TOTAL */}
+      <div className="mt-8 max-w-md ml-auto">
+        <div className="h-48 bg-[#111111] border border-white/10 rounded-2xl" />
+      </div>
+    </div>
+  );
+};
+
 const Cart = () => {
-  const { products, currency, cartItems, updateQuantity, navigate, delivery_fee } =
-    useContext(ShopContext);
+  const {
+    products,
+    currency,
+    cartItems,
+    updateQuantity,
+    navigate,
+    delivery_fee,
+  } = useContext(ShopContext);
 
   const cartTotalRef = useRef(null);
 
@@ -21,38 +62,30 @@ const Cart = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState(null);
 
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
   useEffect(() => {
-  const tempData = [];
+    const online = () => setIsOnline(true);
+    const offline = () => setIsOnline(false);
 
-  for (const productId in cartItems) {
-    for (const size in cartItems[productId]) {
-      const qty = cartItems[productId][size];
-      if (qty > 0) {
-        tempData.push({
-          _id: productId,
-          size,
-          quantity: qty,
-        });
-      }
-    }
-  }
+    window.addEventListener("online", online);
+    window.addEventListener("offline", offline);
 
-  setCartData(tempData);
-  setLoading(false);
-}, [cartItems, products]);
+    return () => {
+      window.removeEventListener("online", online);
+      window.removeEventListener("offline", offline);
+    };
+  }, []);
 
-
-  // -------- LOAD CART DATA ----------
   useEffect(() => {
-  const loadPreview = async () => {
-    const items = [];
+    const tempData = [];
 
     for (const productId in cartItems) {
       for (const size in cartItems[productId]) {
         const qty = cartItems[productId][size];
         if (qty > 0) {
-          items.push({
-            productId,
+          tempData.push({
+            _id: productId,
             size,
             quantity: qty,
           });
@@ -60,35 +93,60 @@ const Cart = () => {
       }
     }
 
-    if (!items.length) {
-      setPriceData(null);
-      return;
-    }
+    setCartData(tempData);
+    setLoading(false);
+  }, [cartItems, products]);
 
-    try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/order/preview`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          token: localStorage.getItem("token"),
-        },
-        body: JSON.stringify({
-          items,
-          paymentMethod: "preview", // cart page me COD fixed
-        }),
-      });
+  // -------- LOAD CART DATA ----------
+  useEffect(() => {
+    const loadPreview = async () => {
+      const items = [];
 
-      const data = await res.json();
-      if (data.success) {
-        setPriceData(data);
+      for (const productId in cartItems) {
+        for (const size in cartItems[productId]) {
+          const qty = cartItems[productId][size];
+          if (qty > 0) {
+            items.push({
+              productId,
+              size,
+              quantity: qty,
+            });
+          }
+        }
       }
-    } catch (err) {
-      console.log("Cart preview failed", err);
-    }
-  };
 
-  loadPreview();
-}, [cartItems, products]);
+      if (!items.length) {
+        setPriceData(null);
+        return;
+      }
+
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/order/preview`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              token: localStorage.getItem("token"),
+            },
+            body: JSON.stringify({
+              items,
+              paymentMethod: "preview", // cart page me COD fixed
+            }),
+          }
+        );
+
+        const data = await res.json();
+        if (data.success) {
+          setPriceData(data);
+        }
+      } catch (err) {
+        console.log("Cart preview failed", err);
+      }
+    };
+
+    loadPreview();
+  }, [cartItems, products]);
 
   // -------- CONFIRM DELETE ----------
   const confirmDelete = () => {
@@ -116,30 +174,15 @@ const Cart = () => {
     }
 
     const FREE_LIMIT = 1000;
-    const shippingFee =
-  discountedTotal >= FREE_LIMIT ? 0 : delivery_fee;
+    const shippingFee = discountedTotal >= FREE_LIMIT ? 0 : delivery_fee;
 
     return discountedTotal + shippingFee;
   };
 
   const finalTotal = computeFinalTotal();
 
-  
-
-  // LOADING
-  if (loading) {
-    return (
-      <div className="pt-20 flex flex-col items-center justify-center text-white">
-        <div className="w-10 h-10 border-4 border-gray-500 border-t-white rounded-full animate-spin"></div>
-        <p className="mt-4 text-gray-400 text-sm animate-pulse">
-          Bringing your cart to life… ✨
-        </p>
-      </div>
-    );
-  }
-
   // EMPTY CART
-  if (!loading && cartData.length === 0) {
+  if (cartData.length === 0) {
     return (
       <div className="pt-20 flex flex-col items-center text-white">
         <img src={assets.bin_icon} className="w-14 opacity-70 mb-4" />
@@ -261,6 +304,16 @@ const Cart = () => {
       </div>
     );
   };
+
+  const isCartLoading =
+    !isOnline ||
+    loading ||
+    !products.length ||
+    (cartItems && Object.keys(cartItems).length > 0 && !priceData);
+
+  if (isCartLoading) {
+    return <CartPageSkeleton />;
+  }
 
   return (
     <>
@@ -405,11 +458,7 @@ const Cart = () => {
             ref={cartTotalRef}
             className="w-full sm:w-[450px] cursor-pointer"
           >
-            <CartTotal
-  forceOpenKey={cartOpenKey}
-  priceData={priceData}
-/>
-
+            <CartTotal forceOpenKey={cartOpenKey} priceData={priceData} />
           </div>
         </div>
       </div>
@@ -455,7 +504,7 @@ const Cart = () => {
 
           {/* RIGHT — CTA */}
           <button
-            onClick={() => navigate("/placeorder")}
+            onClick={() => navigate("/order-preview")}
             className="
         bg-white text-black
         px-6 py-3

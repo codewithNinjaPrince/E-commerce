@@ -3,20 +3,47 @@ import Title from "../components/Title";
 import { assets } from "../assets/assets";
 import NewsLetter from "../components/NewsLetter";
 
-export default function About() {
-  const [loading, setLoading] = useState(true);
+const AboutSkeleton = () => (
+  <div className="animate-pulse space-y-10 px-4 py-8">
+    {/* Title */}
+    <div className="text-center space-y-3">
+      <div className="h-8 w-48 bg-gray-700/40 mx-auto rounded" />
+      <div className="h-4 w-2/3 bg-gray-700/30 mx-auto rounded" />
+    </div>
 
+    {/* Hero */}
+    <div className="flex flex-col md:flex-row gap-8">
+      <div className="w-full md:w-[420px] h-64 bg-gray-700/40 rounded-2xl" />
+      <div className="flex-1 space-y-3">
+        <div className="h-4 bg-gray-700/40 w-full rounded" />
+        <div className="h-4 bg-gray-700/30 w-5/6 rounded" />
+        <div className="h-4 bg-gray-700/30 w-4/6 rounded" />
+      </div>
+    </div>
+
+    {/* Cards */}
+    <div className="grid md:grid-cols-3 gap-6">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="h-40 bg-gray-700/30 rounded-xl" />
+      ))}
+    </div>
+  </div>
+);
+
+export default function About() {
   const valuesRef = useRef(null);
   const policyRef = useRef(null);
 
-  // Smooth Preloader Timeout
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1300);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+  const totalImages = 3; // about_img, Vocal_for_Local, Make_In_India
+  const loadedCount = useRef(0);
 
-    return () => clearTimeout(timer);
-  }, []);
+  const handleImageLoad = () => {
+    loadedCount.current += 1;
+    if (loadedCount.current >= totalImages) {
+      setImagesLoaded(true);
+    }
+  };
 
   // Reveal Animations
   useEffect(() => {
@@ -33,24 +60,13 @@ export default function About() {
     policyRef.current && observer.observe(policyRef.current);
   }, []);
 
-  // Preloader Screen
-  if (loading) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-14 h-14 rounded-full border-4 border-white border-t-transparent animate-spin" />
-          <p className="text-white text-sm opacity-80 text-center">
-            Brawvly — Where India shops, stories connect...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <section className="px-2 sm:px-6 lg:px-10">
-      <div
-        className="
+      {!imagesLoaded && <AboutSkeleton />}
+      <div className={imagesLoaded ? "block" : "invisible absolute inset-0"}>
+        ) : (
+        <div
+          className="
           bg-black/90
           border border-white/10
           rounded-xl
@@ -61,82 +77,80 @@ export default function About() {
           sm:mt-23 sm:mb-6
           lg:mt-26 lg:mb-8
         "
-      >
-        <div className="w-full sm:px-2 md:px-3 lg:px-4">
-          {/* Header */}
-          <div className="text-center text-white py-4 sm:py-6 md:py-8">
-            <div className="text-2xl sm:text-3xl md:text-4xl">
-              <Title text1="About" text2="Brawvly" />
+        >
+          <div className="w-full sm:px-2 md:px-3 lg:px-4">
+            {/* Header */}
+            <div className="text-center text-white py-4 sm:py-6 md:py-8">
+              <div className="text-2xl sm:text-3xl md:text-4xl">
+                <Title text1="About" text2="Brawvly" />
+              </div>
+              <p className="text-gray-400 mt-4 text-sm md:text-base max-w-2xl mx-auto">
+                The story of a local dream becoming a marketplace for every
+                Indian heart.
+              </p>
             </div>
-            <p className="text-gray-400 mt-4 text-sm md:text-base max-w-2xl mx-auto">
-              The story of a local dream becoming a marketplace for every Indian
-              heart.
-            </p>
-          </div>
 
-          {/* HERO SECTION */}
-          <div className="flex flex-col md:flex-row gap-8 items-center px-2 sm:px-4">
-            <img
-              src={assets.about_img}
-              alt="About Brawvly"
-              className="w-full md:max-w-[420px] rounded-2xl shadow-lg"
-            />
+            {/* HERO SECTION */}
+            <div className="flex flex-col md:flex-row gap-8 items-center px-2 sm:px-4">
+              <img
+                src={assets.about_img}
+                alt="About Brawvly"
+                onLoad={handleImageLoad}
+                className="w-full md:max-w-[420px] rounded-2xl shadow-lg"
+              />
 
-            <div className="space-y-4 text-sm sm:text-base leading-relaxed">
-              <p>
-                Brawvly was born from a simple idea —
-                <span className="text-white font-semibold">
-                  {" "}
-                  a marketplace that feels premium, personal, trustworthy, and
-                  proudly Indian.
-                </span>
-              </p>
-              <p>
-                We wanted to build a space where small businesses, homegrown
-                brands, and creators can stand tall and shine — reaching
-                customers from metros to small towns across India.
-              </p>
+              <div className="space-y-4 text-sm sm:text-base leading-relaxed">
+                <p>
+                  Brawvly was born from a simple idea —
+                  <span className="text-white font-semibold">
+                    {" "}
+                    a marketplace that feels premium, personal, trustworthy, and
+                    proudly Indian.
+                  </span>
+                </p>
+                <p>
+                  We wanted to build a space where small businesses, homegrown
+                  brands, and creators can stand tall and shine — reaching
+                  customers from metros to small towns across India.
+                </p>
+              </div>
             </div>
           </div>
 
           {/* OUR STORY */}
-         <div className="mt-10 bg-[#1a1a1a] border border-white/10 rounded-xl p-6 sm:p-8 mx-2 sm:mx-4">
-  <div className="max-w-5xl mx-auto">
+          <div className="mt-10 bg-[#1a1a1a] border border-white/10 rounded-xl p-6 sm:p-8 mx-2 sm:mx-4">
+            <div className="max-w-5xl mx-auto">
+              <h2 className="text-lg sm:text-xl font-bold text-white mb-6 text-center md:text-left">
+                Our Story
+              </h2>
 
-    <h2 className="text-lg sm:text-xl font-bold text-white mb-6 text-center md:text-left">
-      Our Story
-    </h2>
+              <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-start">
+                {/* LEFT CONTENT */}
+                <div className="space-y-4 text-sm sm:text-base leading-relaxed">
+                  <p>
+                    Every great platform starts with a problem. Ours began when
+                    we saw how many local shops were unable to go online — while
+                    customers struggled to find clean and trustworthy products.
+                  </p>
 
-    <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-start">
+                  <p>
+                    And that’s how{" "}
+                    <span className="text-white font-semibold">Brawvly</span>{" "}
+                    took its first bold step.
+                  </p>
+                </div>
 
-      {/* LEFT CONTENT */}
-      <div className="space-y-4 text-sm sm:text-base leading-relaxed">
-        <p>
-          Every great platform starts with a problem. Ours began when we saw
-          how many local shops were unable to go online — while customers
-          struggled to find clean and trustworthy products.
-        </p>
-
-        <p>
-          And that’s how{" "}
-          <span className="text-white font-semibold">Brawvly</span> took its
-          first bold step.
-        </p>
-      </div>
-
-      {/* RIGHT CONTENT */}
-      <div>
-        <ul className="list-disc pl-5 space-y-3 text-sm sm:text-base">
-          <li>Premium, high-quality fashion for everyone</li>
-          <li>A powerful digital stage for local sellers</li>
-          <li>Fair pricing and trust-driven shopping</li>
-        </ul>
-      </div>
-
-    </div>
-  </div>
-</div>
-
+                {/* RIGHT CONTENT */}
+                <div>
+                  <ul className="list-disc pl-5 space-y-3 text-sm sm:text-base">
+                    <li>Premium, high-quality fashion for everyone</li>
+                    <li>A powerful digital stage for local sellers</li>
+                    <li>Fair pricing and trust-driven shopping</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* VOCAL FOR LOCAL */}
           <div className="mt-10 flex flex-col md:flex-row gap-8 items-center bg-[#1a1a1a] border border-white/10 rounded-xl p-6 sm:p-8 mx-2 sm:mx-4">
@@ -174,6 +188,7 @@ export default function About() {
               <img
                 src={assets.Vocal_for_Local}
                 alt="Vocal for Local"
+                onLoad={handleImageLoad}
                 className="w-full max-w-[360px] rounded-2xl shadow-lg hover:scale-[1.03] transition"
               />
             </a>
@@ -182,11 +197,46 @@ export default function About() {
           {/* MADE IN INDIA */}
           <div className="mt-10 flex flex-col md:flex-row gap-8 items-center bg-[#1a1a1a] border border-white/10 rounded-xl p-6 sm:p-8 mx-2 sm:mx-4">
             <div className="flex flex-col md:flex-row gap-10 items-center">
-              <img
-                src={assets.Make_In_India}
-                alt="Make in India"
-                className="w-full md:max-w-[340px] rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.08)]"
-              />
+              <a
+                href="https://www.pmindia.gov.in/en/major_initiatives/make-in-india/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative group w-full md:max-w-[340px] rounded-xl overflow-hidden shadow-[0_0_20px_rgba(255,255,255,0.08)] cursor-pointer"
+              >
+                {/* IMAGE */}
+                <img
+                  src={assets.Make_In_India}
+                  alt="Make in India"
+                  onLoad={handleImageLoad}
+                  className="w-full rounded-xl transition-transform duration-300 group-hover:scale-[1.03]"
+                />
+
+                {/* OVERLAY */}
+                <div
+                  className="
+      absolute inset-0
+      bg-black/60
+      opacity-0
+      group-hover:opacity-100
+      transition-opacity duration-300
+      flex items-center justify-center
+    "
+                >
+                  <span
+                    className="
+        bg-white text-black
+        px-5 py-2
+        rounded-full
+        text-sm font-semibold
+        shadow-lg
+        hover:scale-105
+        transition
+      "
+                  >
+                    Read More →
+                  </span>
+                </div>
+              </a>
 
               <div className="flex flex-col gap-4 text-gray-300 md:w-2/3">
                 <h2 className="text-xl sm:text-2xl font-bold text-white">
@@ -207,60 +257,68 @@ export default function About() {
           </div>
 
           {/* VALUES SECTION */}
-          <div className="mt-10 flex flex-col md:flex-row gap-8 items-center bg-[#1a1a1a] border border-white/10 rounded-xl p-6 sm:p-8 mx-2 sm:mx-4">
+          <div className="mt-10 flex flex-col md:flex-row gap-8 items-center bg-[#1a1a1a] border border-white/10 rounded-xl p-6 sm:p-8 mx-2 sm:mx-4 cursor-pointer">
             <div className="grid md:grid-cols-3 gap-8">
               {[
                 {
                   title: "Premium Quality",
                   desc: "Every product is verified and meets strict quality standards.",
+                  link: "/collections",
                 },
                 {
                   title: "Easy & Smart Shopping",
                   desc: "Simple checkout, fast search, and a clean experience.",
+                  link: "/collections",
                 },
                 {
                   title: "Friendly Support",
                   desc: "Real humans who care — not bots or scripts.",
+                  link: "/contact",
                 },
               ].map((item, idx) => (
-                <div
+                <a
                   key={idx}
+                  href={item.link}
                   className="bg-black/40 border border-white/10 p-6 rounded-xl 
-                   transition hover:scale-[1.04] hover:shadow-xl"
+        transition hover:scale-[1.04] hover:shadow-xl cursor-pointer"
                 >
                   <h3 className="font-bold text-white mb-2">{item.title}</h3>
                   <p className="text-gray-400">{item.desc}</p>
-                </div>
+                </a>
               ))}
             </div>
           </div>
 
           {/* POLICY SECTION */}
-         <div className="mt-10 bg-[#1a1a1a] border border-white/10 rounded-xl 
-                p-6 sm:p-8 mx-2 sm:mx-4 ">
+          <div
+            className="mt-10 bg-[#1a1a1a] border border-white/10 rounded-xl 
+                p-6 sm:p-8 mx-2 sm:mx-4 "
+          >
+            {/* Heading */}
+            <h2 className="text-xl sm:text-2xl font-bold text-white mb-3">
+              Transparency You Can Trust
+            </h2>
 
-  {/* Heading */}
-  <h2 className="text-xl sm:text-2xl font-bold text-white mb-3">
-    Transparency You Can Trust
-  </h2>
+            <p className="text-gray-400 mb-8 max-w-3xl">
+              Explore our policies to shop with confidence. Everything is clear,
+              fair, and created to give you a safe & smooth experience.
+            </p>
 
-  <p className="text-gray-400 mb-8 max-w-3xl">
-    Explore our policies to shop with confidence. Everything is clear,
-    fair, and created to give you a safe & smooth experience.
-  </p>
-
-  {/* Policy Links */}
-  <div className="grid sm:grid-cols-2 gap-4">
-    {[
-      { label: "🔒 Privacy Policy", link: "/privacy-policy" },
-      { label: "🚚 Shipping & Delivery Policy", link: "/shipping-delivery" },
-      { label: "🔁 Refund & Return Policy", link: "/refund-return" },
-      { label: "📜 Terms & Conditions", link: "/terms-conditions" },
-    ].map((item, idx) => (
-      <a
-        key={idx}
-        href={item.link}
-        className="
+            {/* Policy Links */}
+            <div className="grid sm:grid-cols-2 gap-4">
+              {[
+                { label: "🔒 Privacy Policy", link: "/privacy-policy" },
+                {
+                  label: "🚚 Shipping & Delivery Policy",
+                  link: "/shipping-delivery",
+                },
+                { label: "🔁 Refund & Return Policy", link: "/refund-return" },
+                { label: "📜 Terms & Conditions", link: "/terms-conditions" },
+              ].map((item, idx) => (
+                <a
+                  key={idx}
+                  href={item.link}
+                  className="
           cursor-pointer
           flex items-center justify-between
           bg-black/40
@@ -275,14 +333,13 @@ export default function About() {
           hover:translate-x-1
           hover:shadow-lg
         "
-      >
-        <span>{item.label}</span>
-        <span className="opacity-60">›</span>
-      </a>
-    ))}
-  </div>
-</div>
-
+                >
+                  <span>{item.label}</span>
+                  <span className="opacity-60">›</span>
+                </a>
+              ))}
+            </div>
+          </div>
 
           <NewsLetter />
         </div>

@@ -133,6 +133,14 @@ body {
   overflow-x: hidden;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+  background-color: #000000;
+}
+
+
 /* ======================================================
    GLOBAL LAYOUT SYSTEM — NAVBAR + SEARCHBAR SAFE
    ====================================================== */

@@ -102,4 +102,76 @@ const getUserCart = async (req, res) => {
   }
 };
 
+/* --------------------------------------------------
+   CHANGE SIZE
+-------------------------------------------------- */
+
+export const changeSize = async (req, res) => {
+  try {
+    const { productId, oldSize, newSize, quantity } = req.body;
+    const userId = req.userId; // from auth middleware
+
+    if (!productId || !oldSize || !newSize) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields",
+      });
+    }
+
+    if (oldSize === newSize) {
+      return res.status(400).json({
+        success: false,
+        message: "Old size and new size are same",
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user || !user.cartData) {
+      return res.status(404).json({
+        success: false,
+        message: "Cart not found",
+      });
+    }
+
+    const productCart = user.cartData.get(productId);
+
+    if (!productCart || !productCart.get(oldSize)) {
+      return res.status(400).json({
+        success: false,
+        message: "Old size not found in cart",
+      });
+    }
+
+    const qty = quantity || productCart.get(oldSize);
+
+    // ❌ remove old size
+    productCart.delete(oldSize);
+
+    // ✅ add new size
+    productCart.set(newSize, qty);
+
+    // clean empty product
+    if (productCart.size === 0) {
+      user.cartData.delete(productId);
+    } else {
+      user.cartData.set(productId, productCart);
+    }
+
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: "Size changed successfully",
+      cartData: user.cartData,
+    });
+  } catch (error) {
+    console.error("CHANGE SIZE ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while changing size",
+    });
+  }
+};
+
+
 export { addToCart, updateCart, getUserCart };

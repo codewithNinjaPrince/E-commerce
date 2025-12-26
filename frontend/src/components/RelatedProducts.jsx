@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { ShopContext } from "../context/ShopContext";
 import Title from "./Title";
 import ProductItem from "./ProductItem";
+import ProductItemSkeleton from "./ProductItemSkeleton";
 
 const RelatedProducts = ({ category, subCategory }) => {
   const { products } = useContext(ShopContext);

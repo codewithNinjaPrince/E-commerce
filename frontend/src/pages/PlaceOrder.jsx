@@ -7,23 +7,50 @@ import { ShopContext } from "../context/ShopContext";
 import axios from "axios";
 import { toast } from "react-toastify";
 
-const INDIAN_STATES = [
-  "Andhra Pradesh",
-  "Bihar",
-  "Delhi",
-  "Gujarat",
-  "Haryana",
-  "Karnataka",
-  "Kerala",
-  "Madhya Pradesh",
-  "Maharashtra",
-  "Punjab",
-  "Rajasthan",
-  "Tamil Nadu",
-  "Telangana",
-  "Uttar Pradesh",
-  "West Bengal",
-];
+const PlaceOrderSkeleton = () => {
+  return (
+    <section className="pt-[64px] px-3 pb-32 animate-pulse">
+      <div className="max-w-7xl mx-auto bg-black/90 border border-white/10 rounded-2xl p-4">
+        {/* ADDRESS CARD */}
+        <div className="bg-[#121212] border border-white/10 rounded-2xl p-5 mb-6">
+          <div className="h-6 w-40 bg-gray-700/40 rounded mb-5" />
+
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex gap-3 mb-4">
+              <div className="h-10 flex-1 bg-gray-700/40 rounded" />
+              <div className="h-10 flex-1 bg-gray-700/30 rounded" />
+            </div>
+          ))}
+
+          <div className="h-10 w-full bg-gray-700/40 rounded" />
+        </div>
+
+        {/* CART TOTAL */}
+        <div className="bg-[#121212] border border-white/10 rounded-2xl p-5 mb-6">
+          <div className="h-6 w-32 bg-gray-700/40 rounded mb-4" />
+
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex justify-between mb-3">
+              <div className="h-4 w-28 bg-gray-700/30 rounded" />
+              <div className="h-4 w-16 bg-gray-700/40 rounded" />
+            </div>
+          ))}
+
+          <div className="h-10 w-full bg-gray-700/40 rounded mt-4" />
+        </div>
+
+        {/* PAYMENT METHODS */}
+        <div className="bg-[#121212] border border-white/10 rounded-2xl p-5">
+          <div className="h-6 w-40 bg-gray-700/40 rounded mb-4" />
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-12 bg-gray-700/30 rounded mb-3" />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
 
 const PlaceOrder = () => {
   const {
@@ -82,76 +109,6 @@ const PlaceOrder = () => {
     return items;
   };
 
-  /* ================= ADDRESS STATE (LOCAL STORAGE PREFILL) ================= */
-  const [formData, setFormData] = useState(() => {
-    const saved = localStorage.getItem("checkoutAddress");
-    return saved
-      ? JSON.parse(saved)
-      : {
-          firstName: "",
-          lastName: "",
-          email: "",
-          phone: "",
-          houseNo: "",
-          street: "",
-          locality: "",
-          landmark: "",
-          city: "",
-          district: "",
-          state: "",
-          pincode: "",
-          country: "India",
-        };
-  });
-
-  const onChangeHandler = (e) => {
-    const { name, value } = e.target;
-    setFormData((p) => ({ ...p, [name]: value }));
-  };
-
-  /* ================= USE MY LOCATION ================= */
-  const useMyLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error("Location not supported");
-      return;
-    }
-
-    setLocating(true);
-
-    navigator.geolocation.getCurrentPosition(
-      async ({ coords }) => {
-        try {
-          const res = await axios.get(
-            "https://nominatim.openstreetmap.org/reverse",
-            {
-              params: {
-                lat: coords.latitude,
-                lon: coords.longitude,
-                format: "json",
-              },
-            }
-          );
-
-          const a = res.data.address || {};
-          setFormData((p) => ({
-            ...p,
-            city: a.city || a.town || a.village || "",
-            district: a.state_district || a.county || "",
-            state: a.state || "",
-          }));
-
-          toast.success("Location detected. Please verify pincode.");
-        } catch {
-          toast.error("Failed to fetch location");
-        }
-        setLocating(false);
-      },
-      () => {
-        toast.error("Location permission denied");
-        setLocating(false);
-      }
-    );
-  };
 
   /* ================= APPLY COUPON ================= */
   const applyCoupon = async () => {
@@ -167,47 +124,32 @@ const PlaceOrder = () => {
 
       const res = await axios.post(
         `${backendUrl}/api/order/preview`,
-        {
-          items,
-          couponCode,
-          paymentMethod: method,
-        },
+        { items, couponCode, paymentMethod: method },
         { headers: { token } }
       );
 
-       // ❌ COUPON ALREADY USED
-    if (!res.data.success && res.data.code === "COUPON_ALREADY_USED") {
-      toast.error("Coupon applied previously");
-
-      setCouponValid(false);
-      setCouponCode("");      // 🔥 INPUT EMPTY
-      setCheckingCoupon(false);
-      return;
-    }
-
-    // ❌ OTHER ERROR
-    if (!res.data.success) {
-      toast.error(res.data.message || "Invalid coupon");
-      setCouponValid(false);
-      setCheckingCoupon(false);
-      return;
-    }
-
-
-      if (res.data.success) {
-        setCouponValid(true);
-        setPriceData(res.data);
-        toast.success("Coupon applied");
-      } else {
+      if (!res.data.success && res.data.code === "COUPON_ALREADY_USED") {
+        toast.error("Coupon applied previously");
         setCouponValid(false);
-        toast.error(res.data.message);
+        setCouponCode("");
+        return;
       }
-    } catch (err) {
-      toast.error("Coupon validation failed");
-      setCouponValid(false);
-    }
 
-    setCheckingCoupon(false);
+      if (!res.data.success) {
+        toast.error(res.data.message || "Invalid coupon");
+        setCouponValid(false);
+        return;
+      }
+
+      setCouponValid(true);
+      setPriceData(res.data);
+      toast.success("Coupon applied");
+    } catch {
+      toast.error("Invalid Coupon");
+      setCouponValid(false);
+    } finally {
+      setCheckingCoupon(false); // 🔥 always runs
+    }
   };
 
   //Load Preview
@@ -215,7 +157,7 @@ const PlaceOrder = () => {
     const loadPreview = async () => {
       try {
         const items = buildItems();
-        if (!items.length) return;
+        if (!items.length || placingOrder) return;
 
         const res = await axios.post(
           `${backendUrl}/api/order/preview`,
@@ -282,14 +224,17 @@ const PlaceOrder = () => {
       });
 
       if (res.data.success) {
+        localStorage.setItem("checkoutAddress", JSON.stringify(formData));
+
         if (isBuyNow) {
-          setBuyNowItem(null); // 🔥 clear buy-now snapshot
+          setBuyNowItem(null);
         } else {
           setCartItems({});
         }
-        localStorage.setItem("checkoutAddress", JSON.stringify(formData));
+
         toast.success("Order Placed Successfully!");
-        setTimeout(() => navigate("/orders"), 800);
+        navigate("/orders", { replace: true });
+        return; // 🔥 MOST IMPORTANT
       } else {
         toast.error(res.data.message);
       }
@@ -300,20 +245,13 @@ const PlaceOrder = () => {
     setPlacingOrder(false);
   };
 
-  useEffect(() => {
-    const saved = localStorage.getItem("checkoutAddress");
-
-    if (saved) {
-      setFormData(JSON.parse(saved));
-    }
-  }, [isBuyNow]);
 
   useEffect(() => {
-    if (isBuyNow && !buyNowItem) {
+    if (!placingOrder && isBuyNow && !buyNowItem) {
       toast.error("Buy Now item missing. Please try again.");
       navigate("/");
     }
-  }, [isBuyNow, buyNowItem, navigate]);
+  }, [isBuyNow, buyNowItem, placingOrder, navigate]);
 
   if (isBuyNow && !buyNowItem) return null;
 
@@ -340,6 +278,12 @@ const PlaceOrder = () => {
   `}</style>
   );
 
+  const shouldShowSkeleton = !token || placingOrder || !priceData;
+
+  if (shouldShowSkeleton) {
+    return <PlaceOrderSkeleton />;
+  }
+
   return (
     <>
       <ResponsiveStyles />
@@ -359,153 +303,16 @@ const PlaceOrder = () => {
                 onSubmit={onSubmitHandler}
                 className="checkout-row flex flex-col gap-10 pt-10 border-t text-white items-start"
               >
-                {/* ================= LEFT SECTION ================= */}
-                <div
-                  className="
-                checkout-left
-          flex flex-col gap-4
-          w-full 
-          bg-[#121212] p-6
-          rounded-2xl border border-white/10 shadow-xl
-          shrink-0
-        "
-                >
-                  <Title text1="Delivery" text2="Address" />
-
-                  <button
-                    type="button"
-                    onClick={useMyLocation}
-                    className="text-md text-blue-400 hover:text-white cursor-pointer"
-                  >
-                    {locating
-                      ? "Detecting location..."
-                      : "Use my delivery location"}
-                  </button>
-
-                  <div className="flex gap-3">
-                    <input
-                      required
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={onChangeHandler}
-                      className="input-box"
-                      placeholder="First Name"
-                    />
-                    <input
-                      required
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={onChangeHandler}
-                      className="input-box"
-                      placeholder="Last Name"
-                    />
-                  </div>
-
-                  <div className="flex gap-3">
-                    <input
-                      required
-                      name="phone"
-                      value={formData.phone}
-                      onChange={onChangeHandler}
-                      className="input-box"
-                      placeholder="Phone No."
-                    />
-                    <input
-                      required
-                      name="email"
-                      value={formData.email}
-                      onChange={onChangeHandler}
-                      className="input-box"
-                      placeholder="Email Address"
-                    />
-                  </div>
-
-                  <input
-                    required
-                    name="houseNo"
-                    value={formData.houseNo}
-                    onChange={onChangeHandler}
-                    className="input-box"
-                    placeholder="House / Flat / Apartment No"
-                  />
-                  <input
-                    required
-                    name="street"
-                    value={formData.street}
-                    onChange={onChangeHandler}
-                    className="input-box"
-                    placeholder="Street"
-                  />
-                  <input
-                    name="locality"
-                    value={formData.locality}
-                    onChange={onChangeHandler}
-                    className="input-box"
-                    placeholder="Locality / Area (optional)"
-                  />
-
-                  <div className="flex gap-3">
-                    <input
-                      required
-                      name="city"
-                      value={formData.city}
-                      onChange={onChangeHandler}
-                      className="input-box"
-                      placeholder="City"
-                    />
-                    <input
-                      required
-                      name="pincode"
-                      value={formData.pincode}
-                      onChange={onChangeHandler}
-                      className="input-box"
-                      placeholder="Pin Code"
-                    />
-                  </div>
-
-                  <input
-                    required
-                    name="district"
-                    value={formData.district}
-                    onChange={onChangeHandler}
-                    className="input-box"
-                    placeholder="District"
-                  />
-
-                  <div className="flex gap-3">
-                    <select
-                      required
-                      name="state"
-                      value={formData.state}
-                      onChange={onChangeHandler}
-                      className="input-box"
-                    >
-                      <option value="">Select State</option>
-                      {INDIAN_STATES.map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    </select>
-
-                    <input
-                      required
-                      name="country"
-                      value={formData.country}
-                      onChange={onChangeHandler}
-                      className="input-box"
-                      placeholder="Country"
-                    />
-                  </div>
-                </div>
 
                 {/* ================= RIGHT SECTION ================= */}
                 <div className="flex-1 w-full px-1 flex flex-col gap-6">
-                  <CartTotal
-                    includeCodFee={method === "cod"}
-                    priceData={priceData}
-                    forceOpenKey={cartOpenKey}
-                  />
+                  <div ref={cartTotalRef}>
+                    <CartTotal
+                      includeCodFee={method === "cod"}
+                      priceData={priceData}
+                      forceOpenKey={cartOpenKey}
+                    />
+                  </div>
 
                   {/* ================= COUPON SECTION ================= */}
                   <div className="mt-6 relative">

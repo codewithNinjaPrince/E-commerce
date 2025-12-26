@@ -18,8 +18,52 @@ const TIMELINE_STAGES = [
   "Shipped",
   "Out for Delivery",
   "Delivered",
-  "Cancelled",
 ];
+
+const OrdersSkeleton = () => {
+  return (
+    <section className="pt-20 pb-16 px-2 sm:px-4 md:px-6 animate-pulse">
+      <div className="max-w-7xl mx-auto bg-black/90 border border-white/10 rounded-2xl p-6">
+        {/* TITLE */}
+        <div className="h-7 w-40 bg-gray-700/40 rounded mb-8" />
+
+        {/* ORDER CARDS */}
+        {[1, 2, 3].map((_, i) => (
+          <div
+            key={i}
+            className="bg-[#1c1c1c] border border-white/10 rounded-xl p-4 mb-6"
+          >
+            {/* HEADER */}
+            <div className="flex justify-between mb-4">
+              <div className="space-y-2">
+                <div className="h-3 w-40 bg-gray-700/40 rounded" />
+                <div className="h-3 w-32 bg-gray-700/30 rounded" />
+              </div>
+              <div className="h-4 w-20 bg-gray-700/40 rounded" />
+            </div>
+
+            {/* ITEM */}
+            <div className="flex gap-4">
+              <div className="w-24 h-24 bg-gray-700/40 rounded-lg" />
+              <div className="flex-1 space-y-3">
+                <div className="h-4 w-2/3 bg-gray-700/40 rounded" />
+                <div className="h-3 w-1/3 bg-gray-700/30 rounded" />
+                <div className="h-4 w-1/4 bg-gray-700/40 rounded" />
+              </div>
+            </div>
+
+            {/* TIMELINE */}
+            <div className="mt-6 flex gap-2">
+              {[1, 2, 3, 4, 5].map((_, j) => (
+                <div key={j} className="flex-1 h-2 bg-gray-700/30 rounded" />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+};
 
 const Orders = () => {
   const { backendUrl, token, currency } = useContext(ShopContext);
@@ -30,6 +74,20 @@ const Orders = () => {
   const [actionLoading, setActionLoading] = useState({});
   const [confirmUI, setConfirmUI] = useState(null);
   const [cancelModal, setCancelModal] = useState(null);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const online = () => setIsOnline(true);
+    const offline = () => setIsOnline(false);
+
+    window.addEventListener("online", online);
+    window.addEventListener("offline", offline);
+
+    return () => {
+      window.removeEventListener("online", online);
+      window.removeEventListener("offline", offline);
+    };
+  }, []);
 
   const animRef = useRef({});
   const [, tick] = useState(0);
@@ -122,7 +180,7 @@ const Orders = () => {
               if (
                 oldStage &&
                 TIMELINE_STAGES.indexOf(newStage) >
-                  TIMELINE_STAGES.indexOf(oldStage)
+                TIMELINE_STAGES.indexOf(oldStage)
               ) {
                 animRef.current[keyFor(orderId, fi.productId)] = Date.now();
               }
@@ -201,6 +259,13 @@ const Orders = () => {
     return Date.now() - ts < 3000;
   };
 
+  const shouldShowSkeleton =
+    loading || !isOnline || (token && !loading && orders.length === 0);
+
+  if (shouldShowSkeleton) {
+    return <OrdersSkeleton />;
+  }
+
   // --------------------------- UI RENDER -------------------------
   return (
     <>
@@ -221,15 +286,6 @@ const Orders = () => {
             <div className="text-2xl mb-6">
               <Title text1="Your" text2="Orders" />
             </div>
-
-            {loading && (
-              <div className="flex flex-col items-center justify-center py-20">
-                <div className="w-12 h-12 border-4 border-gray-600 border-t-white rounded-full animate-spin"></div>
-                <p className="mt-4 text-gray-400 text-sm">
-                  Loading your orders...
-                </p>
-              </div>
-            )}
 
             {!loading && orders.length === 0 && (
               <div className="flex flex-col items-center py-20">
@@ -268,9 +324,8 @@ const Orders = () => {
                       <div className="text-right">
                         <p className="text-sm text-gray-400">Payment</p>
                         <p
-                          className={`font-semibold ${
-                            order.payment ? "text-green-400" : "text-red-400"
-                          }`}
+                          className={`font-semibold ${order.payment ? "text-green-400" : "text-red-400"
+                            }`}
                         >
                           {order.payment ? "Completed" : "Pending"}
                         </p>
@@ -284,7 +339,9 @@ const Orders = () => {
                         const status = getItemStatus(order, item);
                         const statusIdx = stageIndex(status);
                         const animate = isAnimated(order._id, item.productId);
-                        const isCancelled = status === "Cancelled";
+                        const isCancelled =
+                          item.itemStatus === "Cancelled" ||
+                          order.status === "Cancelled";
 
                         const loadingTrack =
                           actionLoading[`${order._id}-track`]?.track || false;
@@ -341,156 +398,136 @@ const Orders = () => {
                               </div>
 
                               {/* TIMELINE */}
+                              {/* STATUS / TIMELINE */}
                               <div className="mt-4">
-                                {/* MOBILE VERTICAL */}
-                                <div className="flex flex-col gap-3 lg:hidden">
-                                  {TIMELINE_STAGES.map((stage, sIdx) => {
-                                    const done = sIdx <= statusIdx;
-                                    const animateHere =
-                                      animate && sIdx === statusIdx;
+                                {/* ❌ CANCELLED UI */}
+                                {isCancelled ? (
+                                  <div className="bg-red-900/20 border border-red-500/40 rounded-lg p-4">
+                                    <p className="text-red-400 font-semibold text-sm flex items-center gap-2">
+                                      ❌ Order Cancelled
+                                    </p>
+                                    <p className="text-red-300 text-xs mt-1">
+                                      This item has been cancelled and will not
+                                      be delivered.
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <>
+                                    {/* ✅ MOBILE VERTICAL TIMELINE */}
+                                    <div className="flex flex-col gap-3 lg:hidden">
+                                      {TIMELINE_STAGES.map((stage, sIdx) => {
+                                        const done = sIdx <= statusIdx;
+                                        const animateHere =
+                                          animate && sIdx === statusIdx;
 
-                                    return (
-                                      <div
-                                        key={stage}
-                                        className="flex items-center gap-3"
-                                      >
-                                        <div className="flex flex-col items-center">
+                                        return (
                                           <div
-                                            className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                                              isCancelled
-                                                ? "bg-red-600"
-                                                : done
-                                                ? "bg-green-500"
-                                                : "bg-gray-600"
-                                            }`}
+                                            key={stage}
+                                            className="flex items-center gap-3"
                                           >
-                                            {isCancelled ? (
-                                              <span className="text-white text-xs font-bold">
-                                                ✕
-                                              </span>
-                                            ) : (
-                                              done && (
-                                                <FaCheckCircle className="text-white text-[12px]" />
-                                              )
-                                            )}
-                                          </div>
-
-                                          {sIdx <
-                                            TIMELINE_STAGES.length - 1 && (
-                                            <div
-                                              className={`w-[2px] h-6 mt-1 ${
-                                                isCancelled
-                                                  ? "bg-red-600"
-                                                  : done
-                                                  ? "bg-green-500"
-                                                  : "bg-gray-700"
-                                              }`}
-                                            />
-                                          )}
-                                        </div>
-
-                                        <div className="flex-1">
-                                          <p
-                                            className={`text-sm ${
-                                              done
-                                                ? "text-gray-200 font-semibold"
-                                                : "text-gray-400"
-                                            }`}
-                                          >
-                                            {stage}
-                                          </p>
-
-                                          {animateHere && (
-                                            <div className="mt-1 w-full">
-                                              <div className="h-1 bg-gray-700 rounded overflow-hidden">
-                                                <div
-                                                  className="h-1 bg-green-500 animate-grow"
-                                                  style={{
-                                                    animationDuration: "900ms",
-                                                  }}
-                                                />
+                                            <div className="flex flex-col items-center">
+                                              <div
+                                                className={`w-6 h-6 rounded-full flex items-center justify-center ${done
+                                                    ? "bg-green-500"
+                                                    : "bg-gray-600"
+                                                  }`}
+                                              >
+                                                {done && (
+                                                  <FaCheckCircle className="text-white text-[12px]" />
+                                                )}
                                               </div>
+
+                                              {sIdx <
+                                                TIMELINE_STAGES.length - 1 && (
+                                                  <div
+                                                    className={`w-[2px] h-6 mt-1 ${done
+                                                        ? "bg-green-500"
+                                                        : "bg-gray-700"
+                                                      }`}
+                                                  />
+                                                )}
                                             </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
 
-                                {/* DESKTOP HORIZONTAL TIMELINE */}
-<div className="hidden lg:flex items-start w-full">
-  {TIMELINE_STAGES.map((stage, sIdx) => {
-    const done = sIdx <= statusIdx;
-    const isLast = sIdx === TIMELINE_STAGES.length - 1;
+                                            <div className="flex-1">
+                                              <p
+                                                className={`text-sm ${done
+                                                    ? "text-gray-200 font-semibold"
+                                                    : "text-gray-400"
+                                                  }`}
+                                              >
+                                                {stage}
+                                              </p>
 
-    return (
-      <div key={stage} className="flex-1 flex flex-col items-center relative">
-        
-        {/* ROW: CIRCLE + BAR */}
-        <div className="flex items-center w-full">
-          
-          {/* LEFT BAR */}
-          {sIdx !== 0 && (
-            <div
-              className={`h-[2px] flex-1 ${
-                isCancelled
-                  ? "bg-red-600"
-                  : done
-                  ? "bg-green-500"
-                  : "bg-gray-700"
-              }`}
-            />
-          )}
+                                              {animateHere && (
+                                                <div className="mt-1 w-full">
+                                                  <div className="h-1 bg-gray-700 rounded overflow-hidden">
+                                                    <div className="h-1 bg-green-500 animate-grow" />
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
 
-          {/* STATUS CIRCLE */}
-          <div
-            className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${
-              isCancelled
-                ? "bg-red-600"
-                : done
-                ? "bg-green-500"
-                : "bg-gray-600"
-            }`}
-          >
-            {isCancelled ? (
-              <span className="text-white text-xs font-bold">✕</span>
-            ) : (
-              done && <FaCheckCircle className="text-white text-[12px]" />
-            )}
-          </div>
+                                    {/* ✅ DESKTOP HORIZONTAL TIMELINE */}
+                                    <div className="hidden lg:flex items-start w-full">
+                                      {TIMELINE_STAGES.map((stage, sIdx) => {
+                                        const done = sIdx <= statusIdx;
+                                        const isLast =
+                                          sIdx === TIMELINE_STAGES.length - 1;
 
-          {/* RIGHT BAR */}
-          {!isLast && (
-            <div
-              className={`h-[2px] flex-1 ${
-                isCancelled
-                  ? "bg-red-600"
-                  : done
-                  ? "bg-green-500"
-                  : "bg-gray-700"
-              }`}
-            />
-          )}
-        </div>
+                                        return (
+                                          <div
+                                            key={stage}
+                                            className="flex-1 flex flex-col items-center"
+                                          >
+                                            <div className="flex items-center w-full">
+                                              {sIdx !== 0 && (
+                                                <div
+                                                  className={`h-[2px] flex-1 ${done
+                                                      ? "bg-green-500"
+                                                      : "bg-gray-700"
+                                                    }`}
+                                                />
+                                              )}
 
-        {/* LABEL */}
-        <p
-          className={`mt-3 text-sm text-center ${
-            done
-              ? "text-gray-200 font-semibold"
-              : "text-gray-400"
-          }`}
-        >
-          {stage}
-        </p>
-      </div>
-    );
-  })}
-</div>
+                                              <div
+                                                className={`w-6 h-6 rounded-full flex items-center justify-center ${done
+                                                    ? "bg-green-500"
+                                                    : "bg-gray-600"
+                                                  }`}
+                                              >
+                                                {done && (
+                                                  <FaCheckCircle className="text-white text-[12px]" />
+                                                )}
+                                              </div>
 
-                                
-                                
+                                              {!isLast && (
+                                                <div
+                                                  className={`h-[2px] flex-1 ${done
+                                                      ? "bg-green-500"
+                                                      : "bg-gray-700"
+                                                    }`}
+                                                />
+                                              )}
+                                            </div>
+
+                                            <p
+                                              className={`mt-3 text-sm ${done
+                                                  ? "text-gray-200 font-semibold"
+                                                  : "text-gray-400"
+                                                }`}
+                                            >
+                                              {stage}
+                                            </p>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             </div>
                             {/* ACTION BUTTONS */}
@@ -510,9 +547,9 @@ const Orders = () => {
                             >
                               {/* TRACK BUTTON */}
                               <button
-  onClick={() => trackOrder(order._id)}
-  disabled={loadingTrack || isCancelled}
-  className={`
+                                onClick={() => trackOrder(order._id)}
+                                disabled={loadingTrack || isCancelled}
+                                className={`
     w-full
     h-[42px]
     rounded-md
@@ -520,14 +557,12 @@ const Orders = () => {
     font-semibold
     transition
     flex items-center justify-center gap-2 cursor-pointer
-    ${
-      isCancelled
-        ? "bg-gray-600 text-gray-300 cursor-not-allowed"
-        : "bg-white text-black hover:bg-gray-300"
-    }
+    ${isCancelled
+                                    ? "bg-gray-600 text-gray-300 cursor-not-allowed"
+                                    : "bg-white text-black hover:bg-gray-300"
+                                  }
   `}
->
-
+                              >
                                 {loadingTrack ? (
                                   <div className="w-4 h-4 border-2 border-gray-400 border-t-black rounded-full animate-spin" />
                                 ) : (
@@ -546,7 +581,7 @@ const Orders = () => {
                                       productId: item.productId,
                                     })
                                   }
-                                 className="
+                                  className="
     w-full
     cursor-pointer 
     h-[42px]
@@ -558,8 +593,7 @@ const Orders = () => {
     hover:bg-red-700
     transition
   "
->
-                                
+                                >
                                   {loadingCancel ? "Cancelling…" : "Cancel"}
                                 </button>
                               )}
@@ -596,7 +630,7 @@ const Orders = () => {
                     Cancel Item?
                   </h3>
                   <p className="text-gray-300 mt-2 text-sm">
-                    Are you sure you want to cancel this item?
+                    If you cancel now, you may not be able to avail this deal again. Do you still want to cancel?
                   </p>
 
                   <div className="flex justify-end gap-3 mt-6">
@@ -604,7 +638,7 @@ const Orders = () => {
                       onClick={() => setCancelModal(null)}
                       className="cursor-pointer px-4 py-2 bg-gray-700 text-white rounded-lg text-sm hover:bg-gray-600"
                     >
-                      No
+                      Don't Cancel
                     </button>
 
                     <button
@@ -614,7 +648,7 @@ const Orders = () => {
                       }}
                       className="cursor-pointer px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700"
                     >
-                      Yes, Cancel
+                      Cancel Order
                     </button>
                   </div>
                 </div>

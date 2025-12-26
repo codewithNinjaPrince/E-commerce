@@ -2,29 +2,78 @@ import React, { useState, useEffect, useContext } from "react";
 import { ShopContext } from "../context/ShopContext";
 import Title from "./Title";
 
-const CartTotal = ({ forceOpenKey, priceData },ref) => {
+const CartTotalSkeleton = () => {
+  
+  return (
+    <div className="w-full bg-[#111111] p-6 rounded-2xl border border-white/10 animate-pulse">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="h-7 w-40 bg-gray-700/40 rounded" />
+        <div className="h-7 w-24 bg-gray-700/40 rounded" />
+      </div>
+
+      {/* Lines */}
+      <div className="space-y-3">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="flex justify-between">
+            <div className="h-4 w-32 bg-gray-700/30 rounded" />
+            <div className="h-4 w-20 bg-gray-700/40 rounded" />
+          </div>
+        ))}
+      </div>
+
+      <hr className="border-gray-800 my-4" />
+
+      {/* Total */}
+      <div className="flex justify-between items-center">
+        <div className="h-5 w-24 bg-gray-700/40 rounded" />
+        <div className="h-6 w-28 bg-gray-700/50 rounded" />
+      </div>
+
+      <div className="h-3 w-3/4 bg-gray-700/30 rounded mt-3" />
+    </div>
+  );
+};
+
+
+const CartTotal = ({ forceOpenKey, priceData }) => {
   const [open, setOpen] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const { currency = "₹" } = useContext(ShopContext);
+
+  /* 🌐 ONLINE / OFFLINE */
+  useEffect(() => {
+    const online = () => setIsOnline(true);
+    const offline = () => setIsOnline(false);
+
+    window.addEventListener("online", online);
+    window.addEventListener("offline", offline);
+
+    return () => {
+      window.removeEventListener("online", online);
+      window.removeEventListener("offline", offline);
+    };
+  }, []);
 
   /* ================= FORCE OPEN ================= */
   useEffect(() => {
     if (forceOpenKey !== null) setOpen(true);
   }, [forceOpenKey]);
-  
-  if (!priceData) {
-  return (
-    <div className="w-full bg-[#111111] p-6 rounded-2xl border border-white/10 text-gray-400">
-      <Title text1="Cart" text2="Totals" />
-      <p className="mt-3 text-sm">Calculating totals…</p>
-    </div>
-  );
-}
 
+  /* ================= LOADING STATE ================= */
+  const isLoading =
+  !isOnline ||
+  !priceData ||
+  typeof priceData.payableAmount !== "number";
+
+
+  if (isLoading) {
+    return <CartTotalSkeleton />;
+  }
 
   const {
     actualTotal = 0,
     discountedAmount = 0,
-    discountAmount = 0,
     deliveryFee = 0,
     codFee = 0,
     payableAmount = 0,
@@ -44,16 +93,6 @@ const CartTotal = ({ forceOpenKey, priceData },ref) => {
   deliveryFee > 0 && discountedAmount < FREE_LIMIT
     ? FREE_LIMIT - discountedAmount
     : 0;
-
-    if (!priceData) {
-  return (
-    <div className="w-full bg-[#111111] p-6 rounded-2xl border border-white/10 text-gray-400">
-      <Title text1="Cart" text2="Totals" />
-      <p className="mt-3 text-sm">Calculating totals…</p>
-    </div>
-  );
-}
-
 
 
   /* ================= UI (UNCHANGED) ================= */
@@ -134,7 +173,7 @@ const CartTotal = ({ forceOpenKey, priceData },ref) => {
 
         {codFee > 0 && (
           <div className="flex justify-between mt-1">
-            <span>COD Fee</span>
+            <span>COD Handling Fee</span>
             <span>
               {currency} {codFee}
             </span>
