@@ -144,10 +144,8 @@ const Footer = () => {
                       },
                       { label: "Refund & Return", link: "/refund-return" },
                       { label: "Privacy Policy", link: "/privacy-policy" },
-                      {
-                        label: "Terms & Conditions",
-                        link: "/terms-conditions",
-                      },
+                      { label: "Terms & Conditions", link: "/terms-conditions",},
+                      { label: "Affiliate Policy", link: "/affiliate-policy",},
                     ].map((item, i) => (
                       <li
                         key={i}

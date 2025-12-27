@@ -23,6 +23,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import Verify from "./pages/Verify";
 import User from "./pages/User";
 import SellWithUs from "./pages/SellWithUs";
+import AffiliatePolicy from "./pages/AffiliatePolicy";
 
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import RefundReturnPolicy from "./pages/RefundReturnPolicy";
@@ -216,6 +217,7 @@ const App = () => {
         <Route path="/refund-return" element={<RefundReturnPolicy />} />
         <Route path="/shipping-delivery" element={<ShippingDelivery />} />
         <Route path="/terms-conditions" element={<TermsConditions />} />
+        <Route path="/affiliate-policy" element={<AffiliatePolicy />} />
 
         {/* 🏠 NORMAL PAGES */}
         <Route

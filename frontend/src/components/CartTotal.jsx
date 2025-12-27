@@ -53,6 +53,11 @@ const CartTotal = ({ forceOpenKey, priceData }) => {
     };
   }, []);
 
+  const formatINR = (amount) => {
+  if (amount === null || amount === undefined) return "0";
+  return Number(amount).toLocaleString("en-IN");
+};
+
   /* ================= FORCE OPEN ================= */
   useEffect(() => {
     if (forceOpenKey !== null) setOpen(true);
@@ -81,7 +86,8 @@ const CartTotal = ({ forceOpenKey, priceData }) => {
       ? Math.round((productDiscountAmount / actualTotal) * 100)
       : 0;
 
-  const fmt = (n) => (Number.isInteger(n) ? n : n.toFixed(2));
+  const fmt = (n) => formatINR(n);
+
 
   const FREE_LIMIT = 999;
   const remainingForFree =
@@ -158,7 +164,9 @@ const CartTotal = ({ forceOpenKey, priceData }) => {
           </div>
         )}
 
-        <div className="border-t border-dashed border-gray-700/40 my-3" />
+        <hr className="border-gray-400 my-3" />
+
+        
 
         <div className="flex justify-between text-lg items-center">
           <p className="text-white text-lg font-semibold ">Total Amount</p>
@@ -167,7 +175,9 @@ const CartTotal = ({ forceOpenKey, priceData }) => {
           </p>
         </div>
 
-        <hr className="border-gray-400 my-3" />
+        <div className="border-t border-dashed border-gray-700/40 my-3" />
+
+        
 
         {productDiscountAmount > 0 && (
           <div className="mt-4 bg-green-900/20 border border-green-500/20 rounded-xl px-4 py-3 flex items-center gap-3">

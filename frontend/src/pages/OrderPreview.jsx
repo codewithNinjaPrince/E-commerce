@@ -34,6 +34,12 @@ const QUOTES = [
   "Brawvly recommends 👍",
 ];
 
+// 🇮🇳 Indian currency formatter
+const formatINR = (amount) => {
+  if (amount === null || amount === undefined) return "0";
+  return Number(amount).toLocaleString("en-IN");
+};
+
 const OrderPreviewSkeleton = () => {
   return (
     <section className="min-h-screen bg-black text-white pt-[64px] pb-28 animate-pulse">
@@ -84,12 +90,18 @@ const randomQuote = () => QUOTES[Math.floor(Math.random() * QUOTES.length)];
 const deliveryDate = () => {
   const d = new Date();
   d.setDate(d.getDate() + 9);
-  return d.toDateString();
+
+  return d.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
 };
 
 /* ================= PAGE ================= */
 const OrderPreview = () => {
-   useLayoutEffect(() => {
+  useLayoutEffect(() => {
     // 🔥 HARD FORCE SCROLL (browser memory ignore)
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
@@ -611,7 +623,7 @@ const OrderPreview = () => {
                   {/* PRICE */}
                   <div className="flex flex-wrap items-center gap-2 mt-3">
                     <span className="text-green-400 font-semibold text-lg">
-                      ₹{product.discountedPrice}
+                      ₹{formatINR(product.discountedPrice)}
                     </span>
 
                     <span className="text-gray-500 line-through text-sm">
@@ -674,7 +686,8 @@ const OrderPreview = () => {
 
         {/* ================= TERMS ================= */}
         <p className="text-xs text-gray-400 text-center leading-relaxed">
-          By continuing, you confirm you are 18+ and agree to Brawvly’s{" "}
+          By continuing with the order, you confirm that you are above 18 years
+          of age, and you agree the Brawvly’s{" "}
           <Link
             to="/terms-conditions"
             className="
@@ -737,34 +750,34 @@ const OrderPreview = () => {
               </p>
 
               <p className="text-lg font-bold text-white flex items-center gap-1">
-                ₹{priceData.payableAmount}
-                <FaChevronRight
-                  className="
-          text-gray-400
-          text-sm
-          transition-transform duration-300
-          group-hover:translate-y-0.5
-          group-hover:text-white
-        "
-                />
-              </p>
+  ₹{formatINR(priceData.payableAmount)}
+  <FaChevronRight
+    className="
+      text-gray-400
+      text-sm
+      transition-transform duration-300
+      group-hover:translate-y-0.5
+      group-hover:text-white
+    "
+  />
+</p>
+
             </div>
           </div>
 
           <button
-  onClick={() =>
-    navigate("/payment", {
-      state: {
-        payableAmount: priceData.payableAmount,
-        priceData,
-      },
-    })
-  }
-  className="bg-yellow-400 text-black px-6 py-3 rounded-lg font-semibold hover:bg-yellow-300 cursor-pointer"
->
-  Continue
-</button>
-
+            onClick={() =>
+              navigate("/payment", {
+                state: {
+                  payableAmount: priceData.payableAmount,
+                  priceData,
+                },
+              })
+            }
+            className="bg-yellow-400 text-black px-6 py-3 rounded-lg font-semibold hover:bg-yellow-300 cursor-pointer"
+          >
+            Continue
+          </button>
         </div>
       </div>
       {sizeConfirm && (

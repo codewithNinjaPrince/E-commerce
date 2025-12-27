@@ -237,6 +237,11 @@ const Navbar = ({ showNavbar }) => {
                 label="Shipping & Delivery"
                 setOpen={setOpen}
               />
+              <DrawerLink
+                to="/affiliate-policy"
+                label="Affiliate Policy"
+                setOpen={setOpen}
+              />
             </Section>
 
             {/* FIXED BOTTOM ACTION */}
