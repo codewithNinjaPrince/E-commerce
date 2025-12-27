@@ -609,8 +609,15 @@ import axios from "axios";
 import { ShopContext } from "../context/ShopContext";
 import { toast } from "react-toastify";
 import { assets } from "../assets/assets";
+import { useLayoutEffect } from "react";
 
 const MyProfile = () => {
+  useLayoutEffect(() => {
+    // 🔥 HARD FORCE SCROLL (browser memory ignore)
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, []);
   const { backendUrl, token } = useContext(ShopContext);
 
   const [loading, setLoading] = useState(true);

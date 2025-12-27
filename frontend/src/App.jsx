@@ -5,7 +5,6 @@ import PreLoader from "./components/PreLoader";
 import Navbar from "./components/Navbar";
 import Searchbar from "./components/Searchbar";
 import Footer from "./components/Footer";
-import ScrollToTop from "./components/ScrollToTop";
 
 import Home from "./pages/Home";
 import Collections from "./pages/Collections";
@@ -88,7 +87,7 @@ const App = () => {
     pathname === "/address" ||
     pathname === "/address/add" ||
     pathname.startsWith("/address/edit");
-    pathname === "/order-preview" ||
+  pathname === "/order-preview" ||
     pathname === "/placeorder";
 
   /* 🔥 HIDE FOOTER ON THESE ROUTES */
@@ -252,7 +251,6 @@ const App = () => {
                     <Route path="/favorites" element={<Favorites />} />
                   </Routes>
 
-                  <ScrollToTop />
                 </>
               )}
             </div>

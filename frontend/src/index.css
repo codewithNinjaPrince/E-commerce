@@ -26,9 +26,9 @@ a.active hr {
 }
 
 /* Better smooth scrolling */
-html {
+/* html {
   scroll-behavior: smooth;
-}
+} */
 
 /* Mobile active state */
 @media (max-width: 640px) {

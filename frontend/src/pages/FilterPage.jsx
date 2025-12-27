@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLayoutEffect } from "react";
 
 const FILTER_TYPES = [
   "Gender",
@@ -12,6 +13,12 @@ const FILTER_TYPES = [
 ];
 
 const FilterPage = () => {
+  useLayoutEffect(() => {
+    // 🔥 HARD FORCE SCROLL (browser memory ignore)
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, []);
   const navigate = useNavigate();
 
   const [activeFilter, setActiveFilter] = useState("Gender");

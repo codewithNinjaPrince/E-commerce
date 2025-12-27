@@ -1,6 +1,14 @@
 import React, { useState } from "react";
+import { useLayoutEffect } from "react";
 
 const SellWithUs = () => {
+  useLayoutEffect(() => {
+      // 🔥 HARD FORCE SCROLL (browser memory ignore)
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      window.scrollTo(0, 0);
+    }, []);
+  
   const [openFaq, setOpenFaq] = useState(null);
 
   const handleRegister = () => {

@@ -4,8 +4,15 @@ import LatestCollection from "../components/LatestCollection";
 import BestSeller from "../components/BestSeller";
 import OurPolicy from "../components/OurPolicy";
 import NewsLetter from "../components/NewsLetter";
+import { useLayoutEffect } from "react";
 
 const Home = () => {
+  useLayoutEffect(() => {
+    // 🔥 HARD FORCE SCROLL (browser memory ignore)
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, []);
   return (
     <>
       {/* ================= SEO CONTEXT ================= */}

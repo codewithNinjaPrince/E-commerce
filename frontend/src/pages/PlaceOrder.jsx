@@ -6,6 +6,7 @@ import { assets } from "../assets/assets";
 import { ShopContext } from "../context/ShopContext";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useLayoutEffect } from "react";
 
 const PlaceOrderSkeleton = () => {
   return (
@@ -53,6 +54,12 @@ const PlaceOrderSkeleton = () => {
 
 
 const PlaceOrder = () => {
+  useLayoutEffect(() => {
+    // 🔥 HARD FORCE SCROLL (browser memory ignore)
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, []);
   const {
     navigate,
     backendUrl,

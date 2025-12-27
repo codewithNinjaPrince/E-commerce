@@ -4,6 +4,7 @@ import { ShopContext } from "../context/ShopContext";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { useLayoutEffect } from "react";
 
 /* ---------------- HELPERS ---------------- */
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -30,6 +31,12 @@ const getPasswordScore = (p) =>
 
 /* ---------------- COMPONENT ---------------- */
 const Login = () => {
+  useLayoutEffect(() => {
+    // 🔥 HARD FORCE SCROLL (browser memory ignore)
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, []);
   const [mode, setMode] = useState("Login"); // Login | Sign Up
   const [loading, setLoading] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);

@@ -50,7 +50,9 @@ const ProductItem = ({
 
   return (
     <div
-      onClick={() => navigate(`/product/${_id}`)}
+      onClick={() => {
+        navigate(`/product/${_id}`);
+      }}
       className="product-card group relative cursor-pointer transition-all"
     >
       {/* IMAGE SECTION */}
@@ -193,7 +195,6 @@ const ProductItem = ({
                 return;
               }
 
-              // ✅ ensure item is in cart
               const defaultSize = "M";
 
               setBuyNowItem({
@@ -203,24 +204,12 @@ const ProductItem = ({
                 price: discountedPrice,
                 actualPrice,
                 quantity: 1,
-                size: defaultSize, // or selected size
+                size: defaultSize,
               });
 
-              // ✅ navigate AFTER adding
-              navigate("/placeorder?mode=buynow");
+              navigate("/cart?mode=buynow");
             }}
-            className="
-        flex-1
-        bg-white text-black
-        py-2
-        rounded-lg
-        text-sm font-semibold
-        transition-all duration-200
-        hover:bg-black hover:text-white
-        hover:scale-[1.02]
-        active:scale-95
-        cursor-pointer
-      "
+            className="flex-1 bg-white text-black py-2 rounded-lg text-sm font-semibold hover:bg-black hover:text-white transition cursor-pointer"
           >
             Buy Now
           </button>

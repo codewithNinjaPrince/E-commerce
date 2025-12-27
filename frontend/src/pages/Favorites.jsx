@@ -4,6 +4,7 @@ import Title from "../components/Title";
 import ProductItem from "../components/ProductItem";
 import { FaHeart } from "react-icons/fa";
 import ProductItemSkeleton from "../components/ProductItemSkeleton";
+import { useLayoutEffect } from "react";
 
 const FavoritesPageSkeleton = () => {
   return (
@@ -49,6 +50,12 @@ const FavoritesPageSkeleton = () => {
 };
 
 const Favorites = () => {
+  useLayoutEffect(() => {
+    // 🔥 HARD FORCE SCROLL (browser memory ignore)
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, []);
   const { products, favorites, favoritesLoading, token, navigate } =
     useContext(ShopContext);
 

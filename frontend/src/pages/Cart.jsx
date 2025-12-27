@@ -4,6 +4,7 @@ import { ShopContext } from "../context/ShopContext";
 import Title from "../components/Title";
 import { assets } from "../assets/assets";
 import CartTotal from "../components/CartTotal";
+import { useLayoutEffect } from "react";
 
 const CartPageSkeleton = () => {
   return (
@@ -41,6 +42,12 @@ const CartPageSkeleton = () => {
 };
 
 const Cart = () => {
+  useLayoutEffect(() => {
+    // 🔥 HARD FORCE SCROLL (browser memory ignore)
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, []);
   const {
     products,
     currency,
@@ -193,7 +200,7 @@ const Cart = () => {
 
         <button
           onClick={() => navigate("/collections")}
-          className="mt-6 bg-white text-black px-6 py-2 rounded-lg font-semibold hover:bg-gray-300 transition"
+          className="mt-6 bg-white text-black px-6 py-2 rounded-lg font-semibold hover:bg-gray-300 transition cursor-pointer"
         >
           Browse Products →
         </button>
@@ -232,7 +239,8 @@ const Cart = () => {
         {/* MINUS */}
         <button
           type="button"
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             const newQty = Math.max(1, item.quantity - 1);
             updateQuantity(item._id, item.size, newQty);
             setValue(String(newQty));
@@ -252,6 +260,7 @@ const Cart = () => {
 
         {/* INPUT */}
         <input
+        onClick={(e) => e.stopPropagation()}
           type="text"
           inputMode="numeric"
           value={value}
@@ -284,7 +293,8 @@ const Cart = () => {
         {/* PLUS */}
         <button
           type="button"
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             const newQty = item.quantity + 1;
             updateQuantity(item._id, item.size, newQty);
             setValue(String(newQty));
@@ -347,13 +357,14 @@ const Cart = () => {
             return (
               <div
                 key={index}
+                onClick={() => navigate(`/product/${item._id}`)}
                 className="
   bg-[#1a1a1a] border border-white/10
   p-4 rounded-xl
   flex flex-col gap-4
   sm:grid sm:grid-cols-[3fr_1.5fr_1.5fr]
   sm:items-center 
-  hover:border-white/20 transition
+  hover:border-white/50 transition cursor-pointer
 "
               >
                 {/* LEFT */}
@@ -400,7 +411,8 @@ const Cart = () => {
 
                   {/* RIGHT — DELETE */}
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setDeleteItem(item);
                       setConfirmOpen(true);
                     }}
@@ -432,7 +444,8 @@ const Cart = () => {
                   <img
                     src={assets.bin_icon}
                     alt="delete"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setDeleteItem(item);
                       setConfirmOpen(true);
                     }}
@@ -504,21 +517,24 @@ const Cart = () => {
 
           {/* RIGHT — CTA */}
           <button
-            onClick={() => navigate("/order-preview")}
-            className="
-        bg-white text-black
-        px-6 py-3
-        rounded-lg
-        font-semibold
-        border border-black
-        transition-all duration-200
-        hover:bg-black hover:text-white
-        cursor-pointer
-        whitespace-nowrap
-      "
-          >
-            Proceed to Checkout →
-          </button>
+  onClick={(e) => {
+    e.stopPropagation();
+    navigate("/order-preview");
+  }}
+  className="
+    bg-white text-black
+    px-6 py-3
+    rounded-lg
+    font-semibold
+    border border-black
+    transition-all duration-200
+    hover:bg-black hover:text-white
+    cursor-pointer
+    whitespace-nowrap
+  "
+>
+  Proceed to Checkout →
+</button>
         </div>
       </div>
 
@@ -535,13 +551,19 @@ const Cart = () => {
 
             <div className="flex justify-end gap-3 mt-6">
               <button
-                onClick={() => setConfirmOpen(false)}
+                onClick={(e) => {
+    e.stopPropagation();
+    setConfirmOpen(false);
+  }}
                 className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 cursor-pointer"
               >
                 Cancel
               </button>
               <button
-                onClick={confirmDelete}
+                onClick={(e) => {
+    e.stopPropagation();
+    confirmDelete();
+  }}
                 className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 cursor-pointer"
               >
                 Remove

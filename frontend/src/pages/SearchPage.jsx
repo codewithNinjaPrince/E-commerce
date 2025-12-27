@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { ShopContext } from "../context/ShopContext";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaTimes, FaChevronRight } from "react-icons/fa";
+import { useLayoutEffect } from "react";
 
 const POPULAR_KEYWORDS = [
   "Shoes",
@@ -12,6 +13,12 @@ const POPULAR_KEYWORDS = [
 ];
 
 const SearchPage = () => {
+  useLayoutEffect(() => {
+    // 🔥 HARD FORCE SCROLL (browser memory ignore)
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, []);
   const { products } = useContext(ShopContext);
   const navigate = useNavigate();
 

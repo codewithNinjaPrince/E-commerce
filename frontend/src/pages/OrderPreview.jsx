@@ -3,7 +3,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { ShopContext } from "../context/ShopContext";
 import CartTotal from "../components/CartTotal";
 import axios from "axios";
+import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useLayoutEffect } from "react";
 
 import {
   FaArrowLeft,
@@ -15,6 +17,7 @@ import {
   FaChevronDown,
   FaCheckCircle,
   FaLock,
+  FaChevronRight,
 } from "react-icons/fa";
 
 /* ---------------- QUOTES ---------------- */
@@ -31,6 +34,50 @@ const QUOTES = [
   "Brawvly recommends 👍",
 ];
 
+const OrderPreviewSkeleton = () => {
+  return (
+    <section className="min-h-screen bg-black text-white pt-[64px] pb-28 animate-pulse">
+      <div className="max-w-7xl mx-auto px-4 space-y-6">
+        {/* ADDRESS SKELETON */}
+        <div className="bg-[#121212] p-5 rounded-2xl border border-white/10">
+          <div className="flex gap-4">
+            <div className="w-10 h-10 rounded-full bg-white/10" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 w-32 bg-white/10 rounded" />
+              <div className="h-4 w-52 bg-white/10 rounded" />
+              <div className="h-3 w-64 bg-white/10 rounded" />
+            </div>
+          </div>
+        </div>
+
+        {/* PRODUCT SKELETON */}
+        {[1, 2].map((i) => (
+          <div
+            key={i}
+            className="bg-[#121212] p-5 rounded-2xl border border-white/10"
+          >
+            <div className="flex gap-4">
+              <div className="w-24 h-32 bg-white/10 rounded-xl" />
+              <div className="flex-1 space-y-3">
+                <div className="h-4 w-3/4 bg-white/10 rounded" />
+                <div className="h-3 w-1/3 bg-white/10 rounded" />
+                <div className="h-4 w-1/4 bg-white/10 rounded" />
+                <div className="h-3 w-2/5 bg-white/10 rounded" />
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* TOTAL SKELETON */}
+        <div className="bg-[#121212] p-4 rounded-xl border border-white/10">
+          <div className="h-4 w-40 bg-white/10 rounded" />
+          <div className="h-6 w-32 bg-white/10 rounded mt-3" />
+        </div>
+      </div>
+    </section>
+  );
+};
+
 /* ---------------- HELPERS ---------------- */
 const randomQuote = () => QUOTES[Math.floor(Math.random() * QUOTES.length)];
 
@@ -42,17 +89,18 @@ const deliveryDate = () => {
 
 /* ================= PAGE ================= */
 const OrderPreview = () => {
-  const {
-    navigate,
-    backendUrl,
-    token,
-    cartItems,
-    products,
-    updateQuantity,
-    addToCart,
-  } = useContext(ShopContext);
+   useLayoutEffect(() => {
+    // 🔥 HARD FORCE SCROLL (browser memory ignore)
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, []);
+  const { backendUrl, token, cartItems, products, updateQuantity, addToCart } =
+    useContext(ShopContext);
 
   const location = useLocation();
+  const navigate = useNavigate();
+
   const cartTotalRef = useRef(null);
 
   const [priceData, setPriceData] = useState(null);
@@ -61,93 +109,155 @@ const OrderPreview = () => {
   const [checkingCoupon, setCheckingCoupon] = useState(false);
   const [cartOpenKey, setCartOpenKey] = useState(0);
   const [sizeEdit, setSizeEdit] = useState(null);
+  const [sizeConfirm, setSizeConfirm] = useState(null);
+  const [updatingSize, setUpdatingSize] = useState(false);
+  const [addressLoading, setAddressLoading] = useState(true);
+  const [orderUpdating, setOrderUpdating] = useState(false);
 
   const [address, setAddress] = useState(null);
   const [localCartOverride, setLocalCartOverride] = useState(null);
 
+  /* ---------------- BUILD ITEMS ---------------- */
+
+  const handleConfirmSizeChange = async () => {
+    try {
+      setOrderUpdating(true); // 🔥 freeze UI
+
+      // 1️⃣ add new size FIRST
+      await updateQuantity(
+        sizeConfirm.productId,
+        sizeConfirm.newSize,
+        sizeConfirm.quantity
+      );
+
+      // 2️⃣ then remove old size
+      await updateQuantity(sizeConfirm.productId, sizeConfirm.oldSize, 0);
+
+      // 3️⃣ force fresh preview fetch
+      await axios
+        .post(
+          `${backendUrl}/api/order/preview`,
+          {
+            items: buildItems(),
+            couponCode: couponValid ? couponCode : null,
+          },
+          { headers: { token } }
+        )
+        .then((res) => {
+          if (res.data.success) {
+            setPriceData(res.data);
+          }
+        });
+
+      toast.success(`Size changed to ${sizeConfirm.newSize}`, {
+        theme: "dark",
+        autoClose: 1200,
+      });
+    } catch (err) {
+      toast.error("Failed to update item");
+    } finally {
+      setOrderUpdating(false); // 🔥 unfreeze UI
+      setSizeConfirm(null);
+    }
+  };
+
+  const buildItems = () => {
+    const source = localCartOverride || cartItems;
+    let items = [];
+
+    Object.keys(source).forEach((pid) => {
+      Object.keys(source[pid]).forEach((size) => {
+        if (source[pid][size] > 0) {
+          items.push({
+            productId: pid,
+            size,
+            quantity: source[pid][size],
+          });
+        }
+      });
+    });
+
+    return items;
+  };
+
+  const handleSizeChange = async (item, product, newSize) => {
+    if (newSize === item.size) return;
+
+    // 🔥 1. Optimistic local update (IMMEDIATE UI FIX)
+    setLocalCartOverride((prev) => {
+      const clone = JSON.parse(JSON.stringify(prev || cartItems));
+
+      // remove old size
+      delete clone[item.productId][item.size];
+
+      // add new size
+      clone[item.productId][newSize] = item.quantity;
+
+      return clone;
+    });
+
+    // 🔥 2. Backend sync
+    await updateQuantity(item.productId, item.size, 0);
+    await updateQuantity(item.productId, newSize, item.quantity);
+
+    // 🔥 3. Clear override after backend sync
+    setLocalCartOverride(null);
+
+    toast.success(`Size changed to ${newSize}`, {
+      position: "top-center",
+      autoClose: 1500,
+      hideProgressBar: true,
+      theme: "dark",
+    });
+
+    setSizeEdit(null);
+  };
 
   useEffect(() => {
     const loadSelectedAddress = async () => {
       try {
-        if (!token) return;
-
-        const selectedId = localStorage.getItem("selectedAddressId");
+        // ⛔ token nahi aaya → wait (NO redirect)
+        if (!token) {
+          return;
+        }
 
         const res = await axios.get(`${backendUrl}/api/address/get`, {
           headers: { token },
         });
 
-        if (res.data.success) {
-          const found = res.data.addresses.find(
-            (a) => a.addressId === selectedId
-          );
-
-          setAddress(found || null);
+        if (!res.data.success) {
+          return;
         }
+
+        const { addresses, selectedAddressId } = res.data;
+
+        if (!selectedAddressId) {
+          toast.info("Please select a delivery address first", {
+            position: "top-center",
+            autoClose: 1500,
+            theme: "dark",
+          });
+          navigate("/address");
+          return;
+        }
+
+        const found = addresses.find((a) => a.addressId === selectedAddressId);
+
+        if (!found) {
+          navigate("/address");
+          return;
+        }
+
+        setAddress(found); // ✅ SUCCESS
       } catch (err) {
-        toast.error("Failed to load delivery address");
+        navigate("/address");
+      } finally {
+        setAddressLoading(false); // ✅ ALWAYS end loading
       }
     };
 
     loadSelectedAddress();
-  }, [token]);
-
-  /* ---------------- BUILD ITEMS ---------------- */
-  
-  
-  const buildItems = () => {
-  const source = localCartOverride || cartItems;
-  let items = [];
-
-  Object.keys(source).forEach((pid) => {
-    Object.keys(source[pid]).forEach((size) => {
-      if (source[pid][size] > 0) {
-        items.push({
-          productId: pid,
-          size,
-          quantity: source[pid][size],
-        });
-      }
-    });
-  });
-
-  return items;
-};
-
-
-  const handleSizeChange = async (item, product, newSize) => {
-  if (newSize === item.size) return;
-
-  // 🔥 1. Optimistic local update (IMMEDIATE UI FIX)
-  setLocalCartOverride((prev) => {
-    const clone = JSON.parse(JSON.stringify(prev || cartItems));
-
-    // remove old size
-    delete clone[item.productId][item.size];
-
-    // add new size
-    clone[item.productId][newSize] = item.quantity;
-
-    return clone;
-  });
-
-  // 🔥 2. Backend sync
-  await updateQuantity(item.productId, item.size, 0);
-  await updateQuantity(item.productId, newSize, item.quantity);
-
-  // 🔥 3. Clear override after backend sync
-  setLocalCartOverride(null);
-
-  toast.success(`Size changed to ${newSize}`, {
-    position: "top-center",
-    autoClose: 1500,
-    hideProgressBar: true,
-    theme: "dark",
-  });
-
-  setSizeEdit(null);
-};
-
+  }, [token, backendUrl, navigate]);
 
   /* ---------------- LOAD PRICE ---------------- */
   useEffect(() => {
@@ -168,14 +278,26 @@ const OrderPreview = () => {
           setPriceData(res.data);
         }
       } catch {
-        toast.error("Failed to load order preview");
+        toast.error("Please try later");
       }
     };
 
     loadPreview();
   }, [cartItems, couponValid, couponCode]); // 🔥 cartItems added
 
-  if (!priceData) return null;
+  if (addressLoading) return <OrderPreviewSkeleton />;
+  if (!priceData) return <OrderPreviewSkeleton />;
+
+  if (orderUpdating) {
+    return (
+      <section className="min-h-screen bg-black flex flex-col items-center justify-center text-white">
+        <div className="w-14 h-14 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+        <p className="mt-4 text-lg font-medium">
+          Hold on… We are updating your 🛒✨
+        </p>
+      </section>
+    );
+  }
 
   /* ================= RENDER ================= */
   return (
@@ -294,44 +416,55 @@ const OrderPreview = () => {
           return (
             <div
               key={idx}
+              onClick={() => navigate(`/product/${item.productId}`)}
               className="bg-[#121212] rounded-2xl border border-white/10 p-4 sm:p-5 transition hover:border-white/25 hover:shadow-[0_0_20px_rgba(255,255,255,0.06)] cursor-pointer"
             >
               <p className="text-green-400 text-sm mb-3">{randomQuote()}</p>
 
               <div className="flex gap-4 sm:gap-5">
                 {/* IMAGE + QTY */}
-                <div className="w-24 sm:w-28 flex-shrink-0">
+                <div className="w-24 sm:w-28 flex-shrink-0 flex flex-col items-center">
                   <img
                     src={product.image[0]}
                     alt={product.name}
                     className="w-full h-28 sm:h-32 object-cover rounded-xl border border-white/10"
                   />
 
-                  <select
-                    disabled={!priceData}
-                    value={item.quantity}
-                    onChange={(e) =>
-                      updateQuantity(
-                        item.productId,
-                        item.size,
-                        Number(e.target.value)
-                      )
-                    }
-                    className="w-full mt-4 bg-black border border-white/20 rounded-lg px-2 py-1 text-sm text-white focus:border-white/40 outline-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    {product.sizes.map((sz) => (
-                      <option
-                        key={sz}
-                        value={sz}
-                        disabled={product.stock && product.stock[sz] <= 0}
-                      >
-                        {sz}
-                        {product.stock && product.stock[sz] <= 0
-                          ? " (Out of stock)"
-                          : ""}
-                      </option>
-                    ))}
-                  </select>
+                  {/* QUANTITY BELOW IMAGE */}
+                  <div className="flex items-center gap-2 mt-3 border border-white/20 rounded-lg overflow-hidden">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updateQuantity(
+                          item.productId,
+                          item.size,
+                          item.quantity - 1
+                        );
+                      }}
+                      disabled={item.quantity <= 1}
+                      className="px-2 py-1 text-lg hover:bg-white/10 disabled:opacity-40 cursor-pointer"
+                    >
+                      −
+                    </button>
+
+                    <span className="px-3 text-sm font-medium">
+                      {item.quantity}
+                    </span>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updateQuantity(
+                          item.productId,
+                          item.size,
+                          item.quantity + 1
+                        );
+                      }}
+                      className="px-2 py-1 text-lg hover:bg-white/10 cursor-pointer"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
 
                 {/* DETAILS */}
@@ -378,7 +511,9 @@ const OrderPreview = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSizeEdit(item.productId + item.size);
+                            navigate(
+                              `/product/${item.productId}?from=orderpreview`
+                            );
                           }}
                           className="px-4 py-2 rounded-lg border border-white/20 text-sm text-green-500 hover:border-white/40 hover:bg-white/5 transition cursor-pointer"
                         >
@@ -411,9 +546,11 @@ const OrderPreview = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSizeEdit(item.productId + item.size);
+                          navigate(
+                            `/product/${item.productId}?from=orderpreview`
+                          );
                         }}
-                        className="w-full py-2 rounded-xl border border-white/20 text-sm text-green-500 hover:bg-white/5 transition cursor-pointer"
+                        className="px-4 py-2 rounded-lg border border-white/20 text-sm text-green-500 hover:border-white/40 hover:bg-white/5 transition cursor-pointer"
                       >
                         Change size
                       </button>
@@ -485,15 +622,30 @@ const OrderPreview = () => {
                       ↓ {discountPercent}% OFF
                     </span>
                   </div>
-
-                  <p className="text-xs sm:text-sm text-gray-300 mt-3">
-                    Delivery by -
-                    <span className="text-white ml-2 mr-2 sm:ml-2 sm:mr-2 ">
-                      {deliveryDate()},
-                    </span>
-                    10 PM
-                  </p>
                 </div>
+              </div>
+              <div className="relative w-full my-6">
+                {/* dotted line */}
+                <div className="border-t border-dashed border-white/30 w-full"></div>
+
+                {/* center text */}
+                <span
+                  className="
+      absolute
+      left-1/2 top-0
+      -translate-x-1/2 -translate-y-1/2
+      bg-[#0e0e0e]
+      px-4
+      text-sm sm:text-base
+      text-gray-300
+      whitespace-nowrap
+    "
+                >
+                  🚚 Delivery Expected by{" "}
+                  <span className="text-white font-medium">
+                    {deliveryDate()}
+                  </span>
+                </span>
               </div>
             </div>
           );
@@ -514,20 +666,43 @@ const OrderPreview = () => {
           />
           <button
             onClick={() => setCouponValid(true)}
-            className="mt-3 w-full bg-white text-black py-2 rounded font-semibold"
+            className="mt-3 w-full bg-white text-black py-2 rounded font-semibold hover:bg-white/80 hover:text-black/80 cursor-pointer"
           >
             Apply Coupon
           </button>
         </div>
 
         {/* ================= TERMS ================= */}
-        <p className="text-xs text-gray-400 text-center">
+        <p className="text-xs text-gray-400 text-center leading-relaxed">
           By continuing, you confirm you are 18+ and agree to Brawvly’s{" "}
-          <span className="text-blue-400 cursor-pointer">
+          <Link
+            to="/terms-conditions"
+            className="
+      text-blue-400
+      hover:text-blue-300
+      underline-offset-4
+      hover:underline
+      transition-all duration-200
+      cursor-pointer
+    "
+          >
             Terms & Conditions
-          </span>{" "}
+          </Link>{" "}
           and{" "}
-          <span className="text-blue-400 cursor-pointer">Privacy Policy</span>.
+          <Link
+            to="/privacy-policy"
+            className="
+      text-blue-400
+      hover:text-blue-300
+      underline-offset-4
+      hover:underline
+      transition-all duration-200
+      cursor-pointer
+    "
+          >
+            Privacy Policy
+          </Link>
+          .
         </p>
       </div>
 
@@ -537,24 +712,146 @@ const OrderPreview = () => {
           <div
             onClick={() => {
               setCartOpenKey((k) => k + 1);
-              cartTotalRef.current?.scrollIntoView({
-                behavior: "smooth",
-              });
+              cartTotalRef.current?.scrollIntoView({ behavior: "smooth" });
             }}
-            className="cursor-pointer"
+            className="
+    cursor-pointer
+    group
+    flex items-center gap-2
+  "
           >
-            <p className="text-xs text-gray-400">Total Amount</p>
-            <p className="text-lg font-bold">₹{priceData.payableAmount}</p>
+            <div className="flex flex-col">
+              <p className="text-xs text-gray-400 flex items-center gap-1">
+                Total Amount
+                <span
+                  className="
+          text-gray-400
+          text-sm
+          group-hover:text-white
+          transition
+        "
+                  title="View price breakdown"
+                >
+                  ⓘ
+                </span>
+              </p>
+
+              <p className="text-lg font-bold text-white flex items-center gap-1">
+                ₹{priceData.payableAmount}
+                <FaChevronRight
+                  className="
+          text-gray-400
+          text-sm
+          transition-transform duration-300
+          group-hover:translate-y-0.5
+          group-hover:text-white
+        "
+                />
+              </p>
+            </div>
           </div>
 
           <button
-            onClick={() => navigate("/payment")}
-            className="bg-yellow-400 text-black px-6 py-3 rounded-lg font-semibold hover:bg-yellow-300"
-          >
-            Continue
-          </button>
+  onClick={() =>
+    navigate("/payment", {
+      state: {
+        payableAmount: priceData.payableAmount,
+        priceData,
+      },
+    })
+  }
+  className="bg-yellow-400 text-black px-6 py-3 rounded-lg font-semibold hover:bg-yellow-300 cursor-pointer"
+>
+  Continue
+</button>
+
         </div>
       </div>
+      {sizeConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center">
+          <div className="bg-[#121212] rounded-2xl p-6 w-[90%] max-w-sm border border-white/10 text-center">
+            {!updatingSize ? (
+              <>
+                <p className="text-lg font-semibold text-white">
+                  Change product size
+                </p>
+
+                <select
+                  value={sizeConfirm.newSize}
+                  onChange={(e) =>
+                    setSizeConfirm((p) => ({ ...p, newSize: e.target.value }))
+                  }
+                  className="w-full mt-4 bg-black border border-white/20 rounded-lg px-3 py-2 text-white cursor-pointer"
+                >
+                  <option value="" disabled>
+                    Select size
+                  </option>
+
+                  {products
+                    .find((p) => p._id === sizeConfirm.productId)
+                    ?.sizes.map((sz) => (
+                      <option key={sz} value={sz}>
+                        {sz}
+                      </option>
+                    ))}
+                </select>
+
+                <div className="flex gap-3 mt-6">
+                  <button
+                    onClick={() => setSizeConfirm(null)}
+                    className="flex-1 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 cursor-pointer "
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    disabled={!sizeConfirm.newSize}
+                    onClick={async () => {
+                      try {
+                        setUpdatingSize(true);
+
+                        // 🔥 REMOVE OLD SIZE
+                        await updateQuantity(
+                          sizeConfirm.productId,
+                          sizeConfirm.oldSize,
+                          0
+                        );
+
+                        // 🔥 ADD NEW SIZE
+                        await updateQuantity(
+                          sizeConfirm.productId,
+                          sizeConfirm.newSize,
+                          sizeConfirm.quantity
+                        );
+
+                        toast.success(
+                          `Size changed to ${sizeConfirm.newSize}`,
+                          { theme: "dark", autoClose: 1500 }
+                        );
+                      } catch {
+                        toast.error("Failed to update size");
+                      } finally {
+                        setUpdatingSize(false);
+                        setSizeConfirm(null);
+                      }
+                    }}
+                    className="flex-1 py-2 rounded-lg bg-green-500 text-black font-semibold disabled:opacity-50 cursor-pointer hover:bg-green-650"
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto" />
+                <p className="text-white mt-4 font-medium">
+                  Hold on… updating your item
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </section>
   );
 };

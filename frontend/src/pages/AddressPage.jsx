@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { ShopContext } from "../context/ShopContext";
 import { toast } from "react-toastify";
+import { useLayoutEffect } from "react";
 
 import {
   FaArrowLeft,
@@ -25,6 +26,12 @@ const AddressSkeleton = () => (
 );
 
 const AddressPage = () => {
+  useLayoutEffect(() => {
+    // 🔥 HARD FORCE SCROLL (browser memory ignore)
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, []);
   const navigate = useNavigate();
   const { backendUrl } = useContext(ShopContext);
 
@@ -261,7 +268,7 @@ const AddressPage = () => {
         {!loading && !error && (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {filtered.length === 0 && (
-              <p className="text-gray-400 text-sm">No saved addresses found</p>
+              <p className="text-gray-400 text-sm">No address found ! Add</p>
             )}
 
             {filtered.map((addr) => (

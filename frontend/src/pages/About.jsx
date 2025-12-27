@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import Title from "../components/Title";
 import { assets } from "../assets/assets";
 import NewsLetter from "../components/NewsLetter";
+import { useLayoutEffect } from "react";
 
 const AboutSkeleton = () => (
   <div className="animate-pulse space-y-10 px-4 py-8">
@@ -31,6 +32,12 @@ const AboutSkeleton = () => (
 );
 
 export default function About() {
+  useLayoutEffect(() => {
+    // 🔥 HARD FORCE SCROLL (browser memory ignore)
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, []);
   const valuesRef = useRef(null);
   const policyRef = useRef(null);
 

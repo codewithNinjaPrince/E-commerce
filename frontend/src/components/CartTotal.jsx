@@ -3,7 +3,6 @@ import { ShopContext } from "../context/ShopContext";
 import Title from "./Title";
 
 const CartTotalSkeleton = () => {
-  
   return (
     <div className="w-full bg-[#111111] p-6 rounded-2xl border border-white/10 animate-pulse">
       {/* Header */}
@@ -35,7 +34,6 @@ const CartTotalSkeleton = () => {
   );
 };
 
-
 const CartTotal = ({ forceOpenKey, priceData }) => {
   const [open, setOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -62,10 +60,7 @@ const CartTotal = ({ forceOpenKey, priceData }) => {
 
   /* ================= LOADING STATE ================= */
   const isLoading =
-  !isOnline ||
-  !priceData ||
-  typeof priceData.payableAmount !== "number";
-
+    !isOnline || !priceData || typeof priceData.payableAmount !== "number";
 
   if (isLoading) {
     return <CartTotalSkeleton />;
@@ -90,10 +85,9 @@ const CartTotal = ({ forceOpenKey, priceData }) => {
 
   const FREE_LIMIT = 999;
   const remainingForFree =
-  deliveryFee > 0 && discountedAmount < FREE_LIMIT
-    ? FREE_LIMIT - discountedAmount
-    : 0;
-
+    deliveryFee > 0 && discountedAmount < FREE_LIMIT
+      ? FREE_LIMIT - discountedAmount
+      : 0;
 
   /* ================= UI (UNCHANGED) ================= */
   return (
@@ -102,18 +96,11 @@ const CartTotal = ({ forceOpenKey, priceData }) => {
         onClick={() => setOpen(!open)}
         className="flex items-center justify-between cursor-pointer select-none"
       >
-        <div className="text-2xl">
-          <Title text1="Cart" text2="Totals" />
-        </div>
+        <p className="text-blue-500 text-lg font-semibold">Price Details</p>
 
-        <div className="text-right">
-          <p className="text-white font-bold text-lg">
-            {currency} {fmt(payableAmount)}
-          </p>
-          <p className="text-xs text-red-500">
-            {open ? "Hide details ▲" : "View details ▼"}
-          </p>
-        </div>
+        <p className="text-xs text-blue-500">
+          {open ? "Hide Details ▲" : "View Details ▼"}
+        </p>
       </div>
 
       <div
@@ -121,6 +108,7 @@ const CartTotal = ({ forceOpenKey, priceData }) => {
           open ? "max-h-[1000px] opacity-100 mt-4" : "max-h-0 opacity-0"
         }`}
       >
+        <hr className="border-gray-400 my-3" />
         <div className="flex justify-between items-center">
           <p className="text-gray-400">Actual Price</p>
           <p className="line-through text-gray-500">
@@ -132,7 +120,7 @@ const CartTotal = ({ forceOpenKey, priceData }) => {
           <p className="text-gray-400 flex items-center gap-2">
             Discounted Price
             {discountPercentage > 0 && (
-              <span className="bg-green-700/20 text-green-300 px-2 py-0.5 text-[11px] rounded-full">
+              <span className="font-semibold bg-green-700/20 text-green-300 px-2 py-0.5 text-[11px] rounded-full">
                 -{discountPercentage}%
               </span>
             )}
@@ -142,17 +130,7 @@ const CartTotal = ({ forceOpenKey, priceData }) => {
           </p>
         </div>
 
-        {/* Saving */}
-        {productDiscountAmount > 0 && (
-          <div className="flex justify-between items-center">
-            <p className="text-gray-500">You save</p>
-            <p className="text-green-400 flex items-center gap-2">
-              {currency} {fmt(productDiscountAmount)}
-            </p>
-          </div>
-        )}
-
-        <hr className="border-gray-800 my-3" />
+        <div className="border-t border-dashed border-gray-700/40 my-3" />
 
         <div className="flex justify-between items-center">
           <p className="text-gray-400">Shipping & Delivery</p>
@@ -180,14 +158,28 @@ const CartTotal = ({ forceOpenKey, priceData }) => {
           </div>
         )}
 
-        <hr className="border-gray-800 my-3" />
+        <div className="border-t border-dashed border-gray-700/40 my-3" />
 
         <div className="flex justify-between text-lg items-center">
-          <p className="text-white text-lg font-semibold ">Total</p>
+          <p className="text-white text-lg font-semibold ">Total Amount</p>
           <p className="text-xl font-bold text-white">
             {currency} {fmt(payableAmount)}
           </p>
         </div>
+
+        <hr className="border-gray-400 my-3" />
+
+        {productDiscountAmount > 0 && (
+          <div className="mt-4 bg-green-900/20 border border-green-500/20 rounded-xl px-4 py-3 flex items-center gap-3">
+            <div className="w-8 h-8 flex items-center justify-center bg-green-500/20 rounded-full text-green-400">
+              ₹
+            </div>
+
+            <p className="text-green-400 text-sm font-medium">
+              You’ll save {currency} {fmt(productDiscountAmount)} on this order!
+            </p>
+          </div>
+        )}
 
         {deliveryFee > 0 && remainingForFree > 0 && (
           <p className="text-xs text-gray-400 mt-1">

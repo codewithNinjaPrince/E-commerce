@@ -4,8 +4,15 @@ import Title from "../components/Title";
 import ProductItem from "../components/ProductItem";
 import SideSheet from "../components/SideSheet";
 import ProductItemSkeleton from "../components/ProductItemSkeleton";
+import { useLayoutEffect } from "react";
 
 const Collections = () => {
+  useLayoutEffect(() => {
+    // 🔥 HARD FORCE SCROLL (browser memory ignore)
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, []);
   const { products, search, showSearch } = useContext(ShopContext);
 
   const [filterProducts, setFilterProducts] = useState([]);

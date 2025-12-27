@@ -1,13 +1,20 @@
 import React, { useEffect, useContext, useState, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { ShopContext } from "../context/ShopContext";
 import { assets } from "../assets/assets";
 import RelatedProducts from "../components/RelatedProducts";
 import { toast } from "react-toastify";
 import { FaShareAlt, FaHeart } from "react-icons/fa";
 import { FaStar } from "react-icons/fa6";
+import { useLayoutEffect } from "react";
+import ProductSkeleton from "../components/ProductSkeleton";
 
 const Product = () => {
+  useLayoutEffect(() => {
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, []);
   const navigate = useNavigate();
   const { productId } = useParams();
 
@@ -36,6 +43,10 @@ const Product = () => {
 
   const [lens, setLens] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
+
+  const location = useLocation();
+  const fromOrderPreview =
+    new URLSearchParams(location.search).get("from") === "orderpreview";
 
   const handleShare = async () => {
     const shareUrl = window.location.href;
@@ -116,6 +127,18 @@ const Product = () => {
     const found = products.find((p) => p._id === productId);
     if (!found) return;
 
+    setProductData(null);
+    setImage("");
+    setSize("");
+    setCurrentIndex(0);
+    window.scrollTo(0, 0);
+
+    requestAnimationFrame(() => {
+      setProductData(found);
+      const imgs = Array.isArray(found.image) ? found.image : [found.image];
+      setImage(imgs[0]);
+    });
+
     setProductData(found);
 
     const imgs = Array.isArray(found.image) ? found.image : [found.image];
@@ -184,35 +207,7 @@ const Product = () => {
 
   /* ---------------- GUARD ---------------- */
   if (!productData) {
-    return (
-      <div className="bg-[#0e0e0e] text-white p-4 animate-pulse">
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* IMAGE SKELETON */}
-          <div className="w-full lg:w-[520px] h-[700px] bg-white/10 rounded-xl" />
-
-          {/* RIGHT CONTENT */}
-          <div className="flex-1 space-y-5">
-            <div className="h-6 w-40 bg-white/10 rounded" />
-            <div className="h-8 w-3/4 bg-white/10 rounded" />
-
-            <div className="flex gap-3">
-              <div className="h-8 w-28 bg-white/10 rounded" />
-              <div className="h-8 w-24 bg-white/10 rounded" />
-            </div>
-
-            <div className="flex gap-3 mt-4">
-              <div className="h-10 w-16 bg-white/10 rounded" />
-              <div className="h-10 w-16 bg-white/10 rounded" />
-              <div className="h-10 w-16 bg-white/10 rounded" />
-            </div>
-
-            <div className="h-4 w-full bg-white/10 rounded mt-6" />
-            <div className="h-4 w-5/6 bg-white/10 rounded" />
-            <div className="h-4 w-4/6 bg-white/10 rounded" />
-          </div>
-        </div>
-      </div>
-    );
+    return <ProductSkeleton />;
   }
 
   /* ---------------- SAFE DERIVED VALUES ---------------- */
@@ -231,17 +226,27 @@ const Product = () => {
       navigate(`/login?redirect=/product/${productId}`);
       return;
     }
+
     if (!size) {
       toast.error("Please select a size!", { position: "top-center" });
       return;
     }
 
     setAdding(true);
+
     setTimeout(() => {
       addToCart(productData._id, size);
       setAdding(false);
+
       toast.success("Added to cart");
-    }, 600);
+
+      // ✅ redirect ONLY here
+      if (fromOrderPreview) {
+        navigate("/cart");
+      } else {
+        navigate("/cart");
+      }
+    }, 500);
   };
 
   /* ---------------- UI ---------------- */
@@ -710,7 +715,9 @@ const Product = () => {
                         }
 
                         if (!size) {
-                          toast.error("Please select a size!", { position: "top-center" });
+                          toast.error("Please select a size!", {
+                            position: "top-center",
+                          });
                           return;
                         }
 
@@ -724,7 +731,7 @@ const Product = () => {
                           size,
                         });
 
-                        navigate("/placeorder?mode=buynow");
+                        navigate("/cart?mode=buynow");
                       }}
                       className="w-1/2 py-4 text-center font-semibold bg-orange-500 text-black active:scale-95"
                     >
@@ -751,7 +758,9 @@ const Product = () => {
                         }
 
                         if (!size) {
-                          toast.error("Please select a size!", { position: "top-center" });
+                          toast.error("Please select a size!", {
+                            position: "top-center",
+                          });
 
                           return;
                         }
@@ -766,7 +775,7 @@ const Product = () => {
                           size,
                         });
 
-                        navigate("/placeorder?mode=buynow");
+                        navigate("/order-preview?mode=buynow");
                       }}
                       className="flex-1 py-4 font-semibold bg-orange-500 text-black rounded-md hover:scale-[1.05] transition cursor-pointer hover:text-black/80 hover:bg-orange-400/80"
                     >

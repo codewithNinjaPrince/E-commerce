@@ -4,8 +4,15 @@ import Title from "../components/Title";
 import NewsLetter from "../components/NewsLetter";
 import { toast } from "react-toastify";
 import imageCompression from "browser-image-compression";
+import { useLayoutEffect } from "react";
 
 const Contact = () => {
+  useLayoutEffect(() => {
+    // 🔥 HARD FORCE SCROLL (browser memory ignore)
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, []);
   const navigate = useNavigate();
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 

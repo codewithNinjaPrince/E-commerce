@@ -1,7 +1,14 @@
 import React from "react";
 import Title from "../components/Title";
+import { useLayoutEffect } from "react";
 
 const RefundReturnPolicy = () => {
+  useLayoutEffect(() => {
+    // 🔥 HARD FORCE SCROLL (browser memory ignore)
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, []);
   return (
     <section className="pt-20 sm:pt-22 lg:pt-26 pb-16 px-2 sm:px-4 md:px-6">
       <div

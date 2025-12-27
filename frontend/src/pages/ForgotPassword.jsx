@@ -3,12 +3,19 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { ShopContext } from "../context/ShopContext";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { useLayoutEffect } from "react";
 
 /* ---------------- HELPERS ---------------- */
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 /* ---------------- COMPONENT ---------------- */
 const ForgotPassword = () => {
+  useLayoutEffect(() => {
+    // 🔥 HARD FORCE SCROLL (browser memory ignore)
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, []);
   const { backendUrl, navigate } = useContext(ShopContext);
 
   const [step, setStep] = useState(1); // 1=email | 2=otp | 3=password

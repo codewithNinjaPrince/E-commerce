@@ -5,6 +5,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { FiBox } from "react-icons/fi";
 import { FaCheckCircle, FaTruck } from "react-icons/fa";
+import { useLayoutEffect } from "react";
 
 /**
  * Orders.jsx
@@ -66,6 +67,12 @@ const OrdersSkeleton = () => {
 };
 
 const Orders = () => {
+  useLayoutEffect(() => {
+    // 🔥 HARD FORCE SCROLL (browser memory ignore)
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, []);
   const { backendUrl, token, currency } = useContext(ShopContext);
 
   const [orders, setOrders] = useState([]);
