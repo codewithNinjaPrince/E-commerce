@@ -17,6 +17,8 @@ const ShopContextProvider = (props) => {
   const [favorites, setFavorites] = useState([]);
   const [favoritesLoading, setFavoritesLoading] = useState(true);
   const [buyNowItem, setBuyNowItem] = useState(null);
+  const [appLoading, setAppLoading] = useState(true);
+
 
 
   const navigate = useNavigate();
@@ -257,11 +259,6 @@ const fetchFavorites = async (authToken) => {
   }
 };
 
-  /* ---------------------- EFFECTS ---------------------- */
-  useEffect(() => {
-    getProductsData();
-  }, []);
-
 //  useEffect(() => {
 //   const saved = localStorage.getItem("token");
 //   if (saved && products.length > 0) {
@@ -278,21 +275,32 @@ const fetchFavorites = async (authToken) => {
 // }, []);
 
 useEffect(() => {
-  const saved = localStorage.getItem("token");
-  if (saved) setToken(saved);
+  const bootstrapApp = async () => {
+    const savedToken = localStorage.getItem("token");
+
+    try {
+      // 1️⃣ Fetch products (public)
+      await getProductsData();
+
+      if (savedToken) {
+        setToken(savedToken);
+
+        // 2️⃣ Fetch user-specific data in parallel
+        await Promise.all([
+          getUserCart(savedToken),
+          fetchFavorites(savedToken),
+        ]);
+      }
+    } catch (err) {
+      console.error("BOOTSTRAP ERROR:", err);
+    } finally {
+      // 3️⃣ App is ready (even if some API failed)
+      setAppLoading(false);
+    }
+  };
+
+  bootstrapApp();
 }, []);
-
-
-useEffect(() => {
-  if (token) {
-    getUserCart(token);
-    fetchFavorites(token);
-  } else {
-    // logout / no token
-    setCartItems({});
-    setFavorites([]);
-  }
-}, [token]);
 
 
   /* ---------------------- CONTEXT VALUE ---------------------- */
@@ -300,6 +308,7 @@ useEffect(() => {
     products,
     currency,
     delivery_fee,
+    appLoading,
     search,
     setSearch,
     showSearch,

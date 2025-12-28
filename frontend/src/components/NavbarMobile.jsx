@@ -159,7 +159,7 @@ const Navbar = ({ showNavbar }) => {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         className={`
-          fixed top-0 right-0 h-full z-999
+          fixed top-0 right-0 h-[100dvh] z-999
           w-[85%] sm:w-[60%]
           bg-gradient-to-b from-[#050505] via-[#0d0d0d] to-[#111]
           transform transition-transform duration-500 ease-out
@@ -181,7 +181,7 @@ const Navbar = ({ showNavbar }) => {
         </div>
 
         {/* NAV ITEMS */}
-        <nav className="flex flex-col h-[calc(100vh-64px)] z-100">
+        <nav className="flex flex-col h-[calc(100dvh-64px)] z-100">
           {/* 🔹 MAIN */}
           <div className="flex-1 overflow-y-auto px-2 py-2 flex flex-col gap-4">
             <Section title="Explore">
@@ -245,7 +245,7 @@ const Navbar = ({ showNavbar }) => {
             </Section>
 
             {/* FIXED BOTTOM ACTION */}
-            <div className="px-2 py-2 border-t border-white/10 bg-[#111]">
+            <div className="sticky bottom-0 px-2 py-2 border-t border-white/10 bg-[#111]">
               {token ? (
                 <button
                   onClick={() => {

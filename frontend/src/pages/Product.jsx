@@ -8,6 +8,29 @@ import { FaShareAlt, FaHeart } from "react-icons/fa";
 import { FaStar } from "react-icons/fa6";
 import { useLayoutEffect } from "react";
 import ProductSkeleton from "../components/ProductSkeleton";
+import SizeSelectorModal from "../components/SizeSelectorModal";
+
+const showCartToast = (message = "Added to cart 🛒") => {
+  const isMobile = window.innerWidth < 768;
+
+  toast.success(message, {
+    position: isMobile ? "bottom-center" : "top-right",
+    autoClose: 1800,
+    hideProgressBar: true,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: false,
+    theme: "dark",
+    style: {
+      marginBottom: isMobile ? "90px" : "0px", // 👈 sticky bar se upar
+      borderRadius: "14px",
+      background: "#111",
+      color: "#fff",
+      fontWeight: 500,
+      boxShadow: "0 10px 30px rgba(0,0,0,0.45)",
+    },
+  });
+};
 
 const Product = () => {
   useLayoutEffect(() => {
@@ -37,6 +60,8 @@ const Product = () => {
   const [showFullView, setShowFullView] = useState(false);
   const [showZoom, setShowZoom] = useState(false);
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
+  const [showSizeModal, setShowSizeModal] = useState(false);
+  const [actionType, setActionType] = useState(null);
   const isDesktop = window.innerWidth >= 1024;
 
   const LENS_SIZE = 120;
@@ -220,52 +245,60 @@ const Product = () => {
     : 0;
 
   /* ---------------- HANDLERS ---------------- */
-  const handleAddToCart = () => {
+  const handleAddToCartClick = () => {
     if (!token) {
-      toast.error("Please login to continue");
       navigate(`/login?redirect=/product/${productId}`);
       return;
     }
 
     if (!size) {
-      toast.error("Please select a size!", { position: "top-center" });
+      setActionType("add");
+      setShowSizeModal(true);
       return;
     }
 
-    setAdding(true);
+    addToCart(productData._id, size);
+    showCartToast("Added to cart 🛒");
+  };
+
+  const handleBuyNowClick = () => {
+    if (!token) {
+      navigate(`/login?redirect=/product/${productId}`);
+      return;
+    }
+
+    if (!size) {
+      setActionType("buy");
+      setShowSizeModal(true);
+      return;
+    }
+
+    addToCart(productData._id, size);
+    showCartToast("Item added • Taking you to cart");
 
     setTimeout(() => {
-      addToCart(productData._id, size);
-      setAdding(false);
-
-      toast.success("Added to cart");
-
-      // ✅ redirect ONLY here
-      if (fromOrderPreview) {
-        navigate("/cart");
-      } else {
-        navigate("/cart");
-      }
-    }, 500);
+      navigate("/cart");
+    }, 600); // 👈 toast feel aane do
   };
 
   /* ---------------- UI ---------------- */
 
   return (
-    <div className="bg-[#0e0e0e] text-white">
-      <div
-        className="
+    <>
+      <div className="bg-[#0e0e0e] text-white">
+        <div
+          className="
     w-full
     2xl:max-w-[1800px] 2xl:mx-auto
     px-[6px] py-[6px]
     md:px-[5px] md:py-[5px]
   "
-      >
-        {/* MAIN GRID */}
-        <div className="flex flex-col lg:flex-row gap-5">
-          {/* ============== LEFT IMAGE SECTION ============== */}
-          <div
-            className="
+        >
+          {/* MAIN GRID */}
+          <div className="flex flex-col lg:flex-row gap-5">
+            {/* ============== LEFT IMAGE SECTION ============== */}
+            <div
+              className="
     flex flex-col-reverse
     sm:flex-row
     gap-2
@@ -275,46 +308,18 @@ const Product = () => {
     xl:max-w-[720px]
     2xl:max-w-[760px]
   "
-          >
-            {/* ⭐ MOBILE THUMBNAILS (Horizontal Scroll) */}
-            <div className="flex sm:hidden gap-3 overflow-x-auto px-1">
-              {productData.image.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setImage(img)}
-                  className={`
+            >
+              {/* ⭐ MOBILE THUMBNAILS (Horizontal Scroll) */}
+              <div className="flex sm:hidden gap-3 overflow-x-auto px-1">
+                {productData.image.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setImage(img)}
+                    className={`
         w-14 aspect-square rounded-xl overflow-hidden
         border transition cursor-pointer
         ${image === img ? "border-white scale-105" : "border-gray-500"}
       `}
-                >
-                  <img
-                    src={img}
-                    alt=""
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
-            </div>
-
-            {/* ⭐ DESKTOP THUMBNAILS (Hover changes main image) */}
-            <div className="hidden sm:flex flex-col items-center w-[70px]">
-              <div className="flex flex-col gap-3 overflow-y-auto custom-scrollbar w-full pt-3 md:pt-5 lg:pt-1 px-1">
-                {productData.image.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onMouseEnter={() => setImage(img)} // 🖱 hover support
-                    onClick={() => setImage(img)} // 👆 click support
-                    className={`
-          w-14 aspect-square rounded-[12%]
-          overflow-hidden border transition
-          cursor-pointer
-          ${
-            image === img
-              ? "border-white scale-105"
-              : "border-gray-400 hover:border-white/70"
-          }
-        `}
                   >
                     <img
                       src={img}
@@ -324,12 +329,40 @@ const Product = () => {
                   </button>
                 ))}
               </div>
-            </div>
 
-            {/* MAIN IMAGE */}
-            <div className="relative w-full pt-3 md:pt-5 lg:pt-0">
-              <div
-                className="
+              {/* ⭐ DESKTOP THUMBNAILS (Hover changes main image) */}
+              <div className="hidden sm:flex flex-col items-center w-[70px]">
+                <div className="flex flex-col gap-3 overflow-y-auto custom-scrollbar w-full pt-3 md:pt-5 lg:pt-1 px-1">
+                  {productData.image.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onMouseEnter={() => setImage(img)} // 🖱 hover support
+                      onClick={() => setImage(img)} // 👆 click support
+                      className={`
+          w-14 aspect-square rounded-[12%]
+          overflow-hidden border transition
+          cursor-pointer
+          ${
+            image === img
+              ? "border-white scale-105"
+              : "border-gray-400 hover:border-white/70"
+          }
+        `}
+                    >
+                      <img
+                        src={img}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* MAIN IMAGE */}
+              <div className="relative w-full pt-3 md:pt-5 lg:pt-0">
+                <div
+                  className="
   relative
   w-full
 
@@ -350,69 +383,69 @@ const Product = () => {
 
   flex items-center justify-center
 "
-                onTouchStart={(e) => {
-                  touchStartX.current = e.touches[0].clientX;
-                }}
-                onTouchEnd={(e) => {
-                  const diff =
-                    e.changedTouches[0].clientX - touchStartX.current;
-                  if (diff > 50) goPrev();
-                  if (diff < -50) goNext();
-                }}
-              >
-                {/* IMAGE */}
-                <div
-                  className="relative w-full cursor-pointer"
-                  onMouseEnter={() => isDesktop && setIsHovering(true)}
-                  onMouseLeave={() => isDesktop && setIsHovering(false)}
-                  onMouseMove={handleMouseMove}
+                  onTouchStart={(e) => {
+                    touchStartX.current = e.touches[0].clientX;
+                  }}
+                  onTouchEnd={(e) => {
+                    const diff =
+                      e.changedTouches[0].clientX - touchStartX.current;
+                    if (diff > 50) goPrev();
+                    if (diff < -50) goNext();
+                  }}
                 >
-                  {/* IMAGE – MOBILE & TABLET */}
-                  <img
-                    src={image}
-                    alt={productData.name}
-                    className="
+                  {/* IMAGE */}
+                  <div
+                    className="relative w-full cursor-pointer"
+                    onMouseEnter={() => isDesktop && setIsHovering(true)}
+                    onMouseLeave={() => isDesktop && setIsHovering(false)}
+                    onMouseMove={handleMouseMove}
+                  >
+                    {/* IMAGE – MOBILE & TABLET */}
+                    <img
+                      src={image}
+                      alt={productData.name}
+                      className="
     block lg:hidden
     w-full h-full
     object-cover
     bg-[#0e0e0e]
   "
-                  />
-
-                  {/* IMAGE – DESKTOP (hover zoom enabled) */}
-                  <div
-                    className="hidden lg:block relative w-full h-full"
-                    onMouseEnter={() => setShowZoom(true)}
-                    onMouseLeave={() => setShowZoom(false)}
-                    onMouseMove={handleMouseMove}
-                  >
-                    <img
-                      src={image}
-                      alt={productData.name}
-                      className={`w-full h-full object-contain transition ${
-                        showZoom ? "scale-[1.02] opacity-80" : ""
-                      }`}
                     />
 
-                    {/* LENS */}
-                    {showZoom && (
-                      <div
-                        className="absolute border border-white rounded-lg bg-white/10 pointer-events-none"
-                        style={{
-                          width: 120,
-                          height: 120,
-                          left: lens.x,
-                          top: lens.y,
-                        }}
+                    {/* IMAGE – DESKTOP (hover zoom enabled) */}
+                    <div
+                      className="hidden lg:block relative w-full h-full"
+                      onMouseEnter={() => setShowZoom(true)}
+                      onMouseLeave={() => setShowZoom(false)}
+                      onMouseMove={handleMouseMove}
+                    >
+                      <img
+                        src={image}
+                        alt={productData.name}
+                        className={`w-full h-full object-contain transition ${
+                          showZoom ? "scale-[1.02] opacity-80" : ""
+                        }`}
                       />
-                    )}
-                  </div>
-                </div>
 
-                {/* FULL VIEW (MOBILE ONLY) */}
-                <button
-                  onClick={() => setShowFullView(true)}
-                  className="
+                      {/* LENS */}
+                      {showZoom && (
+                        <div
+                          className="absolute border border-white rounded-lg bg-white/10 pointer-events-none"
+                          style={{
+                            width: 120,
+                            height: 120,
+                            left: lens.x,
+                            top: lens.y,
+                          }}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* FULL VIEW (MOBILE ONLY) */}
+                  <button
+                    onClick={() => setShowFullView(true)}
+                    className="
     lg:hidden
     absolute top-3 left-3
     bg-black/60 text-white
@@ -422,75 +455,75 @@ const Product = () => {
     z-20
     cursor-pointer
   "
-                >
-                  ⛶
-                </button>
+                  >
+                    ⛶
+                  </button>
 
-                {/* SHARE */}
-                <button
-                  onClick={handleShare}
-                  className="
+                  {/* SHARE */}
+                  <button
+                    onClick={handleShare}
+                    className="
     absolute top-3 right-3
     bg-black/60 p-2 rounded-full
     hover:bg-black/80 hover:scale-110
     transition z-10 cursor-pointer
   "
-                >
-                  <FaShareAlt />
-                </button>
+                  >
+                    <FaShareAlt />
+                  </button>
 
-                {/* FAVORITE */}
-                <button
-                  onClick={() => {
-                    if (!token) {
-                      toast.error("Please login to continue");
-                      navigate(`/login?redirect=/product/${productId}`);
-                      return;
-                    }
+                  {/* FAVORITE */}
+                  <button
+                    onClick={() => {
+                      if (!token) {
+                        toast.error("Please login to continue");
+                        navigate(`/login?redirect=/product/${productId}`);
+                        return;
+                      }
 
-                    isFav
-                      ? removeFromFavorites(productId)
-                      : addToFavorites(productId);
-                  }}
-                  className="
+                      isFav
+                        ? removeFromFavorites(productId)
+                        : addToFavorites(productId);
+                    }}
+                    className="
     absolute bottom-3 right-3
     bg-black/60 p-2 rounded-full
     hover:scale-110 transition z-10
     cursor-pointer
   "
-                >
-                  <FaHeart
-                    size={18}
-                    className={isFav ? "text-red-500" : "text-white"}
-                  />
-                </button>
+                  >
+                    <FaHeart
+                      size={18}
+                      className={isFav ? "text-red-500" : "text-white"}
+                    />
+                  </button>
 
-                {/* RATING */}
-                <div
-                  className="
+                  {/* RATING */}
+                  <div
+                    className="
         lg:hidden absolute bottom-3 left-3
         bg-black/90 px-2 py-1 rounded-md
         flex items-center gap-1
         hover:scale-105 transition z-10
       "
-                >
-                  <FaStar className="text-yellow-500" size={12} />
-                  <span className="text-sm font-semibold">
-                    {Number.isFinite(Number(productData.review))
-                      ? Number(productData.review).toFixed(1)
-                      : "0.0"}
-                  </span>
-                  <span className="text-white text-xs">
-                    ({productData.noOfPeopleReviewed || 0})
-                  </span>
+                  >
+                    <FaStar className="text-yellow-500" size={12} />
+                    <span className="text-sm font-semibold">
+                      {Number.isFinite(Number(productData.review))
+                        ? Number(productData.review).toFixed(1)
+                        : "0.0"}
+                    </span>
+                    <span className="text-white text-xs">
+                      ({productData.noOfPeopleReviewed || 0})
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          {/* ================= FULL SCREEN IMAGE VIEW (MOBILE) ================= */}
-          {showFullView && (
-            <div
-              className="
+            {/* ================= FULL SCREEN IMAGE VIEW (MOBILE) ================= */}
+            {showFullView && (
+              <div
+                className="
       fixed inset-0 z-[999]
       bg-black
       flex flex-col
@@ -498,57 +531,57 @@ const Product = () => {
 
       px-3 py-4   /* 👈 mobile safe padding */
     "
-            >
-              {/* ❌ CLOSE BUTTON */}
-              <button
-                onClick={() => setShowFullView(false)}
-                className="absolute top-4 right-4 text-red-500 text-3xl z-50"
               >
-                ✕
-              </button>
+                {/* ❌ CLOSE BUTTON */}
+                <button
+                  onClick={() => setShowFullView(false)}
+                  className="absolute top-4 right-4 text-red-500 text-3xl z-50"
+                >
+                  ✕
+                </button>
 
-              {/* 🖼 MAIN IMAGE */}
-              <div
-                className="flex-1 flex items-center justify-center overflow-hidden"
-                onTouchStart={(e) => {
-                  touchStartX.current = e.touches[0].clientX;
-                }}
-                onTouchEnd={(e) => {
-                  const diff =
-                    e.changedTouches[0].clientX - touchStartX.current;
-                  if (diff > 50) goPrev();
-                  if (diff < -50) goNext();
-                }}
-              >
-                <img
-                  src={images[currentIndex]}
-                  alt="Full view"
-                  className="
+                {/* 🖼 MAIN IMAGE */}
+                <div
+                  className="flex-1 flex items-center justify-center overflow-hidden"
+                  onTouchStart={(e) => {
+                    touchStartX.current = e.touches[0].clientX;
+                  }}
+                  onTouchEnd={(e) => {
+                    const diff =
+                      e.changedTouches[0].clientX - touchStartX.current;
+                    if (diff > 50) goPrev();
+                    if (diff < -50) goNext();
+                  }}
+                >
+                  <img
+                    src={images[currentIndex]}
+                    alt="Full view"
+                    className="
           w-full h-full
           object-cover
           rounded-md
           select-none
         "
-                />
-              </div>
+                  />
+                </div>
 
-              {/* 👇 THUMBNAILS STRIP */}
-              <div
-                className="
+                {/* 👇 THUMBNAILS STRIP */}
+                <div
+                  className="
         mt-4
         flex gap-3
         overflow-x-auto
         pb-2
       "
-              >
-                {images.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => {
-                      setCurrentIndex(idx);
-                      setImage(img);
-                    }}
-                    className={`
+                >
+                  {images.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setCurrentIndex(idx);
+                        setImage(img);
+                      }}
+                      className={`
             w-16 h-20
             flex-shrink-0
             rounded-md
@@ -560,21 +593,21 @@ const Product = () => {
                 : "border-white/30"
             }
           `}
-                  >
-                    <img
-                      src={img}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
+                    >
+                      <img
+                        src={img}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* ============== RIGHT DETAILS SECTION ============== */}
-          <div
-            className="
+            {/* ============== RIGHT DETAILS SECTION ============== */}
+            <div
+              className="
     flex-1
     text-white
     relative
@@ -582,11 +615,11 @@ const Product = () => {
     flex flex-col
     lg:min-h-full
   "
-          >
-            {/* ================= DESKTOP ZOOM VIEW ================= */}
-            {isDesktop && showZoom ? (
-              <div
-                className="
+            >
+              {/* ================= DESKTOP ZOOM VIEW ================= */}
+              {isDesktop && showZoom ? (
+                <div
+                  className="
         w-full
         rounded-lg
         border border-white/10
@@ -595,80 +628,80 @@ const Product = () => {
         lg:min-h-[700px]
         lg:max-h-[700px]
       "
-                style={{
-                  backgroundImage: `url(${image})`,
-                  backgroundRepeat: "no-repeat",
-                  backgroundSize: "200%",
-                  backgroundPosition: `${zoomPos.x}% ${zoomPos.y}%`,
-                }}
-              />
-            ) : (
-              <>
-                {/* ========== TOP CONTENT ========== */}
-                <div className="flex flex-col gap-6">
-                  {/* Brand */}
-                  <p
-                    className="text-xl uppercase text-gray-400 cursor-pointer"
-                    onClick={() =>
-                      navigate(`/seller/${productData.brandName || "store"}`)
-                    }
-                  >
-                    {productData.brandName}
-                  </p>
-
-                  {/* Name */}
-                  <h1 className="font-semibold text-2xl leading-tight">
-                    {productData.name}
-                  </h1>
-
-                  {/* RATING (DESKTOP) */}
-                  <div className="hidden lg:flex items-center gap-1.5">
-                    {Array.from({ length: rating }).map((_, i) => (
-                      <FaStar key={i} className="text-yellow-400" size={16} />
-                    ))}
-                    <p className="pl-3 text-gray-400 text-sm">
-                      ({productData.noOfPeopleReviewed})
+                  style={{
+                    backgroundImage: `url(${image})`,
+                    backgroundRepeat: "no-repeat",
+                    backgroundSize: "200%",
+                    backgroundPosition: `${zoomPos.x}% ${zoomPos.y}%`,
+                  }}
+                />
+              ) : (
+                <>
+                  {/* ========== TOP CONTENT ========== */}
+                  <div className="flex flex-col gap-6">
+                    {/* Brand */}
+                    <p
+                      className="text-xl uppercase text-gray-400 cursor-pointer"
+                      onClick={() =>
+                        navigate(`/seller/${productData.brandName || "store"}`)
+                      }
+                    >
+                      {productData.brandName}
                     </p>
-                  </div>
 
-                  <p className="text-sm uppercase tracking-wide text-green-400">
-                    Discounted Price
-                  </p>
+                    {/* Name */}
+                    <h1 className="font-semibold text-2xl leading-tight">
+                      {productData.name}
+                    </h1>
 
-                  {/* PRICE */}
-                  <div className="flex items-center gap-4">
-                    <p className="text-3xl font-bold text-green-500">
-                      {currency} {productData.discountedPrice}
+                    {/* RATING (DESKTOP) */}
+                    <div className="hidden lg:flex items-center gap-1.5">
+                      {Array.from({ length: rating }).map((_, i) => (
+                        <FaStar key={i} className="text-yellow-400" size={16} />
+                      ))}
+                      <p className="pl-3 text-gray-400 text-sm">
+                        ({productData.noOfPeopleReviewed})
+                      </p>
+                    </div>
+
+                    <p className="text-sm uppercase tracking-wide text-green-400">
+                      Discounted Price
                     </p>
-                    <p className="line-through text-gray-400 text-xl">
-                      {currency} {productData.actualPrice}
-                    </p>
-                    <p className="text-red-500 font-semibold text-lg">
-                      {Math.round(
-                        ((productData.actualPrice -
-                          productData.discountedPrice) /
-                          productData.actualPrice) *
-                          100
-                      )}
-                      % OFF
-                    </p>
-                  </div>
 
-                  {/* SIZE SELECTOR */}
-                  <div className="flex flex-col gap-3">
-                    <p className="font-medium">Select Size</p>
+                    {/* PRICE */}
+                    <div className="flex items-center gap-4">
+                      <p className="text-3xl font-bold text-green-500">
+                        {currency} {productData.discountedPrice}
+                      </p>
+                      <p className="line-through text-gray-400 text-xl">
+                        {currency} {productData.actualPrice}
+                      </p>
+                      <p className="text-red-500 font-semibold text-lg">
+                        {Math.round(
+                          ((productData.actualPrice -
+                            productData.discountedPrice) /
+                            productData.actualPrice) *
+                            100
+                        )}
+                        % OFF
+                      </p>
+                    </div>
 
-                    <div className="flex gap-4 flex-wrap">
-                      {productData.sizes.map((s) => {
-                        const isSelected = size === s;
+                    {/* SIZE SELECTOR */}
+                    <div className="flex flex-col gap-3">
+                      <p className="font-medium">Select Size</p>
 
-                        return (
-                          <button
-                            key={s}
-                            onClick={() =>
-                              setSize((prev) => (prev === s ? "" : s))
-                            }
-                            className={`
+                      <div className="flex gap-4 flex-wrap">
+                        {productData.sizes.map((s) => {
+                          const isSelected = size === s;
+
+                          return (
+                            <button
+                              key={s}
+                              onClick={() =>
+                                setSize((prev) => (prev === s ? "" : s))
+                              }
+                              className={`
             py-2 px-5 rounded-md border
             cursor-pointer
             transition-all duration-200
@@ -688,144 +721,122 @@ const Product = () => {
             /* 📱 Mobile tap */
             active:scale-95
           `}
-                          >
-                            {s}
-                          </button>
-                        );
-                      })}
+                            >
+                              {s}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* MOBILE & TABLET STICKY ACTION BAR */}
-                  <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-black border-t border-white/10 flex">
-                    <button
-                      onClick={handleAddToCart}
-                      className="w-1/2 py-4 text-center font-semibold bg-white text-black active:scale-95 cursor-pointer"
-                    >
-                      ADD TO CART
-                    </button>
+                    {/* MOBILE & TABLET STICKY ACTION BAR */}
+                    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-black border-t border-white/10 flex">
+                      <button
+                        onClick={handleAddToCartClick}
+                        className="w-1/2 py-4 text-center font-semibold bg-white text-black active:scale-95 cursor-pointer"
+                      >
+                        ADD TO CART
+                      </button>
 
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBuyNowClick();
+                        }}
+                        className="w-1/2 py-4 text-center font-semibold bg-orange-500 text-black active:scale-95"
+                      >
+                        BUY NOW
+                      </button>
+                    </div>
 
-                        if (!token) {
-                          navigate(`/login?redirect=/product/${productId}`);
-                          return;
-                        }
+                    {/* DESKTOP ACTION BUTTONS */}
+                    <div className="hidden lg:flex gap-4 cursor-pointer">
+                      <button
+                        onClick={handleAddToCartClick}
+                        className="flex-1 py-4 font-semibold bg-white text-black rounded-md hover:scale-[1.05] transition cursor-pointer  hover:text-black/80 hover:bg-white/80"
+                      >
+                        ADD TO CART
+                      </button>
 
-                        if (!size) {
-                          toast.error("Please select a size!", {
-                            position: "top-center",
-                          });
-                          return;
-                        }
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBuyNowClick();
+                        }}
+                        className="flex-1 py-4 font-semibold bg-orange-500 text-black rounded-md hover:scale-[1.05] transition cursor-pointer hover:text-black/80 hover:bg-orange-400/80"
+                      >
+                        BUY NOW
+                      </button>
+                    </div>
 
-                        setBuyNowItem({
-                          productId: productData._id,
-                          name: productData.name,
-                          image: productData.image, // 👈 PURE ARRAY
-                          price: productData.discountedPrice,
-                          actualPrice: productData.actualPrice,
-                          quantity: 1,
-                          size,
-                        });
-
-                        navigate("/cart?mode=buynow");
-                      }}
-                      className="w-1/2 py-4 text-center font-semibold bg-orange-500 text-black active:scale-95"
-                    >
-                      BUY NOW
-                    </button>
-                  </div>
-
-                  {/* DESKTOP ACTION BUTTONS */}
-                  <div className="hidden lg:flex gap-4 cursor-pointer">
-                    <button
-                      onClick={handleAddToCart}
-                      className="flex-1 py-4 font-semibold bg-white text-black rounded-md hover:scale-[1.05] transition cursor-pointer  hover:text-black/80 hover:bg-white/80"
-                    >
-                      ADD TO CART
-                    </button>
-
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-
-                        if (!token) {
-                          navigate(`/login?redirect=/product/${productId}`);
-                          return;
-                        }
-
-                        if (!size) {
-                          toast.error("Please select a size!", {
-                            position: "top-center",
-                          });
-
-                          return;
-                        }
-
-                        setBuyNowItem({
-                          productId: productData._id,
-                          name: productData.name,
-                          image: productData.image, // 👈 PURE ARRAY
-                          price: productData.discountedPrice,
-                          actualPrice: productData.actualPrice,
-                          quantity: 1,
-                          size,
-                        });
-
-                        navigate("/order-preview?mode=buynow");
-                      }}
-                      className="flex-1 py-4 font-semibold bg-orange-500 text-black rounded-md hover:scale-[1.05] transition cursor-pointer hover:text-black/80 hover:bg-orange-400/80"
-                    >
-                      BUY NOW
-                    </button>
-                  </div>
-
-                  {/* DESCRIPTION */}
-                  <p className="text-gray-400 leading-relaxed">
-                    {productData.description}
-                  </p>
-
-                  {/* DELIVERY INFO */}
-                  <div className="flex items-start gap-2 md:text-2xl text-gray-400">
-                    <span className="text-green-400 font-medium">
-                      🚚 Delivery:
-                    </span>
-                    <span>
-                      Expected by{" "}
-                      <span className="text-white font-medium">
-                        {getDeliveryDateRange()}
-                      </span>
-                    </span>
-                  </div>
-
-                  {adding && (
-                    <p className="text-gray-400 text-sm animate-pulse">
-                      Adding this masterpiece… Stay stylish 😎
+                    {/* DESCRIPTION */}
+                    <p className="text-gray-400 leading-relaxed">
+                      {productData.description}
                     </p>
-                  )}
-                </div>
 
-                {/* ========== BOTTOM CONTENT (ALIGNED WITH IMAGE BOTTOM) ========== */}
-                <div className="text-sm text-gray-500 mt-5">
-                  <p>✔ 100% Original Product</p>
-                  <p>✔ Cash on Delivery Available</p>
-                  <p>✔ Easy 7-Day Return & Exchange</p>
-                </div>
-              </>
-            )}
+                    {/* DELIVERY INFO */}
+                    <div className="flex items-start gap-2 md:text-2xl text-gray-400">
+                      <span className="text-green-400 font-medium">
+                        🚚 Delivery:
+                      </span>
+                      <span>
+                        Expected by{" "}
+                        <span className="text-white font-medium">
+                          {getDeliveryDateRange()}
+                        </span>
+                      </span>
+                    </div>
+
+                    {adding && (
+                      <p className="text-gray-400 text-sm animate-pulse">
+                        Adding this masterpiece… Stay stylish 😎
+                      </p>
+                    )}
+                  </div>
+
+                  {/* ========== BOTTOM CONTENT (ALIGNED WITH IMAGE BOTTOM) ========== */}
+                  <div className="text-sm text-gray-500 mt-5">
+                    <p>✔ 100% Original Product</p>
+                    <p>✔ Cash on Delivery Available</p>
+                    <p>✔ Easy 7-Day Return & Exchange</p>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* RELATED */}
-        <RelatedProducts
-          category={productData.category}
-          subCategory={productData.subCategory}
-        />
+          {/* RELATED */}
+          <RelatedProducts
+            category={productData.category}
+            subCategory={productData.subCategory}
+          />
+        </div>
       </div>
-    </div>
+      <SizeSelectorModal
+        open={showSizeModal}
+        sizes={productData.sizes}
+        onClose={() => {
+          setShowSizeModal(false);
+          setActionType(null);
+        }}
+        onConfirm={(selectedSize) => {
+          setShowSizeModal(false);
+          setSize(selectedSize);
+
+          addToCart(productData._id, selectedSize);
+
+          showCartToast(
+            actionType === "buy"
+              ? "Perfect fit selected 🖤"
+              : "Added to cart 🛒"
+          );
+
+          if (actionType === "buy") {
+            setTimeout(() => navigate("/cart"), 600);
+          }
+        }}
+      />
+    </>
   );
 };
 

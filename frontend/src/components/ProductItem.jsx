@@ -5,6 +5,7 @@ import { FaShareAlt, FaHeart, FaShoppingCart } from "react-icons/fa";
 import { FaStar } from "react-icons/fa6";
 import { toast } from "react-toastify";
 import ProductItemSkeleton from "./ProductItemSkeleton";
+import SizeSelectorModal from "./SizeSelectorModal";
 
 const ProductItem = ({
   _id,
@@ -16,6 +17,7 @@ const ProductItem = ({
   review,
   noOfPeopleReviewed,
   colors = [],
+  sizes = [],
 }) => {
   if (!_id || !name || !image) {
     return <ProductItemSkeleton />;
@@ -34,6 +36,9 @@ const ProductItem = ({
 
   const navigate = useNavigate();
   const isFav = token && favorites.includes(_id);
+  const [showSizeModal, setShowSizeModal] = useState(false);
+  const [actionType, setActionType] = useState(null);
+
   const getSkeletonCount = () => {
     if (window.innerWidth < 640) return 10; // mobile
     return 15; // desktop
@@ -49,173 +54,189 @@ const ProductItem = ({
     colors.length === 1 ? colors[0] : colors.length > 1 ? "Multicolor" : null;
 
   return (
-    <div
-      onClick={() => {
-        navigate(`/product/${_id}`);
-      }}
-      className="product-card group relative cursor-pointer transition-all"
-    >
-      {/* IMAGE SECTION */}
-      <div className="relative w-full overflow-hidden rounded-xl bg-gray-100">
-        <img
-          src={Array.isArray(image) ? image[0] : image}
-          alt={name}
-          className="w-full h-52 object-cover rounded-xl transition-transform group-hover:scale-105"
-        />
-
-        {/* SHARE BUTTON */}
-        <button
-          className="absolute top-2 right-2 bg-black/60 text-white p-2 rounded-full opacity-70 hover:opacity-100 transition cursor-pointer"
-          onClick={(e) => {
-            e.stopPropagation();
-            const shareUrl = `${window.location.origin}/product/${_id}`;
-
-            if (navigator.share) {
-              navigator.share({ title: name, url: shareUrl });
-            } else {
-              navigator.clipboard.writeText(shareUrl);
-              alert("Link copied!");
-            }
+    <>
+      <div className="product-card group relative cursor-pointer transition-all">
+        {/* IMAGE SECTION */}
+        <div
+          onClick={() => {
+            navigate(`/product/${_id}`);
           }}
+          className="relative w-full overflow-hidden rounded-xl bg-gray-100"
         >
-          <FaShareAlt size={14} />
-        </button>
-
-        {/* ❤️ FAVORITE BUTTON */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!token) {
-              navigate("/login");
-              return;
-            }
-            isFav ? removeFromFavorites(_id) : addToFavorites(_id);
-          }}
-          className="absolute bottom-2 right-2 p-2 rounded-full bg-black/60 cursor-pointer"
-        >
-          <FaHeart
-            size={15}
-            className={isFav ? "text-red-600" : "text-white/80"}
+          <img
+            src={Array.isArray(image) ? image[0] : image}
+            alt={name}
+            className="w-full h-52 object-cover rounded-xl transition-transform group-hover:scale-105"
           />
-        </button>
 
-        {/* RATING BOX */}
-        <div className="absolute bottom-2 left-2 bg-black/90 px-2 py-1 rounded-md flex items-center gap-1 shadow-sm backdrop-blur-md">
-          <FaStar className="text-yellow-500" size={12} />
-          <span className="text-sm font-semibold">{review}</span>
-          <span className="text-white text-xs">({noOfPeopleReviewed})</span>
-        </div>
+          {/* SHARE BUTTON */}
+          <button
+            className="absolute top-2 right-2 bg-black/60 text-white p-2 rounded-full opacity-70 hover:opacity-100 transition cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              const shareUrl = `${window.location.origin}/product/${_id}`;
 
-        {/* DISCOUNT BADGE */}
-        {discountPercent > 0 && (
-          <span className="absolute top-2 left-2 bg-red-600 text-white text-xs px-2 py-[2px] rounded-md shadow-md">
-            -{discountPercent}%
-          </span>
-        )}
-      </div>
+              if (navigator.share) {
+                navigator.share({ title: name, url: shareUrl });
+              } else {
+                navigator.clipboard.writeText(shareUrl);
+                alert("Link copied!");
+              }
+            }}
+          >
+            <FaShareAlt size={14} />
+          </button>
 
-      {/* DETAILS */}
-      <div className="mt-2 flex flex-col h-full">
-        {/* BRAND */}
-        <p className="text-xs text-gray-500 uppercase tracking-wide truncate">
-          {brandName}
-        </p>
+          {/* ❤️ FAVORITE BUTTON */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!token) {
+                navigate("/login");
+                return;
+              }
+              isFav ? removeFromFavorites(_id) : addToFavorites(_id);
+            }}
+            className="absolute bottom-2 right-2 p-2 rounded-full bg-black/60 cursor-pointer"
+          >
+            <FaHeart
+              size={15}
+              className={isFav ? "text-red-600" : "text-white/80"}
+            />
+          </button>
 
-        {/* NAME */}
-        <p className="text-sm font-semibold leading-tight mt-1 line-clamp-2 min-h-[36px]">
-          {name}
-        </p>
+          {/* RATING BOX */}
+          <div className="absolute bottom-2 left-2 bg-black/90 px-2 py-1 rounded-md flex items-center gap-1 shadow-sm backdrop-blur-md">
+            <FaStar className="text-yellow-500" size={12} />
+            <span className="text-sm font-semibold">{review}</span>
+            <span className="text-white text-xs">({noOfPeopleReviewed})</span>
+          </div>
 
-        {/* PRICE */}
-        <div className="mt-1 flex items-center gap-2 flex-wrap">
-          {actualPrice && (
-            <span className="text-gray-500 line-through text-sm">
-              {currency} {actualPrice}
+          {/* DISCOUNT BADGE */}
+          {discountPercent > 0 && (
+            <span className="absolute top-2 left-2 bg-red-600 text-white text-xs px-2 py-[2px] rounded-md shadow-md">
+              -{discountPercent}%
             </span>
           )}
-          <span className="text-green-600 font-bold text-sm">
-            {currency} {discountedPrice}
-          </span>
         </div>
 
-        {/* COLORS */}
-        {colorLabel && (
-          <p className="text-xs text-gray-500 mt-1">
-            Color: <span className="text-gray-700">{colorLabel}</span>
+        {/* DETAILS */}
+        <div className="mt-2 flex flex-col h-full">
+          {/* BRAND */}
+          <p className="text-xs text-gray-500 uppercase tracking-wide truncate">
+            {brandName}
           </p>
-        )}
 
-        {/* ACTIONS */}
-        <div className="mt-3 flex items-center gap-2">
-          {/* CART ICON */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
+          {/* NAME */}
+          <p className="text-sm font-semibold leading-tight mt-1 line-clamp-2 min-h-[36px]">
+            {name}
+          </p>
 
-              if (!token) {
-                navigate("/login");
-                return;
-              }
+          {/* PRICE */}
+          <div className="mt-1 flex items-center gap-2 flex-wrap">
+            {actualPrice && (
+              <span className="text-gray-500 line-through text-sm">
+                {currency} {actualPrice}
+              </span>
+            )}
+            <span className="text-green-600 font-bold text-sm">
+              {currency} {discountedPrice}
+            </span>
+          </div>
 
-              addToCart(_id, "M");
+          {/* COLORS */}
+          {colorLabel && (
+            <p className="text-xs text-gray-500 mt-1">
+              Color: <span className="text-gray-700">{colorLabel}</span>
+            </p>
+          )}
 
-              // ✅ TOAST
-              toast.success("Added to cart 🛒", {
-                position: "top-center",
-                autoClose: 2000,
-                hideProgressBar: true,
-                theme: "dark",
-              });
-            }}
-            className="
-        w-10 h-10
-        flex items-center justify-center
-        rounded-lg
-        border border-black/10
-        bg-white
-        text-black
-        transition-all duration-200
-        hover:bg-black hover:text-white
-        hover:scale-105
-        active:scale-95
-        cursor-pointer
-      "
-            title="Add to Cart"
-          >
-            <FaShoppingCart size={16} />
-          </button>
+          {/* ACTIONS */}
+          <div className="mt-3 flex items-center gap-2">
+            {/* CART ICON */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
 
-          {/* BUY NOW */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
+                if (!token) {
+                  navigate("/login");
+                  return;
+                }
 
-              if (!token) {
-                navigate("/login");
-                return;
-              }
+                // 🔥 always open size selector
+                setActionType("add");
+                setShowSizeModal(true);
+              }}
+              className="
+    w-10 h-10
+    flex items-center justify-center
+    rounded-lg
+    border border-black/10
+    bg-white
+    text-black
+    transition-all duration-200
+    hover:bg-black hover:text-white
+    hover:scale-105
+    active:scale-95
+    cursor-pointer
+  "
+              title="Add to Cart"
+            >
+              <FaShoppingCart size={16} />
+            </button>
 
-              const defaultSize = "M";
-
-              setBuyNowItem({
-                productId: _id,
-                name,
-                image,
-                price: discountedPrice,
-                actualPrice,
-                quantity: 1,
-                size: defaultSize,
-              });
-
-              navigate("/cart?mode=buynow");
-            }}
-            className="flex-1 bg-white text-black py-2 rounded-lg text-sm font-semibold hover:bg-black hover:text-white transition cursor-pointer"
-          >
-            Buy Now
-          </button>
+            {/* BUY NOW */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!token) {
+                  navigate("/login");
+                  return;
+                }
+                setActionType("buy"); 
+                setShowSizeModal(true);
+              }}
+              className="flex-1 bg-white text-black py-2 rounded-lg text-sm font-semibold hover:bg-black hover:text-white transition cursor-pointer"
+            >
+              Buy Now
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      <SizeSelectorModal
+        open={showSizeModal}
+        sizes={sizes}
+        onClose={() => {
+          setShowSizeModal(false);
+          setActionType(null);
+        }}
+        onConfirm={(selectedSize) => {
+          addToCart(_id, selectedSize);
+
+          setShowSizeModal(false);
+
+          // ✅ BUY NOW → CART PAGE
+          if (actionType === "buy") {
+            navigate("/cart");
+          }
+
+          setActionType(null);
+
+          toast.success(
+            actionType === "buy"
+              ? "Hurray! Item added , Let's Checkout  🛒"
+              : "Smile Added to cart 🛒",
+            {
+              position: "top-center",
+              autoClose: 1500,
+              hideProgressBar: true,
+              theme: "dark",
+            }
+          );
+        }}
+      />
+    </>
   );
 };
 

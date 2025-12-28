@@ -27,7 +27,6 @@ const authUser = (req, res, next) => {
   try {
 
     let token = req.headers.token || req.headers.authorization;
-    console.log("RAW TOKEN:", token);
 
     if (!token) {
       console.log("Not Authorized");

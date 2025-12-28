@@ -59,6 +59,7 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   const [showNavbar, setShowNavbar] = useState(true);
   const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
+  const { appLoading } = useContext(ShopContext);
 
   useEffect(() => {
     setIsMobileOrTablet(window.innerWidth < 1024);
@@ -88,8 +89,7 @@ const App = () => {
     pathname === "/address" ||
     pathname === "/address/add" ||
     pathname.startsWith("/address/edit");
-  pathname === "/order-preview" ||
-    pathname === "/placeorder";
+  pathname === "/order-preview" || pathname === "/placeorder";
 
   /* 🔥 HIDE FOOTER ON THESE ROUTES */
   const hideFooterRoutes = [
@@ -143,7 +143,8 @@ const App = () => {
   return (
     <div className="min-h-screen bg-black text-white relative overflow-x-hidden">
       {/* ================= LOADER ================= */}
-      <PreLoader isLoading={loading} />
+      <PreLoader isLoading={appLoading} />
+      {!appLoading && <Routes />}
 
       {/* ================= TOAST ================= */}
       <ToastContainer
@@ -252,7 +253,6 @@ const App = () => {
                     {/* SHOP */}
                     <Route path="/favorites" element={<Favorites />} />
                   </Routes>
-
                 </>
               )}
             </div>

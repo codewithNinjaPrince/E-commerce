@@ -139,11 +139,11 @@ const Login = () => {
 
       setOtpVerified(true);
       toast.success(`Welcome back, ${name} 😎`, {
-              position: "top-center",
-              autoClose: 2000,
-              hideProgressBar: true,
-              theme: "dark",
-            });
+        position: "top-center",
+        autoClose: 2000,
+        hideProgressBar: true,
+        theme: "dark",
+      });
     } catch (err) {
       toast.error(err?.response?.data?.message || "Invalid OTP");
     }
@@ -212,8 +212,10 @@ const Login = () => {
         localStorage.setItem("userName", firstName || "User");
       }
 
-      await getUserCart(res.data.token);
-      await fetchFavorites();
+      await Promise.all([
+        getUserCart(res.data.token),
+        fetchFavorites(res.data.token),
+      ]);
 
       if (redirectPath && redirectPath.startsWith("/")) {
         navigate(redirectPath);
@@ -223,19 +225,19 @@ const Login = () => {
 
       if (mode === "Sign Up") {
         toast.success("Account created 🎉", {
-              position: "top-center",
-              autoClose: 2000,
-              hideProgressBar: true,
-              theme: "dark",
-            });
+          position: "top-center",
+          autoClose: 2000,
+          hideProgressBar: true,
+          theme: "dark",
+        });
       } else {
         const name = res.data?.user?.firstName || "there";
         toast.success(`Welcome back, ${name} 😎`, {
-              position: "top-center",
-              autoClose: 2000,
-              hideProgressBar: true,
-              theme: "dark",
-            });
+          position: "top-center",
+          autoClose: 2000,
+          hideProgressBar: true,
+          theme: "dark",
+        });
       }
     } catch (err) {
       toast.error(err?.response?.data?.message || "Something went wrong");
@@ -257,10 +259,6 @@ const Login = () => {
 
     return cleaned; // phone stays as-is
   };
-
-  useEffect(() => {
-    if (token) navigate("/");
-  }, [token]);
 
   useEffect(() => {
     if (cooldown === 0) return;
