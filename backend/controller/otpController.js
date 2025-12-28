@@ -26,9 +26,17 @@ export const sendOtp = async (req, res) => {
       });
     }
 
-    /* ---------------- EMAIL OTP ---------------- */
+    /* =========================================================
+       EMAIL OTP
+    ========================================================= */
     if (type === "email") {
-      const existingUser = await userModel.findOne({ email: identifier });
+      const normalizedEmail = identifier.toLowerCase().trim();
+
+      // Check existing user
+      const existingUser = await userModel.findOne({
+        email: normalizedEmail,
+      });
+
       if (existingUser && existingUser.password) {
         return res.status(409).json({
           success: false,
@@ -37,7 +45,11 @@ export const sendOtp = async (req, res) => {
         });
       }
 
-      const lastOtp = await EmailOtp.findOne({ email: identifier });
+      // Cooldown check
+      const lastOtp = await EmailOtp.findOne({
+        email: normalizedEmail,
+      });
+
       if (lastOtp && lastOtp.updatedAt > Date.now() - OTP_COOLDOWN) {
         return res.status(429).json({
           success: false,
@@ -46,23 +58,30 @@ export const sendOtp = async (req, res) => {
         });
       }
 
+      // Generate OTP
       const otp = generateOtp();
 
+      // Save / Update OTP
       await EmailOtp.findOneAndUpdate(
-        { email: identifier },
+        { email: normalizedEmail },
         {
           otp,
           expiresAt: new Date(Date.now() + OTP_EXPIRY),
           verified: false,
+          updatedAt: new Date(),
         },
         { upsert: true, new: true }
       );
 
-     try{ await transporter.sendMail({
-        from: `"Brawvly Support" <${process.env.EMAIL_USER}>`,
-        to: identifier,
-        subject: "Your Brawvly Verification Code",
-        html: `
+      // Send Email
+      try {
+        await transporter.sendMail({
+          from: `"Brawvly" <${process.env.EMAIL_FROM}>`,
+          replyTo: "support@brawvly.com",
+
+          to: normalizedEmail,
+          subject: "Your Brawvly Verification Code",
+          html: `
 <div style="font-family: Arial, sans-serif; background:#f4f4f4; padding:30px;">
   <div style="max-width:520px; margin:auto; background:#ffffff; border-radius:8px; padding:30px;">
     <h2 style="color:#111; text-align:center;">Verify your email</h2>
@@ -85,63 +104,72 @@ export const sendOtp = async (req, res) => {
     </p>
   </div>
 </div>`,
+        });
+      } catch (mailError) {
+        console.error("EMAIL SEND FAILED:", mailError);
+        return res.status(500).json({
+          success: false,
+          message: "Unable to send email OTP. Please try again later.",
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: "OTP sent to email",
       });
-    }catch(mailError){
-      console.error("EMAIL SEND WARNING:", mailError);
-      //
-    }
-      return res.json({ success: true, message: "OTP sent to email" });
     }
 
- /* ---------------- PHONE OTP ---------------- */
-if (type === "phone") {
-  let sendSms;
+    /* =========================================================
+       PHONE OTP
+    ========================================================= */
+    if (type === "phone") {
+      let sendSms;
 
-  try {
-    // 🔹 Lazy import (prevents email OTP from failing)
-    sendSms = (await import("../config/sms.js")).default;
-  } catch (importError) {
-    console.error("SMS MODULE LOAD ERROR:", importError);
-    return res.status(503).json({
-      success: false,
-      message: "Phone OTP service is currently unavailable",
-    });
-  }
+      try {
+        sendSms = (await import("../config/sms.js")).default;
+      } catch (importError) {
+        console.error("SMS MODULE LOAD ERROR:", importError);
+        return res.status(503).json({
+          success: false,
+          message: "Phone OTP service is currently unavailable",
+        });
+      }
 
-  const existingUser = await userModel.findOne({ phone: identifier });
-  if (existingUser && existingUser.password) {
-    return res.status(409).json({
-      success: false,
-      code: "PHONE_EXISTS",
-      message: "Phone already exists. Please login.",
-    });
-  }
+      const existingUser = await userModel.findOne({ phone: identifier });
+      if (existingUser && existingUser.password) {
+        return res.status(409).json({
+          success: false,
+          code: "PHONE_EXISTS",
+          message: "Phone already exists. Please login.",
+        });
+      }
 
-  const lastOtp = await PhoneOtp.findOne({ phone: identifier });
-  if (lastOtp && lastOtp.updatedAt > Date.now() - OTP_COOLDOWN) {
-    return res.status(429).json({
-      success: false,
-      code: "TOO_MANY_REQUESTS",
-      message: "Please wait before requesting another OTP",
-    });
-  }
+      const lastOtp = await PhoneOtp.findOne({ phone: identifier });
+      if (lastOtp && lastOtp.updatedAt > Date.now() - OTP_COOLDOWN) {
+        return res.status(429).json({
+          success: false,
+          code: "TOO_MANY_REQUESTS",
+          message: "Please wait before requesting another OTP",
+        });
+      }
 
-  const otp = generateOtp();
+      const otp = generateOtp();
 
-  await PhoneOtp.findOneAndUpdate(
-    { phone: identifier },
-    {
-      otp,
-      expiresAt: new Date(Date.now() + OTP_EXPIRY),
-      verified: false,
-    },
-    { upsert: true, new: true }
-  );
+      await PhoneOtp.findOneAndUpdate(
+        { phone: identifier },
+        {
+          otp,
+          expiresAt: new Date(Date.now() + OTP_EXPIRY),
+          verified: false,
+          updatedAt: new Date(),
+        },
+        { upsert: true, new: true }
+      );
 
-  try {
-    await sendSms(
-      identifier,
-      `Brawvly Verification Code
+      try {
+        await sendSms(
+          identifier,
+          `Brawvly Verification Code
 
 Hi ${firstName || "there"} 👋,
 
@@ -153,17 +181,16 @@ ${otp}
 🚫 Do not share this code with anyone.
 
 — Team Brawvly`
-    );
-  } catch (smsError) {
-    console.error("SMS SEND WARNING:", smsError);
-    // ⚠️ OTP already saved, so DO NOT fail the request
-  }
+        );
+      } catch (smsError) {
+        console.error("SMS SEND WARNING:", smsError);
+      }
 
-  return res.json({
-    success: true,
-    message: "OTP sent to phone",
-  });
-}
+      return res.json({
+        success: true,
+        message: "OTP sent to phone",
+      });
+    }
 
     return res.status(400).json({
       success: false,
@@ -178,9 +205,6 @@ ${otp}
   }
 };
 
-
-
-
 /* =========================================================
    VERIFY OTP (SIGNUP)
 ========================================================= */
@@ -188,8 +212,29 @@ export const verifyOtp = async (req, res) => {
   try {
     const { identifier, otp } = req.body;
 
-    let record = await EmailOtp.findOne({ email: identifier });
-    if (record) {
+    if (!identifier || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid request",
+      });
+    }
+
+    const isEmail = identifier.includes("@");
+
+    /* =========================================================
+       EMAIL OTP VERIFY
+    ========================================================= */
+    if (isEmail) {
+      const normalizedEmail = identifier.toLowerCase().trim();
+
+      const record = await EmailOtp.findOne({
+        email: normalizedEmail,
+        verified: false,
+      });
+
+      if (!record)
+        return res.json({ success: false, message: "OTP not found" });
+
       if (record.expiresAt < Date.now())
         return res.json({ success: false, message: "OTP expired" });
 
@@ -205,7 +250,14 @@ export const verifyOtp = async (req, res) => {
       });
     }
 
-    record = await PhoneOtp.findOne({ phone: identifier });
+    /* =========================================================
+       PHONE OTP VERIFY
+    ========================================================= */
+    const record = await PhoneOtp.findOne({
+      phone: identifier,
+      verified: false,
+    });
+
     if (!record) return res.json({ success: false, message: "OTP not found" });
 
     if (record.expiresAt < Date.now())
@@ -217,7 +269,7 @@ export const verifyOtp = async (req, res) => {
     record.verified = true;
     await record.save();
 
-    res.json({
+    return res.json({
       success: true,
       message: "Phone verified successfully",
     });
@@ -236,8 +288,18 @@ export const verifyOtp = async (req, res) => {
 export const sendForgotOtp = async (req, res) => {
   try {
     const { email } = req.body;
-    const user = await userModel.findOne({ email });
 
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Check if user exists
+    const user = await userModel.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -246,7 +308,8 @@ export const sendForgotOtp = async (req, res) => {
       });
     }
 
-    const lastOtp = await EmailOtp.findOne({ email });
+    // Cooldown check
+    const lastOtp = await EmailOtp.findOne({ email: normalizedEmail });
     if (lastOtp && lastOtp.updatedAt > Date.now() - OTP_COOLDOWN) {
       return res.status(429).json({
         success: false,
@@ -254,33 +317,70 @@ export const sendForgotOtp = async (req, res) => {
       });
     }
 
+    // Generate OTP
     const otp = generateOtp();
 
+    // Save / Update OTP
     await EmailOtp.findOneAndUpdate(
-      { email },
+      { email: normalizedEmail },
       {
         otp,
         expiresAt: new Date(Date.now() + OTP_EXPIRY),
         verified: false,
+        updatedAt: new Date(),
       },
       { upsert: true, new: true }
     );
 
-    await transporter.sendMail({
-      from: `"Brawvly Support" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "Reset your Brawvly password",
-      html: `
-<h2>Reset your password</h2>
-<p>Hi <b>${user.firstName}</b>,</p>
-<p>Your OTP is <b>${otp}</b></p>
-<p>Valid for 5 minutes. Do not share this code.</p>`,
-    });
+    // Send email
+    try {
+      await transporter.sendMail({
+        from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_FROM_ADDRESS}>`,
+        replyTo: "support@brawvly.com",
+        to: normalizedEmail,
+        subject: "Reset your Brawvly password",
+        html: `
+<div style="font-family: Arial, sans-serif; background:#f4f4f4; padding:30px;">
+  <div style="max-width:520px; margin:auto; background:#ffffff; border-radius:8px; padding:30px;">
+    <h2 style="color:#111; text-align:center;">Reset your password</h2>
+    <p style="color:#555;">
+      Hi <b>${user.firstName || "there"}</b> 👋,<br/><br/>
+      Use the OTP below to reset your <b>Brawvly</b> account password.
+    </p>
+    <div style="text-align:center; margin:30px 0;">
+      <span style="font-size:32px; letter-spacing:6px; font-weight:bold;">
+        ${otp}
+      </span>
+    </div>
+    <p style="color:#555;">
+      ⏱ This OTP will expire in <b>5 minutes</b>.<br/>
+      🚫 Do not share this code with anyone.
+    </p>
+    <hr />
+    <p style="font-size:12px; color:#888; text-align:center;">
+      © ${new Date().getFullYear()} Brawvly
+    </p>
+  </div>
+</div>`,
+      });
+    } catch (mailError) {
+      console.error("FORGOT OTP EMAIL FAILED:", mailError);
+      return res.status(500).json({
+        success: false,
+        message: "Unable to send reset OTP. Try again later.",
+      });
+    }
 
-    res.json({ success: true });
+    return res.json({
+      success: true,
+      message: "OTP sent to email",
+    });
   } catch (error) {
-    console.error("FORGOT OTP ERROR:", error);
-    res.status(500).json({ success: false });
+    console.error("SEND FORGOT OTP ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to process request. Please try again.",
+    });
   }
 };
 
@@ -288,43 +388,124 @@ export const sendForgotOtp = async (req, res) => {
    VERIFY FORGOT OTP
 ========================================================= */
 export const verifyForgotOtp = async (req, res) => {
-  const { email, otp } = req.body;
-  const record = await EmailOtp.findOne({ email });
+  try {
+    const { email, otp } = req.body;
 
-  if (!record) return res.status(400).json({ message: "OTP not found" });
+    if (!email || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and OTP are required",
+      });
+    }
 
-  if (record.expiresAt < Date.now())
-    return res.status(400).json({ message: "OTP expired" });
+    const normalizedEmail = email.toLowerCase().trim();
 
-  if (record.otp !== otp)
-    return res.status(400).json({ message: "Invalid OTP" });
+    const record = await EmailOtp.findOne({
+      email: normalizedEmail,
+      verified: false,
+    });
 
-  record.verified = true;
-  await record.save();
+    if (!record) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP not found or already used",
+      });
+    }
 
-  res.json({ success: true });
+    if (record.expiresAt < Date.now()) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP expired",
+      });
+    }
+
+    if (record.otp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP",
+      });
+    }
+
+    record.verified = true;
+    await record.save();
+
+    return res.json({
+      success: true,
+      message: "OTP verified successfully",
+    });
+  } catch (error) {
+    console.error("VERIFY FORGOT OTP ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "OTP verification failed",
+    });
+  }
 };
 
 /* =========================================================
    RESET PASSWORD
 ========================================================= */
 export const resetPassword = async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const record = await EmailOtp.findOne({ email, verified: true });
-  if (!record) {
-    return res.status(400).json({ message: "OTP not verified" });
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
+    }
+
+    // Normalize email
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Basic password safety (minimum)
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 8 characters long",
+      });
+    }
+
+    // Check verified OTP
+    const record = await EmailOtp.findOne({
+      email: normalizedEmail,
+      verified: true,
+    });
+
+    if (!record) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP not verified",
+      });
+    }
+
+    // Hash password
+    const hashed = await bcrypt.hash(password, 10);
+
+    // Update user password
+    await userModel.updateOne(
+      { email: normalizedEmail },
+      {
+        password: hashed,
+        isEmailVerified: true,
+      }
+    );
+
+    // Remove OTP record
+    await EmailOtp.deleteOne({ email: normalizedEmail });
+
+    return res.json({
+      success: true,
+      message: "Password reset successfully",
+    });
+  } catch (error) {
+    console.error("RESET PASSWORD ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to reset password. Please try again.",
+    });
   }
-
-  const hashed = await bcrypt.hash(password, 10);
-  await userModel.updateOne(
-    { email },
-    { password: hashed, isEmailVerified: true }
-  );
-
-  await EmailOtp.deleteOne({ email });
-
-  res.json({ success: true });
 };
 
 // import bcrypt from "bcrypt";

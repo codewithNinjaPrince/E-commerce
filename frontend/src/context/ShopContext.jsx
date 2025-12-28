@@ -26,6 +26,7 @@ const logout = () => {
   // 🔥 LocalStorage clear
   localStorage.removeItem("token");
   localStorage.removeItem("userName");
+  navigate("/login");
 
   // 🔥 Reset all user-related state
   setToken("");

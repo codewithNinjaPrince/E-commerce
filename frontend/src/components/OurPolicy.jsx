@@ -64,7 +64,7 @@ const OurPolicy = () => {
             ) : (
               <>
                 {/* CARD 1 */}
-                <NavLink to="/shipping-delivery">
+                <NavLink to="/terms-conditions">
                   <div className="h-full bg-[#1e1e1e] border border-white/10 rounded-xl p-6 flex flex-col items-center text-center hover:scale-[1.03] hover:border-white/20 transition">
                     <img src={assets.exchange_icon} className="w-14 mb-4 invert" />
                     <p className="font-semibold text-white text-lg">

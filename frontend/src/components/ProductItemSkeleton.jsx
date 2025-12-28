@@ -2,7 +2,7 @@ const ProductItemSkeleton = () => {
   return (
     <div className="animate-pulse product-card">
       {/* IMAGE */}
-      <div className="w-full h-52 bg-gray-700/50 rounded-xl" />
+      <div className="w-full h-52 bg-gray-700/50 rounded-xl mb-4" />
 
       {/* DETAILS */}
       <div className="mt-3 space-y-2">
@@ -15,7 +15,7 @@ const ProductItemSkeleton = () => {
           <div className="h-4 bg-gray-700/50 rounded w-20" />
         </div>
 
-        <div className="flex gap-2 mt-4">
+        <div className="flex gap-2 mt-4 mb-4">
           <div className="w-10 h-10 bg-gray-700/50 rounded-lg" />
           <div className="flex-1 h-10 bg-gray-700/40 rounded-lg" />
         </div>
