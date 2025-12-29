@@ -56,12 +56,13 @@ const Favorites = () => {
     document.body.scrollTop = 0;
     window.scrollTo(0, 0);
   }, []);
-  const { products, favorites, favoritesLoading, token, navigate } =
+  const { products, favorites, favoritesLoading, token, navigate, appLoading } =
     useContext(ShopContext);
 
   const [favoriteProducts, setFavoriteProducts] = useState([]);
 
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  
 
   useEffect(() => {
     const online = () => setIsOnline(true);
@@ -78,10 +79,11 @@ const Favorites = () => {
 
   /* -------- AUTH GUARD -------- */
   useEffect(() => {
-    if (!token) {
-      navigate("/login?redirect=/favorites");
-    }
-  }, [token]);
+  if (!appLoading && !token) {
+    navigate("/login?redirect=/favorites");
+  }
+}, [appLoading, token]);
+
 
   /* -------- MAP FAVORITES -------- */
   useEffect(() => {
@@ -92,9 +94,10 @@ const Favorites = () => {
     }
   }, [products, favorites]);
 
-  if (!isOnline || favoritesLoading) {
-    return <FavoritesPageSkeleton />;
-  }
+  if (!isOnline || appLoading || favoritesLoading) {
+  return <FavoritesPageSkeleton />;
+}
+
 
   return (
     <section>

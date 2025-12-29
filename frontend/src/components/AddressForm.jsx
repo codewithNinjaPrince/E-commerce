@@ -130,7 +130,7 @@ const AddressForm = () => {
       <div className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur border-b border-white/10">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/address")}
             className="p-2 rounded-lg hover:bg-white/10 transition cursor-pointer"
             aria-label="Go back"
           >

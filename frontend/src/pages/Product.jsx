@@ -33,13 +33,14 @@ const showCartToast = (message = "Added to cart 🛒") => {
 };
 
 const Product = () => {
+  const navigate = useNavigate();
+  const { productId } = useParams();
+  
   useLayoutEffect(() => {
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
     window.scrollTo(0, 0);
-  }, []);
-  const navigate = useNavigate();
-  const { productId } = useParams();
+  }, [productId]);
 
   const {
     products,

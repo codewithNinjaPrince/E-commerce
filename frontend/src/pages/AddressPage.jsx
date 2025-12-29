@@ -49,7 +49,7 @@ const AddressPage = () => {
 
   /* ================= FETCH ADDRESSES ================= */
 
- 
+
   const loadAddresses = async () => {
     if (!token) {
       navigate("/login");
@@ -180,51 +180,50 @@ const AddressPage = () => {
   return (
     <section className="min-h-screen mt-4 lg:mt-0 bg-black text-white overflow-x-hidden">
       {/* ================= FIXED HEADER ================= */}
-<div className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur border-b border-white/10">
-  <div className="max-w-7xl mx-auto px-4 py-3 grid grid-cols-[auto_1fr_auto] items-center gap-3">
+      <div className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4 py-3 grid grid-cols-[auto_1fr_auto] items-center gap-3">
 
-    {/* LEFT */}
-    <button
-      onClick={() => navigate(-1)}
-      className="p-2 rounded-lg hover:bg-white/10 transition cursor-pointer"
-      aria-label="Go back"
-    >
-      <FaArrowLeft />
-    </button>
-
-    {/* CENTER SEARCH */}
-    <div className="flex justify-center">
-      <div className="relative w-full max-w-xl">
-        <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm cursor-pointer" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name, phone, area, pin code"
-          className="w-full bg-[#121212] pl-9 pr-10 py-2 rounded-xl text-sm outline-none border border-white/10 focus:border-white/30 cursor-text"
-        />
-
-        {search && (
+          {/* LEFT */}
           <button
-            onClick={() => setSearch("")}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition cursor-pointer"
+            onClick={() => navigate(-1)}
+            className="p-2 rounded-lg hover:bg-white/10 transition cursor-pointer"
+            aria-label="Go back"
           >
-            <FaTimes size={12} />
+            <FaArrowLeft />
           </button>
-        )}
+
+          {/* CENTER SEARCH */}
+          <div className="flex justify-center">
+            <div className="relative w-full max-w-xl">
+              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm cursor-pointer" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by name, phone, area, pin code"
+                className="w-full bg-[#121212] pl-9 pr-10 py-2 rounded-xl text-sm outline-none border border-white/10 focus:border-white/30 cursor-text"
+              />
+
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition cursor-pointer"
+                >
+                  <FaTimes size={12} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT */}
+          <button
+            onClick={() => navigate("/cart")}
+            className="p-2 rounded-lg hover:bg-white/10 transition cursor-pointer"
+            aria-label="Close"
+          >
+            <FaTimes />
+          </button>
+        </div>
       </div>
-    </div>
-
-    {/* RIGHT */}
-    <button
-      onClick={() => navigate(-1)}
-      className="p-2 rounded-lg hover:bg-white/10 transition cursor-pointer"
-      aria-label="Close"
-    >
-      <FaTimes />
-    </button>
-
-  </div>
-</div>
 
 
       {/* ================= CONTENT ================= */}
@@ -280,11 +279,10 @@ const AddressPage = () => {
     transition-all duration-200
     overflow-hidden
     hover:shadow-lg hover:-translate-y-[2px]
-    ${
-      addr.addressId === pendingId
-        ? "border-green-500 bg-green-500/10 ring-2 ring-green-500/30"
-        : "border-white/10 hover:border-white/30"
-    }
+    ${addr.addressId === pendingId
+                    ? "border-green-500 bg-green-500/10 ring-2 ring-green-500/30"
+                    : "border-white/10 hover:border-white/30"
+                  }
   `}
               >
                 <div className="flex gap-3">
@@ -292,21 +290,21 @@ const AddressPage = () => {
                   <div className="mt-1 text-lg">
                     {addr.type === "home" ? <FaHome /> : <FaMapMarkerAlt />}
                   </div>
-                  
+
 
                   {/* DETAILS */}
                   <div className="flex-1 min-w-0 flex flex-col">
                     <div className="flex items-start gap-2 min-w-0">
                       {/* TEXT */}
                       <div className="flex items-start justify-between gap-2">
-  {/* NAME */}
-  <p className="font-medium truncate">{addr.name}</p>
+                        {/* NAME */}
+                        <p className="font-medium truncate">{addr.name}</p>
 
-  {/* FIXED SLOT (NO LAYOUT SHIFT) */}
-  <div className="min-w-[72px] flex justify-end">
-    {addr.addressId === selectedId && (
-      <span
-        className="
+                        {/* FIXED SLOT (NO LAYOUT SHIFT) */}
+                        <div className="min-w-[72px] flex justify-end">
+                          {addr.addressId === selectedId && (
+                            <span
+                              className="
           text-xs
           px-2 py-0.5
           rounded-full
@@ -315,15 +313,15 @@ const AddressPage = () => {
           border border-green-500/30
           whitespace-nowrap
         "
-      >
-        Selected
-      </span>
-    )}
-  </div>
-</div>
+                            >
+                              Selected
+                            </span>
+                          )}
+                        </div>
+                      </div>
 
                     </div>
-                    
+
 
                     <p className="text-sm text-gray-400 truncate">
                       {addr.houseNo}, {addr.street}, {addr.locality},{" "}

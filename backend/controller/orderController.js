@@ -9,6 +9,8 @@ import { calculateOrder } from "../utils/calculateOrder.js";
 const currency = "inr";
 const deliveryCharge = 10;
 
+
+
 //Gateway Initialize
 // const cashfree = new Cashfree({
 //   appId: process.env.CASHFREE_APP_ID,
@@ -21,7 +23,7 @@ const deliveryCharge = 10;
 const placeOrder = async (req, res) => {
   try {
     const userId = req.userId; // from auth middleware
-    const { items, paymentMethod, address, couponCode } = req.body;
+    const { items, paymentMethod, couponCode } = req.body;
 
     if (!items || items.length === 0) {
       return res.json({ success: false, message: "No items in order" });
@@ -39,6 +41,30 @@ const placeOrder = async (req, res) => {
 
     let finalAmount = 0;
     let couponActuallyUsed = false;
+
+    /* =====================================================
+   LOAD SELECTED ADDRESS
+===================================================== */
+const selectedAddressId = user.selectedAddressId;
+
+if (!selectedAddressId) {
+  return res.json({
+    success: false,
+    message: "No delivery address selected",
+  });
+}
+
+const address = user.addresses?.find(
+  (a) => a.addressId === selectedAddressId
+);
+
+if (!address) {
+  return res.json({
+    success: false,
+    message: "Selected address not found",
+  });
+}
+
 
     /* =====================================================
        1️⃣ ENRICH CART ITEMS WITH PRODUCT DATA

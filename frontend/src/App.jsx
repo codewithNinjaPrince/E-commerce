@@ -17,7 +17,6 @@ import AddressPage from "./pages/AddressPage";
 import AddressForm from "./components/AddressForm";
 import OrderPreview from "./pages/OrderPreview";
 import PaymentPage from "./pages/Paymentpage";
-import PlaceOrder from "./pages/PlaceOrder";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import Verify from "./pages/Verify";
@@ -210,7 +209,6 @@ const App = () => {
         <Route path="/sell-with-us" element={<SellWithUs />} />
         <Route path="/login" element={<Login />} />
         <Route path="/orders" element={<Orders />} />
-        <Route path="/placeorder" element={<PlaceOrder />} />
         <Route path="/address" element={<AddressPage />} />
         <Route path="/address/add" element={<AddressForm />} />
         <Route path="/address/edit/:addressId" element={<AddressForm />} />
