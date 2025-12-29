@@ -88,8 +88,10 @@ const App = () => {
   const isAddressFlow =
     pathname === "/address" ||
     pathname === "/address/add" ||
-    pathname.startsWith("/address/edit");
-  pathname === "/order-preview" || pathname === "/placeorder";
+    pathname.startsWith("/address/edit") ||
+    pathname === "/order-preview" ||
+    pathname === "/placeorder" ||
+    pathname === "/cart";
 
   /* 🔥 HIDE FOOTER ON THESE ROUTES */
   const hideFooterRoutes = [

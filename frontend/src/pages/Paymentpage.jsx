@@ -119,7 +119,7 @@ const PaymentPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { backendUrl, token, cartItems, products, updateQuantity, addToCart } =
+  const { backendUrl, token, cartItems, products, updateQuantity, addToCart, buyNowItem, setBuyNowItem } =
     useContext(ShopContext);
 
   const cartTotalRef = useRef(null);
@@ -195,6 +195,8 @@ const PaymentPage = () => {
       setProcessing(false);
       setConfirmOpen(false);
 
+      setBuyNowItem(null);
+
       navigate("/placeorder", {
         state: {
           payableAmount,
@@ -240,24 +242,35 @@ const PaymentPage = () => {
     loadSelectedAddress();
   }, [token, backendUrl, navigate]);
 
-  const buildItems = () => {
-    const source = localCartOverride || cartItems;
-    let items = [];
+const buildItems = () => {
+  // 🚀 BUY NOW FLOW
+  if (buyNowItem) {
+    return [
+      {
+        productId: buyNowItem.productId,
+        size: buyNowItem.size,
+        quantity: buyNowItem.quantity,
+      },
+    ];
+  }
 
-    Object.keys(source).forEach((pid) => {
-      Object.keys(source[pid]).forEach((size) => {
-        if (source[pid][size] > 0) {
-          items.push({
-            productId: pid,
-            size,
-            quantity: source[pid][size],
-          });
-        }
-      });
+  // 🛒 NORMAL CART FLOW
+  let items = [];
+
+  Object.keys(cartItems).forEach((pid) => {
+    Object.keys(cartItems[pid]).forEach((size) => {
+      if (cartItems[pid][size] > 0) {
+        items.push({
+          productId: pid,
+          size,
+          quantity: cartItems[pid][size],
+        });
+      }
     });
+  });
 
-    return items;
-  };
+  return items;
+};
 
   /* ---------------- LOAD PRICE ---------------- */
   useEffect(() => {
@@ -295,7 +308,9 @@ const PaymentPage = () => {
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           {/* BACK */}
           <button
-            onClick={() => navigate(-1)}
+            onClick={() =>{ setBuyNowItem(null);
+               navigate(-1)}
+            }
             className="p-2 rounded-lg hover:bg-white/10 cursor-pointer"
           >
             <FaArrowLeft />

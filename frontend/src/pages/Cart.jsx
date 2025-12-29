@@ -5,6 +5,9 @@ import Title from "../components/Title";
 import { assets } from "../assets/assets";
 import CartTotal from "../components/CartTotal";
 import { useLayoutEffect } from "react";
+import AddressPage from "./AddressPage";
+import { FaArrowLeft, FaTimes, FaTrash } from "react-icons/fa";
+
 
 const CartPageSkeleton = () => {
   return (
@@ -55,6 +58,11 @@ const Cart = () => {
     updateQuantity,
     navigate,
     delivery_fee,
+    addToFavorites,
+    removeFromFavorites,
+    buyNowItem,
+    favorites = [],
+    setBuyNowItem,
   } = useContext(ShopContext);
 
   const cartTotalRef = useRef(null);
@@ -83,6 +91,7 @@ const Cart = () => {
       window.removeEventListener("offline", offline);
     };
   }, []);
+
 
   useEffect(() => {
     const tempData = [];
@@ -245,49 +254,23 @@ const Cart = () => {
             updateQuantity(item._id, item.size, newQty);
             setValue(String(newQty));
           }}
-          className="
-          w-8 h-8
-          flex items-center justify-center
-          rounded-md
-          bg-white/10
-          hover:bg-white/20
-          transition
-          cursor-pointer
-        "
+          className="w-8 h-8 flex items-center justify-center rounded-md bg-white/10 hover:bg-white/20 transition cursor-pointer"
         >
           −
         </button>
 
         {/* INPUT */}
         <input
-        onClick={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
           type="text"
           inputMode="numeric"
           value={value}
           onChange={(e) => {
-            // allow empty while typing
-            if (/^\d*$/.test(e.target.value)) {
-              setValue(e.target.value);
-            }
+            if (/^\d*$/.test(e.target.value)) setValue(e.target.value);
           }}
           onBlur={commitValue}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.currentTarget.blur();
-            }
-          }}
-          className="
-          w-12 sm:w-14
-          h-9
-          bg-black
-          border border-white/20
-          rounded-md
-          text-white
-          text-center
-          text-sm
-          outline-none
-          focus:border-white/40
-        "
+          onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+          className="w-12 sm:w-14 h-9 bg-black border border-white/20 rounded-md text-white text-center text-sm outline-none focus:border-white/40"
         />
 
         {/* PLUS */}
@@ -299,15 +282,7 @@ const Cart = () => {
             updateQuantity(item._id, item.size, newQty);
             setValue(String(newQty));
           }}
-          className="
-          w-8 h-8
-          flex items-center justify-center
-          rounded-md
-          bg-white/10
-          hover:bg-white/20
-          transition
-          cursor-pointer
-        "
+          className="w-8 h-8 flex items-center justify-center rounded-md bg-white/10 hover:bg-white/20 transition cursor-pointer"
         >
           +
         </button>
@@ -327,251 +302,321 @@ const Cart = () => {
 
   return (
     <>
-      <div
-        className="
-    border-t  
-    pt-20  
-    text-white
-    pb-[110px]
-    px-2 sm:px-4 md:px-6 lg:px-10
-  "
-      >
-        <div className="text-3xl mb-4 text-center">
-          <Title text1="Your" text2="Cart" />
+      <section className="min-h-screen bg-black text-white pt-[64px] pb-28">
+        {/* ================= CART HEADER ================= */}
+        <div className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur border-b border-white/10">
+          <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            {/* BACK */}
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 rounded-lg hover:bg-white/10 cursor-pointer"
+              aria-label="Go back"
+            >
+              <FaArrowLeft />
+            </button>
+
+            {/* TITLE */}
+            <div className="text-center">
+              <p className="font-semibold text-medium text-xm">Your Cart</p>
+            </div>
+
+            {/* CLOSE → COLLECTIONS */}
+            <button
+              onClick={() => navigate("/collections")}
+              className="p-2 rounded-lg hover:bg-white/10 cursor-pointer"
+              aria-label="Close cart"
+            >
+              <FaTimes />
+            </button>
+          </div>
         </div>
 
-        {/* CART ITEMS */}
-        <div className="space-y-6">
-          {cartData.map((item, index) => {
-            const productData = products.find(
-              (product) => product._id === item._id
-            );
-            if (!productData) return null;
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 space-y-6 mt-4 sm:mt-6">
+          {/* CART ITEMS */}
+          <div className="space-y-6">
+            {cartData.map((item, index) => {
+              const isFavorited = favorites.includes(item._id);
+              const productData = products.find(
+                (product) => product._id === item._id
+              );
+              if (!productData) return null;
 
-            const discountPercent = Math.round(
-              ((productData.actualPrice - productData.discountedPrice) /
-                productData.actualPrice) *
+              const discountPercent = Math.round(
+                ((productData.actualPrice - productData.discountedPrice) /
+                  productData.actualPrice) *
                 100
-            );
+              );
 
-            return (
-              <div
-                key={index}
-                onClick={() => navigate(`/product/${item._id}`)}
-                className="
-  bg-[#1a1a1a] border border-white/10
-  p-4 rounded-xl
-  flex flex-col gap-4
-  sm:grid sm:grid-cols-[3fr_1.5fr_1.5fr]
-  sm:items-center 
-  hover:border-white/50 transition cursor-pointer
-"
-              >
-                {/* LEFT */}
-                <div className="flex gap-4 sm:gap-6 items-start">
-                  <img
-                    className="w-20 h-24 object-cover rounded-lg"
-                    src={productData.image[0]}
-                    alt={productData.name}
-                  />
+              return (
+                <div
+                  key={index}
+                  className="relative bg-[#1a1a1a] border border-white/10 rounded-xl p-4 space-y-4 hover:border-white/40 transition cursor-pointer"
+                >
+                  {/* TOP RIGHT ACTIONS — COLUMN (sm+) */}
+                  <div
+                    className="
+                    hidden sm:flex
+                    absolute top-4 right-4
+                    flex-col
+                    items-end
+                    gap-3
+                    "
+                  >
+                    {/* REMOVE */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteItem(item);
+                        setConfirmOpen(true);
+                      }}
+                      className="
+                      flex justify-between items-center gap-1
+                      text-red-400 hover:text-red-500
+                      transition
+                      cursor-pointer
+                      group sm:pb-10 lg:pb-12
+                      "
+                    >
+                      <FaTrash className="group-hover:scale-110 transition" />
+                      <span className="text-sm font-medium">Remove</span>
+                    </button>
 
-                  <div>
-                    <p className="text-lg font-semibold">{productData.name}</p>
+                    {/* QUANTITY */}
+                    <QuantityInput item={item} />
+                  </div>
 
-                    <p className="text-xs uppercase tracking-wide text-gray-400">
-                      {productData.brandName}
-                    </p>
+                  {/* TOP — IMAGE + DETAILS */}
+                  <div onClick={() => navigate(`/product/${item._id}`)}
+                    className="flex gap-4 cursor-pointer">
+                    <img
+                      src={productData.image[0]}
+                      alt={productData.name}
+                      className="w-20 h-24 object-cover rounded-lg"
+                    />
 
-                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                      <p className="text-green-500 font-semibold">
-                        {currency}
-                        {productData.discountedPrice}
+                    <div className="flex-1">
+                      <p className="text-lg font-semibold">
+                        {productData.name}
+                      </p>
+                      <p className="text-xs uppercase text-gray-400">
+                        {productData.brandName}
                       </p>
 
-                      <p className="line-through text-gray-500 text-sm">
-                        {currency}
-                        {productData.actualPrice}
-                      </p>
+                      <div className="flex flex-wrap items-center gap-2 mt-2">
+                        <span className="text-green-500 font-semibold">
+                          {currency}
+                          {productData.discountedPrice}
+                        </span>
+                        <span className="line-through text-gray-500 text-sm">
+                          {currency}
+                          {productData.actualPrice}
+                        </span>
+                        <span className="text-red-400 text-sm font-semibold">
+                          {discountPercent}% OFF
+                        </span>
+                      </div>
 
-                      <p className="text-red-400 font-semibold text-sm">
-                        {discountPercent}% OFF
-                      </p>
+                      <span className="inline-block mt-2 text-xs bg-white/10 border border-white/20 px-2 py-1 rounded">
+                        Size: {item.size}
+                      </span>
                     </div>
+                  </div>
 
-                    <p className="text-xs sm:text-sm mt-2 bg-white/10 border border-white/20 px-2 py-1 rounded-md inline-block max-w-fit">
-                      Size: {item.size}
-                    </p>
+                  {/* MIDDLE — MOBILE ONLY */}
+                  <div className="flex sm:hidden justify-between items-center">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteItem(item);
+                        setConfirmOpen(true);
+                      }}
+                      className="flex items-center gap-2 text-red-400 hover:text-red-500 transition cursor-pointer group"
+                    >
+                      <FaTrash className="group-hover:scale-110 transition" />
+                      <span className="text-sm font-medium">Remove</span>
+                    </button>
+
+                    <QuantityInput item={item} />
+                  </div>
+                  {/* BOTTOM — ACTIONS */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                    {/* SAVE FOR LATER */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        saveForLater(item);
+                      }}
+                      className="py-2 rounded-lg border border-white/20 text-sm text-gray-300 hover:bg-white/5 transition cursor-pointer"
+                    >
+                      Save for later
+                    </button>
+
+                    {/* BUY THIS NOW */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+
+                        setBuyNowItem({
+                          productId: item._id,
+                          size: item.size,
+                          quantity: item.quantity,
+                        });
+
+                        navigate("/order-preview");
+                      }}
+                      className="py-2 rounded-lg bg-yellow-400 text-black font-semibold hover:bg-yellow-300 transition cursor-pointer"
+                    >
+                      Buy this now
+                    </button>
+
+
+                    {/* MOVE TO WISHLIST (future-ready) */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        
+                        if (isFavorited) {
+                          removeFromFavorites(item._id);
+                        } else {
+                          addToFavorites(item._id);
+                        }
+                      }}
+                      
+                      className={`
+                        py-2 rounded-lg text-sm font-medium transition
+                        border
+                        ${isFavorited
+                          ? "bg-pink-500/20 text-pink-400 border-pink-400 hover:bg-pink-500/30"
+                          : "border-white/20 text-pink-400 hover:bg-pink-500/10 hover:border-pink-400"
+                        }
+                        cursor-pointer
+                        `}
+                        >
+                      {isFavorited ? "Remove from Favorites 💔" : "Add to Favorites ❤️"}
+                    </button>
+
+                    {isFavorited && (
+                      <span className="text-xs text-pink-400 mt-1 block">
+                        Saved to your favorites
+                      </span>
+                    )}
+
+
                   </div>
                 </div>
-
-                {/* MOBILE — QUANTITY + DELETE */}
-                <div className="flex sm:hidden items-center justify-between mt-3">
-                  {/* LEFT — QUANTITY */}
-                  <QuantityInput item={item} />
-
-                  {/* RIGHT — DELETE */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeleteItem(item);
-                      setConfirmOpen(true);
-                    }}
-                    className="
-      flex items-center gap-1
-      text-red-400
-      text-sm
-      hover:text-red-500
-      transition
-      cursor-pointer
-    "
-                  >
-                    <img
-                      src={assets.bin_icon}
-                      alt="delete"
-                      className="w-5 invert opacity-80"
-                    />
-                    Remove
-                  </button>
-                </div>
-
-                {/* DESKTOP — QUANTITY (CENTER) */}
-                <div className="hidden sm:flex justify-center">
-                  <QuantityInput item={item} />
-                </div>
-
-                {/* DESKTOP — DELETE (RIGHT) */}
-                <div className="hidden sm:flex justify-end">
-                  <img
-                    src={assets.bin_icon}
-                    alt="delete"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeleteItem(item);
-                      setConfirmOpen(true);
-                    }}
-                    className="
-      w-6
-      invert
-      cursor-pointer
-      opacity-70
-      hover:opacity-100
-      hover:scale-110
-      transition
-    "
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* CART TOTAL (MOBILE + DESKTOP) */}
-        <div className="flex justify-end my-5">
-          <div
-            ref={cartTotalRef}
-            className="w-full sm:w-[450px] cursor-pointer"
-          >
-            <CartTotal forceOpenKey={cartOpenKey} priceData={priceData} />
-          </div>
-        </div>
-      </div>
-      {/* MOBILE FIXED CHECKOUT */}
-      <div className="fixed bottom-0 left-0 w-full bg-black border-t border-white/10 px-4 py-3 z-50">
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
-          {/* LEFT — TOTAL (CLICKABLE) */}
-          <div
-            onClick={() => {
-              setCartOpenKey((prev) => prev + 1); // 🔥 always changes
-              cartTotalRef.current?.scrollIntoView({
-                behavior: "smooth",
-                block: "start",
-              });
-            }}
-            className="
-    flex flex-col
-    cursor-pointer
-    group
-  "
-          >
-            <p className="text-xs text-green-400 flex items-center gap-1">
-              Total Amount
-              <span className="transition-transform duration-200 group-hover:translate-x-1">
-                →
-              </span>
-            </p>
-
-            <p className="text-lg font-bold text-white flex items-center gap-2">
-              {currency}
-              {priceData?.payableAmount ?? finalTotal}
-              <FaChevronRight
-                className="
-    text-gray-400
-    text-lg
-    transition-all duration-200
-    group-hover:text-white
-    group-hover:translate-x-1
-  "
-              />
-            </p>
+              );
+            })}
           </div>
 
-          {/* RIGHT — CTA */}
-          <button
-  onClick={(e) => {
-    e.stopPropagation();
-    navigate("/order-preview");
-  }}
-  className="
-    bg-white text-black
-    px-6 py-3
-    rounded-lg
-    font-semibold
-    border border-black
-    transition-all duration-200
-    hover:bg-black hover:text-white
-    cursor-pointer
-    whitespace-nowrap
-  "
->
-  Proceed to Checkout →
-</button>
-        </div>
-      </div>
-
-      {/* CONFIRM DELETE MODAL */}
-      {confirmOpen && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-[#1a1a1a] p-6 rounded-xl w-[90%] max-w-sm border border-white/10">
-            <p className="text-lg font-semibold text-white">
-              Remove item from cart?
-            </p>
-            <p className="text-sm text-gray-400 mt-2">
-              This item will be permanently removed.
-            </p>
-
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={(e) => {
-    e.stopPropagation();
-    setConfirmOpen(false);
-  }}
-                className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 cursor-pointer"
+          {/* CART TOTAL (MOBILE + DESKTOP) */}
+          <div className="flex justify-end my-5">
+            <div
+              ref={cartTotalRef}
+              className="w-full sm:w-[450px] cursor-pointer"
               >
-                Cancel
-              </button>
-              <button
-                onClick={(e) => {
-    e.stopPropagation();
-    confirmDelete();
-  }}
-                className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 cursor-pointer"
-              >
-                Remove
-              </button>
+              <CartTotal forceOpenKey={cartOpenKey} priceData={priceData} />
             </div>
           </div>
         </div>
-      )}
+        {/* MOBILE FIXED CHECKOUT */}
+        <div className="fixed bottom-0 left-0 w-full bg-black border-t border-white/10 px-4 py-3 z-50">
+          <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
+            {/* LEFT — TOTAL (CLICKABLE) */}
+            <div
+              onClick={() => {
+                setCartOpenKey((prev) => prev + 1); // 🔥 always changes
+                cartTotalRef.current?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "start",
+                });
+              }}
+              className="
+              flex flex-col
+              cursor-pointer
+              group
+              "
+              >
+              <p className="text-xs text-green-400 flex items-center gap-1">
+                Total Amount
+                <span className="transition-transform duration-200 group-hover:translate-x-1">
+                  →
+                </span>
+              </p>
+
+              <p className="text-lg font-bold text-white flex items-center gap-2">
+                {currency}
+                {priceData?.payableAmount ?? finalTotal}
+                <FaChevronRight
+                  className="
+                  text-gray-400
+                  text-lg
+                  transition-all duration-200
+                  group-hover:text-white
+                  group-hover:translate-x-1
+                  "
+                  />
+              </p>
+            </div>
+
+            {/* RIGHT — CTA */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate("/order-preview");
+              }}
+              className="
+              bg-white text-black
+              px-6 py-3
+              rounded-lg
+              font-semibold
+              border border-black
+              transition-all duration-200
+              hover:bg-black hover:text-white
+              cursor-pointer
+              whitespace-nowrap
+              "
+              >
+              Proceed to Checkout →
+            </button>
+          </div>
+
+          {/* CONFIRM DELETE MODAL */}
+          {confirmOpen && (
+            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+              <div className="bg-[#1a1a1a] p-6 rounded-xl w-[90%] max-w-sm border border-white/10">
+                <p className="text-lg font-semibold text-white">
+                  Remove item from cart?
+                </p>
+                <p className="text-sm text-gray-400 mt-2">
+                  This item will be permanently removed.
+                </p>
+
+                <div className="flex justify-end gap-3 mt-6">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setConfirmOpen(false);
+                    }}
+                    className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 cursor-pointer"
+                    >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      confirmDelete();
+                    }}
+                    className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 cursor-pointer"
+                    >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+      </section>
     </>
   );
 };

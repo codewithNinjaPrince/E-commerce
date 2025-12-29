@@ -273,11 +273,16 @@ const Product = () => {
       return;
     }
 
-    addToCart(productData._id, size);
+    setBuyNowItem({
+      productId: productData._id,
+      size,
+      quantity: 1,
+    });
+
     showCartToast("Item added • Taking you to cart");
 
     setTimeout(() => {
-      navigate("/cart");
+      navigate("/order-preview");
     }, 600); // 👈 toast feel aane do
   };
 
@@ -288,26 +293,26 @@ const Product = () => {
       <div className="bg-[#0e0e0e] text-white">
         <div
           className="
-    w-full
-    2xl:max-w-[1800px] 2xl:mx-auto
-    px-[6px] py-[6px]
-    md:px-[5px] md:py-[5px]
-  "
+          w-full
+          2xl:max-w-[1800px] 2xl:mx-auto
+          px-[6px] py-[6px]
+          md:px-[5px] md:py-[5px]
+          "
         >
           {/* MAIN GRID */}
           <div className="flex flex-col lg:flex-row gap-5">
             {/* ============== LEFT IMAGE SECTION ============== */}
             <div
               className="
-    flex flex-col-reverse
-    sm:flex-row
-    gap-2
-
-    lg:flex-none
-    lg:max-w-[680px]
-    xl:max-w-[720px]
-    2xl:max-w-[760px]
-  "
+              flex flex-col-reverse
+              sm:flex-row
+              gap-2
+              
+              lg:flex-none
+              lg:max-w-[680px]
+              xl:max-w-[720px]
+              2xl:max-w-[760px]
+              "
             >
               {/* ⭐ MOBILE THUMBNAILS (Horizontal Scroll) */}
               <div className="flex sm:hidden gap-3 overflow-x-auto px-1">
@@ -316,10 +321,14 @@ const Product = () => {
                     key={idx}
                     onClick={() => setImage(img)}
                     className={`
-        w-14 aspect-square rounded-xl overflow-hidden
-        border transition cursor-pointer
-        ${image === img ? "border-white scale-105" : "border-gray-500"}
-      `}
+                    w-14 aspect-square rounded-xl overflow-hidden
+                    border transition cursor-pointer
+                    ${
+                      image === img
+                        ? "border-white scale-105"
+                        : "border-gray-500"
+                    }
+                    `}
                   >
                     <img
                       src={img}
@@ -339,15 +348,15 @@ const Product = () => {
                       onMouseEnter={() => setImage(img)} // 🖱 hover support
                       onClick={() => setImage(img)} // 👆 click support
                       className={`
-          w-14 aspect-square rounded-[12%]
-          overflow-hidden border transition
-          cursor-pointer
-          ${
-            image === img
-              ? "border-white scale-105"
-              : "border-gray-400 hover:border-white/70"
-          }
-        `}
+                      w-14 aspect-square rounded-[12%]
+                      overflow-hidden border transition
+                      cursor-pointer
+                      ${
+                        image === img
+                          ? "border-white scale-105"
+                          : "border-gray-400 hover:border-white/70"
+                      }
+                      `}
                     >
                       <img
                         src={img}
@@ -363,26 +372,26 @@ const Product = () => {
               <div className="relative w-full pt-3 md:pt-5 lg:pt-0">
                 <div
                   className="
-  relative
-  w-full
-
-  /* 📱 Mobile / Tablet */
-  aspect-[3/4]
-
-  /* 🖥 Desktop overrides */
-  lg:aspect-auto
-  lg:w-[520px]
-  lg:min-w-[520px]
-  lg:max-w-[520px]
-  lg:min-h-[700px]
-  lg:max-h-[700px]
-
-  bg-[#0e0e0e]
-  rounded-[10px]
-  overflow-hidden
-
-  flex items-center justify-center
-"
+                  relative
+                  w-full
+                  
+                  /* 📱 Mobile / Tablet */
+                  aspect-[3/4]
+                  
+                  /* 🖥 Desktop overrides */
+                  lg:aspect-auto
+                  lg:w-[520px]
+                  lg:min-w-[520px]
+                  lg:max-w-[520px]
+                  lg:min-h-[700px]
+                  lg:max-h-[700px]
+                  
+                  bg-[#0e0e0e]
+                  rounded-[10px]
+                  overflow-hidden
+                  
+                  flex items-center justify-center
+                  "
                   onTouchStart={(e) => {
                     touchStartX.current = e.touches[0].clientX;
                   }}
@@ -405,11 +414,11 @@ const Product = () => {
                       src={image}
                       alt={productData.name}
                       className="
-    block lg:hidden
-    w-full h-full
-    object-cover
-    bg-[#0e0e0e]
-  "
+                      block lg:hidden
+                      w-full h-full
+                      object-cover
+                      bg-[#0e0e0e]
+                      "
                     />
 
                     {/* IMAGE – DESKTOP (hover zoom enabled) */}
@@ -446,15 +455,15 @@ const Product = () => {
                   <button
                     onClick={() => setShowFullView(true)}
                     className="
-    lg:hidden
-    absolute top-3 left-3
-    bg-black/60 text-white
-    px-2 py-1
-    rounded-md
-    text-sm
-    z-20
-    cursor-pointer
-  "
+                    lg:hidden
+                    absolute top-3 left-3
+                    bg-black/60 text-white
+                    px-2 py-1
+                    rounded-md
+                    text-sm
+                    z-20
+                    cursor-pointer
+                    "
                   >
                     ⛶
                   </button>
@@ -463,11 +472,11 @@ const Product = () => {
                   <button
                     onClick={handleShare}
                     className="
-    absolute top-3 right-3
-    bg-black/60 p-2 rounded-full
-    hover:bg-black/80 hover:scale-110
-    transition z-10 cursor-pointer
-  "
+                    absolute top-3 right-3
+                    bg-black/60 p-2 rounded-full
+                    hover:bg-black/80 hover:scale-110
+                    transition z-10 cursor-pointer
+                    "
                   >
                     <FaShareAlt />
                   </button>
@@ -486,11 +495,11 @@ const Product = () => {
                         : addToFavorites(productId);
                     }}
                     className="
-    absolute bottom-3 right-3
-    bg-black/60 p-2 rounded-full
-    hover:scale-110 transition z-10
-    cursor-pointer
-  "
+                    absolute bottom-3 right-3
+                    bg-black/60 p-2 rounded-full
+                    hover:scale-110 transition z-10
+                    cursor-pointer
+                    "
                   >
                     <FaHeart
                       size={18}
@@ -501,11 +510,11 @@ const Product = () => {
                   {/* RATING */}
                   <div
                     className="
-        lg:hidden absolute bottom-3 left-3
-        bg-black/90 px-2 py-1 rounded-md
-        flex items-center gap-1
-        hover:scale-105 transition z-10
-      "
+                    lg:hidden absolute bottom-3 left-3
+                    bg-black/90 px-2 py-1 rounded-md
+                    flex items-center gap-1
+                    hover:scale-105 transition z-10
+                    "
                   >
                     <FaStar className="text-yellow-500" size={12} />
                     <span className="text-sm font-semibold">
@@ -524,13 +533,13 @@ const Product = () => {
             {showFullView && (
               <div
                 className="
-      fixed inset-0 z-[999]
-      bg-black
-      flex flex-col
-      justify-between
-
-      px-3 py-4   /* 👈 mobile safe padding */
-    "
+              fixed inset-0 z-[999]
+              bg-black
+              flex flex-col
+              justify-between
+              
+              px-3 py-4   /* 👈 mobile safe padding */
+              "
               >
                 {/* ❌ CLOSE BUTTON */}
                 <button
@@ -557,22 +566,22 @@ const Product = () => {
                     src={images[currentIndex]}
                     alt="Full view"
                     className="
-          w-full h-full
-          object-cover
-          rounded-md
-          select-none
-        "
+                    w-full h-full
+                    object-cover
+                    rounded-md
+                    select-none
+                    "
                   />
                 </div>
 
                 {/* 👇 THUMBNAILS STRIP */}
                 <div
                   className="
-        mt-4
-        flex gap-3
-        overflow-x-auto
-        pb-2
-      "
+                  mt-4
+                  flex gap-3
+                  overflow-x-auto
+                  pb-2
+                  "
                 >
                   {images.map((img, idx) => (
                     <button
@@ -582,17 +591,17 @@ const Product = () => {
                         setImage(img);
                       }}
                       className={`
-            w-16 h-20
-            flex-shrink-0
-            rounded-md
-            overflow-hidden
-            border
-            ${
-              idx === currentIndex
-                ? "border-white scale-105"
-                : "border-white/30"
-            }
-          `}
+                      w-16 h-20
+                      flex-shrink-0
+                      rounded-md
+                      overflow-hidden
+                      border
+                      ${
+                        idx === currentIndex
+                          ? "border-white scale-105"
+                          : "border-white/30"
+                      }
+                      `}
                     >
                       <img
                         src={img}
@@ -608,26 +617,26 @@ const Product = () => {
             {/* ============== RIGHT DETAILS SECTION ============== */}
             <div
               className="
-    flex-1
-    text-white
-    relative
-
-    flex flex-col
-    lg:min-h-full
-  "
+              flex-1
+              text-white
+              relative
+              
+              flex flex-col
+              lg:min-h-full
+              "
             >
               {/* ================= DESKTOP ZOOM VIEW ================= */}
               {isDesktop && showZoom ? (
                 <div
                   className="
-        w-full
-        rounded-lg
-        border border-white/10
-        bg-black
-
-        lg:min-h-[700px]
-        lg:max-h-[700px]
-      "
+                w-full
+                rounded-lg
+                border border-white/10
+                bg-black
+                
+                lg:min-h-[700px]
+                lg:max-h-[700px]
+                "
                   style={{
                     backgroundImage: `url(${image})`,
                     backgroundRepeat: "no-repeat",
@@ -702,25 +711,25 @@ const Product = () => {
                                 setSize((prev) => (prev === s ? "" : s))
                               }
                               className={`
-            py-2 px-5 rounded-md border
-            cursor-pointer
-            transition-all duration-200
-
-            ${
-              isSelected
-                ? "bg-white text-black font-semibold scale-105 border-white"
-                : "bg-black text-white border-gray-500"
-            }
-
-            /* 🖥 Desktop hover */
-            hover:scale-105
-            hover:border-white
-            hover:bg-white
-            hover:text-black
-
-            /* 📱 Mobile tap */
-            active:scale-95
-          `}
+                              py-2 px-5 rounded-md border
+                              cursor-pointer
+                              transition-all duration-200
+                              
+                              ${
+                                isSelected
+                                  ? "bg-white text-black font-semibold scale-105 border-white"
+                                  : "bg-black text-white border-gray-500"
+                              }
+                              
+                              /* 🖥 Desktop hover */
+                              hover:scale-105
+                              hover:border-white
+                              hover:bg-white
+                              hover:text-black
+                              
+                              /* 📱 Mobile tap */
+                              active:scale-95
+                              `}
                             >
                               {s}
                             </button>
@@ -823,17 +832,25 @@ const Product = () => {
           setShowSizeModal(false);
           setSize(selectedSize);
 
-          addToCart(productData._id, selectedSize);
-
-          showCartToast(
-            actionType === "buy"
-              ? "Perfect fit selected 🖤"
-              : "Added to cart 🛒"
-          );
+          if (actionType === "add") {
+            addToCart(productData._id, selectedSize);
+            showCartToast("Added to cart 🛒");
+          }
 
           if (actionType === "buy") {
-            setTimeout(() => navigate("/cart"), 600);
+            setBuyNowItem({
+              productId: productData._id,
+              size: selectedSize,
+              quantity: 1,
+            });
+            showCartToast("Perfect fit selected 🖤");
           }
+
+          if (actionType === "buy") {
+            setTimeout(() => navigate("/order-preview"), 600);
+          }
+
+          setActionType(null);
         }}
       />
     </>

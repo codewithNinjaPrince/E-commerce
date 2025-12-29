@@ -15,6 +15,7 @@ const Navbar = ({ showNavbar }) => {
   const navigate = useNavigate();
   const { getCartCount, token, getFavoriteCount } = useContext(ShopContext);
   const { logout } = useContext(ShopContext);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const [open, setOpen] = useState(false);
 
@@ -163,7 +164,7 @@ const Navbar = ({ showNavbar }) => {
           w-[85%] sm:w-[60%]
           bg-gradient-to-b from-[#050505] via-[#0d0d0d] to-[#111]
           transform transition-transform duration-500 ease-out
-          ${open ? "translate-x-0" : "translate-x-full"}
+          ${open ? "translate-x-0" : "translate-x-full overscroll-contain"}
         `}
       >
         {/* DRAWER HEADER */}
@@ -181,8 +182,8 @@ const Navbar = ({ showNavbar }) => {
         </div>
 
         {/* NAV ITEMS */}
-        <nav className="flex flex-col h-[calc(100dvh-64px)] z-100">
-          {/* 🔹 MAIN */}
+        <nav className="flex flex-col h-[calc(100dvh-64px)]">
+          {/* ===== SCROLLABLE CONTENT ===== */}
           <div className="flex-1 overflow-y-auto px-2 py-2 flex flex-col gap-4">
             <Section title="Explore">
               <DrawerLink to="/" label="Home" setOpen={setOpen} />
@@ -195,16 +196,18 @@ const Navbar = ({ showNavbar }) => {
               <DrawerLink to="/cart" label="Cart" setOpen={setOpen} />
             </Section>
 
-            {/* 🔹 ACCOUNT */}
             {token && (
               <Section title="My Account">
                 <DrawerLink to="/user" label="My Profile" setOpen={setOpen} />
-                <DrawerLink to="/orders" label="My Orders" setOpen={setOpen} />                
-                <DrawerLink to="/address" label="My Addresses" setOpen={setOpen} />                
+                <DrawerLink to="/orders" label="My Orders" setOpen={setOpen} />
+                <DrawerLink
+                  to="/address"
+                  label="My Addresses"
+                  setOpen={setOpen}
+                />
               </Section>
             )}
 
-            {/* 🔹 SUPPORT */}
             <Section title="Support">
               <DrawerLink to="/about" label="About Us" setOpen={setOpen} />
               <DrawerLink to="/contact" label="Contact Us" setOpen={setOpen} />
@@ -215,7 +218,6 @@ const Navbar = ({ showNavbar }) => {
               />
             </Section>
 
-            {/* 🔹 LEGAL */}
             <Section title="Legal">
               <DrawerLink
                 to="/privacy-policy"
@@ -243,35 +245,94 @@ const Navbar = ({ showNavbar }) => {
                 setOpen={setOpen}
               />
             </Section>
+          </div>
 
-            {/* FIXED BOTTOM ACTION */}
-            <div className="sticky bottom-0 px-2 py-2 border-t border-white/10 bg-[#111]">
-              {token ? (
-                <button
-                  onClick={() => {
-                    logout();
-                    setOpen(false);
-                    navigate("/login");
-                  }}
-                  className="w-full py-3 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition"
-                >
-                  Logout
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    setOpen(false);
-                    navigate("/login");
-                  }}
-                  className="w-full py-3 rounded-xl bg-white text-black font-semibold hover:bg-gray-300 transition"
-                >
-                  Login / Sign Up
-                </button>
-              )}
-            </div>
+          {/* ===== ALWAYS VISIBLE BOTTOM BUTTON ===== */}
+          <div className="px-2 py-2 border-t border-white/10 bg-[#111]">
+            {token ? (
+              <button
+                onClick={() => setShowLogoutConfirm(true)}
+                className="w-full py-3 rounded-xl bg-red-500 text-white font-semibold"
+              >
+                Logout
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  navigate("/login");
+                }}
+                className="w-full py-3 rounded-xl bg-white text-black font-semibold"
+              >
+                Login / Sign Up
+              </button>
+            )}
           </div>
         </nav>
       </aside>
+      {/* ================= CONFIRM LOGOUT MODAL ================= */}
+      {showLogoutConfirm && (
+        <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80"
+          onClick={() => setShowLogoutConfirm(false)}
+        >
+          {/* Modal Box */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="
+        w-[90%] max-w-sm
+        rounded-2xl
+        bg-[#0d0d0d]
+        border border-white/10
+        p-6
+        text-center
+        shadow-2xl
+      "
+          >
+            <h2 className="text-lg font-semibold text-white">Confirm Logout</h2>
+
+            <p className="text-sm text-gray-400 mt-2">
+              Are you sure you want to logout?
+            </p>
+
+            <div className="flex gap-3 mt-6">
+              {/* Cancel */}
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="
+            flex-1 py-2.5
+            rounded-xl
+            bg-white/10 text-white
+            hover:bg-white/20
+            transition
+          "
+              >
+                Cancel
+              </button>
+
+              {/* Confirm */}
+              <button
+                onClick={() => {
+                  setShowLogoutConfirm(false);
+                  setOpen(false);
+                  logout();
+                  navigate("/login");
+                }}
+                className="
+            flex-1 py-2.5
+            rounded-xl
+            bg-red-500 text-white
+            font-semibold
+            hover:bg-red-600
+            transition
+          "
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

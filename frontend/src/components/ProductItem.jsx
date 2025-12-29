@@ -193,7 +193,7 @@ const ProductItem = ({
                   navigate("/login");
                   return;
                 }
-                setActionType("buy"); 
+                setActionType("buy");
                 setShowSizeModal(true);
               }}
               className="flex-1 bg-white text-black py-2 rounded-lg text-sm font-semibold hover:bg-black hover:text-white transition cursor-pointer"
@@ -212,28 +212,42 @@ const ProductItem = ({
           setActionType(null);
         }}
         onConfirm={(selectedSize) => {
-          addToCart(_id, selectedSize);
+          // 🛒 ADD TO CART FLOW
+          if (actionType === "add") {
+            addToCart(_id, selectedSize);
 
-          setShowSizeModal(false);
-
-          // ✅ BUY NOW → CART PAGE
-          if (actionType === "buy") {
-            navigate("/cart");
-          }
-
-          setActionType(null);
-
-          toast.success(
-            actionType === "buy"
-              ? "Hurray! Item added , Let's Checkout  🛒"
-              : "Smile Added to cart 🛒",
-            {
+            toast.success("Smile Added to cart 🛒", {
               position: "top-center",
               autoClose: 1500,
               hideProgressBar: true,
               theme: "dark",
-            }
-          );
+            });
+
+            setShowSizeModal(false);
+            setActionType(null);
+            return;
+          }
+
+          // 🚀 BUY NOW FLOW (NEW)
+          if (actionType === "buy") {
+            setBuyNowItem({
+              productId: _id,
+              size: selectedSize,
+              quantity: 1,
+            });
+
+            setShowSizeModal(false);
+            setActionType(null);
+
+            navigate("/order-preview");
+
+            toast.success("Great choice! Let’s checkout 🚀", {
+              position: "top-center",
+              autoClose: 1200,
+              hideProgressBar: true,
+              theme: "dark",
+            });
+          }
         }}
       />
     </>

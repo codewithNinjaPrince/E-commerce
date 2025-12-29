@@ -14,9 +14,6 @@ import {
   FaStar,
   FaTimes,
   FaStarHalfAlt,
-  FaChevronDown,
-  FaCheckCircle,
-  FaLock,
   FaChevronRight,
 } from "react-icons/fa";
 
@@ -107,8 +104,16 @@ const OrderPreview = () => {
     document.body.scrollTop = 0;
     window.scrollTo(0, 0);
   }, []);
-  const { backendUrl, token, cartItems, products, updateQuantity, addToCart } =
-    useContext(ShopContext);
+  const {
+    backendUrl,
+    token,
+    cartItems,
+    products,
+    updateQuantity,
+    addToCart,
+    buyNowItem,
+    setBuyNowItem,
+  } = useContext(ShopContext);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -122,108 +127,89 @@ const OrderPreview = () => {
   const [cartOpenKey, setCartOpenKey] = useState(0);
   const [sizeEdit, setSizeEdit] = useState(null);
   const [sizeConfirm, setSizeConfirm] = useState(null);
-  const [updatingSize, setUpdatingSize] = useState(false);
   const [addressLoading, setAddressLoading] = useState(true);
   const [orderUpdating, setOrderUpdating] = useState(false);
+  const [previewItems, setPreviewItems] = useState(null);
+
 
   const [address, setAddress] = useState(null);
-  const [localCartOverride, setLocalCartOverride] = useState(null);
 
   /* ---------------- BUILD ITEMS ---------------- */
 
-  const handleConfirmSizeChange = async () => {
-    try {
-      setOrderUpdating(true); // 🔥 freeze UI
+ const handleConfirmSizeChange = async () => {
+  if (!sizeConfirm) return;
 
-      // 1️⃣ add new size FIRST
-      await updateQuantity(
-        sizeConfirm.productId,
-        sizeConfirm.newSize,
-        sizeConfirm.quantity
-      );
+  const { productId, oldSize, newSize, quantity } = sizeConfirm;
 
-      // 2️⃣ then remove old size
-      await updateQuantity(sizeConfirm.productId, sizeConfirm.oldSize, 0);
+  if (oldSize === newSize) {
+    setSizeConfirm(null);
+    return;
+  }
 
-      // 3️⃣ force fresh preview fetch
-      await axios
-        .post(
-          `${backendUrl}/api/order/preview`,
-          {
-            items: buildItems(),
-            couponCode: couponValid ? couponCode : null,
-          },
-          { headers: { token } }
-        )
-        .then((res) => {
-          if (res.data.success) {
-            setPriceData(res.data);
-          }
-        });
+  // 🔒 Lock UI
+  setPreviewItems([
+    { productId, size: newSize, quantity }
+  ]);
 
-      toast.success(`Size changed to ${sizeConfirm.newSize}`, {
-        theme: "dark",
-        autoClose: 1200,
-      });
-    } catch (err) {
-      toast.error("Failed to update item");
-    } finally {
-      setOrderUpdating(false); // 🔥 unfreeze UI
-      setSizeConfirm(null);
-    }
-  };
+  setSizeConfirm(null);
+
+  toast.success(`Size changed to ${newSize}`, {
+    theme: "dark",
+    autoClose: 500,
+  });
+
+  try {
+    setOrderUpdating(true);
+
+    // backend sync
+    await updateQuantity(productId, oldSize, 0);
+    await updateQuantity(productId, newSize, quantity);
+
+  } catch (err) {
+    toast.error(
+      "Size updated locally but failed to sync. Refresh cart once.",
+      { autoClose: 3000 }
+    );
+  } finally {
+    // 🔓 RELEASE AFTER CART STATE IS STABLE
+    setTimeout(() => {
+      setPreviewItems(null);
+    }, 0);
+
+    setOrderUpdating(false);
+  }
+};
+
 
   const buildItems = () => {
-    const source = localCartOverride || cartItems;
-    let items = [];
+  // 🔒 absolute lock during preview
+  if (previewItems) return previewItems;
 
-    Object.keys(source).forEach((pid) => {
-      Object.keys(source[pid]).forEach((size) => {
-        if (source[pid][size] > 0) {
-          items.push({
-            productId: pid,
-            size,
-            quantity: source[pid][size],
-          });
-        }
-      });
+  if (buyNowItem) {
+    return [{
+      productId: buyNowItem.productId,
+      size: buyNowItem.size,
+      quantity: buyNowItem.quantity,
+    }];
+  }
+
+  const items = [];
+  Object.keys(cartItems).forEach((pid) => {
+    Object.keys(cartItems[pid]).forEach((size) => {
+      if (cartItems[pid][size] > 0) {
+        items.push({
+          productId: pid,
+          size,
+          quantity: cartItems[pid][size],
+        });
+      }
     });
+  });
 
-    return items;
-  };
+  return items;
+};
 
-  const handleSizeChange = async (item, product, newSize) => {
-    if (newSize === item.size) return;
 
-    // 🔥 1. Optimistic local update (IMMEDIATE UI FIX)
-    setLocalCartOverride((prev) => {
-      const clone = JSON.parse(JSON.stringify(prev || cartItems));
-
-      // remove old size
-      delete clone[item.productId][item.size];
-
-      // add new size
-      clone[item.productId][newSize] = item.quantity;
-
-      return clone;
-    });
-
-    // 🔥 2. Backend sync
-    await updateQuantity(item.productId, item.size, 0);
-    await updateQuantity(item.productId, newSize, item.quantity);
-
-    // 🔥 3. Clear override after backend sync
-    setLocalCartOverride(null);
-
-    toast.success(`Size changed to ${newSize}`, {
-      position: "top-center",
-      autoClose: 1500,
-      hideProgressBar: true,
-      theme: "dark",
-    });
-
-    setSizeEdit(null);
-  };
 
   useEffect(() => {
     const loadSelectedAddress = async () => {
@@ -273,29 +259,40 @@ const OrderPreview = () => {
 
   /* ---------------- LOAD PRICE ---------------- */
   useEffect(() => {
-    if (!Object.keys(cartItems).length) return;
+  if (!token) return;
 
-    const loadPreview = async () => {
-      try {
-        const res = await axios.post(
-          `${backendUrl}/api/order/preview`,
-          {
-            items: buildItems(),
-            couponCode: couponValid ? couponCode : null,
-          },
-          { headers: { token } }
-        );
+  const items = buildItems();
+  if (!items.length) return;
 
-        if (res.data.success) {
-          setPriceData(res.data);
-        }
-      } catch {
-        toast.error("Please try later");
+  const loadPreview = async () => {
+    try {
+      const res = await axios.post(
+        `${backendUrl}/api/order/preview`,
+        {
+          items,
+          couponCode: couponValid ? couponCode : null,
+        },
+        { headers: { token } }
+      );
+
+      if (res.data.success) {
+        setPriceData(res.data);
       }
-    };
+    } catch {
+      toast.error("Failed to load order preview");
+    }
+  };
 
-    loadPreview();
-  }, [cartItems, couponValid, couponCode]); // 🔥 cartItems added
+  loadPreview();
+}, [
+  cartItems,
+  buyNowItem,
+  previewItems, 
+  couponValid,
+  couponCode,
+]);
+
+
 
   if (addressLoading) return <OrderPreviewSkeleton />;
   if (!priceData) return <OrderPreviewSkeleton />;
@@ -310,6 +307,13 @@ const OrderPreview = () => {
       </section>
     );
   }
+
+  {buildItems().length === 0 && (
+  <p className="text-center text-gray-400 py-10">
+    No items to preview
+  </p>
+)}
+
 
   /* ================= RENDER ================= */
   return (
@@ -333,7 +337,10 @@ const OrderPreview = () => {
 
           {/* CLOSE → CART */}
           <button
-            onClick={() => navigate("/cart")}
+            onClick={() => {
+              setBuyNowItem(null);
+              navigate("/cart");
+            }}
             className="p-2 rounded-lg hover:bg-white/10 cursor-pointer"
             aria-label="Close"
           >
@@ -428,12 +435,14 @@ const OrderPreview = () => {
           return (
             <div
               key={idx}
-              onClick={() => navigate(`/product/${item.productId}`)}
               className="bg-[#121212] rounded-2xl border border-white/10 p-4 sm:p-5 transition hover:border-white/25 hover:shadow-[0_0_20px_rgba(255,255,255,0.06)] cursor-pointer"
             >
               <p className="text-green-400 text-sm mb-3">{randomQuote()}</p>
 
-              <div className="flex gap-4 sm:gap-5">
+              <div
+                onClick={() => navigate(`/product/${item.productId}`)}
+                className="flex gap-4 sm:gap-5 cursor-pointer"
+              >
                 {/* IMAGE + QTY */}
                 <div className="w-24 sm:w-28 flex-shrink-0 flex flex-col items-center">
                   <img
@@ -520,17 +529,15 @@ const OrderPreview = () => {
                             ))}
                         </select>
                       ) : (
-                        <button
+                        <div
+                        disabled
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(
-                              `/product/${item.productId}?from=orderpreview`
-                            );
                           }}
                           className="px-4 py-2 rounded-lg border border-white/20 text-sm text-green-500 hover:border-white/40 hover:bg-white/5 transition cursor-pointer"
                         >
-                          Change size
-                        </button>
+                          Let's go to Payments Page
+                        </div>
                       )}
                     </div>
                   </div>
@@ -750,18 +757,17 @@ const OrderPreview = () => {
               </p>
 
               <p className="text-lg font-bold text-white flex items-center gap-1">
-  ₹{formatINR(priceData.payableAmount)}
-  <FaChevronRight
-    className="
+                ₹{formatINR(priceData.payableAmount)}
+                <FaChevronRight
+                  className="
       text-gray-400
       text-sm
       transition-transform duration-300
       group-hover:translate-y-0.5
       group-hover:text-white
     "
-  />
-</p>
-
+                />
+              </p>
             </div>
           </div>
 
@@ -783,7 +789,7 @@ const OrderPreview = () => {
       {sizeConfirm && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center">
           <div className="bg-[#121212] rounded-2xl p-6 w-[90%] max-w-sm border border-white/10 text-center">
-            {!updatingSize ? (
+            {!orderUpdating ? (
               <>
                 <p className="text-lg font-semibold text-white">
                   Change product size
@@ -818,37 +824,9 @@ const OrderPreview = () => {
                   </button>
 
                   <button
-                    disabled={!sizeConfirm.newSize}
-                    onClick={async () => {
-                      try {
-                        setUpdatingSize(true);
-
-                        // 🔥 REMOVE OLD SIZE
-                        await updateQuantity(
-                          sizeConfirm.productId,
-                          sizeConfirm.oldSize,
-                          0
-                        );
-
-                        // 🔥 ADD NEW SIZE
-                        await updateQuantity(
-                          sizeConfirm.productId,
-                          sizeConfirm.newSize,
-                          sizeConfirm.quantity
-                        );
-
-                        toast.success(
-                          `Size changed to ${sizeConfirm.newSize}`,
-                          { theme: "dark", autoClose: 1500 }
-                        );
-                      } catch {
-                        toast.error("Failed to update size");
-                      } finally {
-                        setUpdatingSize(false);
-                        setSizeConfirm(null);
-                      }
-                    }}
-                    className="flex-1 py-2 rounded-lg bg-green-500 text-black font-semibold disabled:opacity-50 cursor-pointer hover:bg-green-650"
+                    disabled={!sizeConfirm?.newSize}
+                    onClick={handleConfirmSizeChange}
+                    className="bg-green-500 text-black px-4 py-2 rounded cursor-pointer"
                   >
                     Confirm
                   </button>

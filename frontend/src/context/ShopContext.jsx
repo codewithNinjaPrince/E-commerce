@@ -19,108 +19,101 @@ const ShopContextProvider = (props) => {
   const [buyNowItem, setBuyNowItem] = useState(null);
   const [appLoading, setAppLoading] = useState(true);
 
-
-
   const navigate = useNavigate();
 
   /* ---------------------- LOGOUT ---------------------- */
-const logout = () => {
-  // 🔥 LocalStorage clear
-  localStorage.removeItem("token");
-  localStorage.removeItem("userName");
-  navigate("/login");
+  const logout = () => {
+    // 🔥 LocalStorage clear
+    localStorage.removeItem("token");
+    localStorage.removeItem("userName");
+    navigate("/login");
 
-  // 🔥 Reset all user-related state
-  setToken("");
-  setCartItems({});
-  setFavorites([]);
-  setSearch("");
-  setShowSearch(false);
+    // 🔥 Reset all user-related state
+    setToken("");
+    setCartItems({});
+    setFavorites([]);
+    setSearch("");
+    setShowSearch(false);
 
-  toast.success("Logged out successfully 👋");
-};
-
+    toast.success("Logged out successfully 👋");
+  };
 
   /* ---------------------- ADD TO CART ---------------------- */
   const addToCart = async (itemId, size) => {
-  if (!size) {
-    toast.error("Select Product Size");
-    return;
-  }
+    if (!size) {
+      toast.error("Select Product Size");
+      return;
+    }
 
-  let cartData = structuredClone(cartItems);
+    let cartData = structuredClone(cartItems);
 
-  if (cartData[itemId]) {
-    cartData[itemId][size] = (cartData[itemId][size] || 0) + 1;
-  } else {
-    cartData[itemId] = { [size]: 1 };
-  }
+    if (cartData[itemId]) {
+      cartData[itemId][size] = (cartData[itemId][size] || 0) + 1;
+    } else {
+      cartData[itemId] = { [size]: 1 };
+    }
 
-  setCartItems(cartData);
+    setCartItems(cartData);
 
-  const storedToken = localStorage.getItem("token"); // ✅ FIX
+    const storedToken = localStorage.getItem("token"); // ✅ FIX
 
-  if (storedToken) {
+    if (storedToken) {
+      try {
+        await axios.post(
+          backendUrl + "/api/cart/add",
+          { itemId, size },
+          { headers: { token: storedToken } }
+        );
+      } catch (error) {
+        console.log(error);
+        toast.error("Failed to save cart");
+      }
+    }
+  };
+
+  /* ---------------- ADD TO FAVORITES ---------------- */
+  const addToFavorites = async (productId) => {
+    if (!token) {
+      toast.info("Please login to save favorites ❤️");
+      navigate("/login");
+      return;
+    }
+
+    if (favorites.includes(productId)) return;
+
+    setFavorites((prev) => [...prev, productId]); // optimistic
+
     try {
       await axios.post(
-        backendUrl + "/api/cart/add",
-        { itemId, size },
-        { headers: { token: storedToken } }
+        `${backendUrl}/api/favorites/add`,
+        { productId },
+        { headers: { token } }
       );
     } catch (error) {
-      console.log(error);
-      toast.error("Failed to save cart");
+      setFavorites((prev) => prev.filter((id) => id !== productId)); // rollback
     }
-  }
-};
+  };
 
-/* ---------------- ADD TO FAVORITES ---------------- */
-const addToFavorites = async (productId) => {
-  if (!token) {
-    toast.info("Please login to save favorites ❤️");
-    navigate("/login");
-    return;
-  }
+  /* ---------------- REMOVE FROM FAVORITES ---------------- */
+  const removeFromFavorites = async (productId) => {
+    if (!token) return;
 
-  if (favorites.includes(productId)) return;
+    setFavorites((prev) => prev.filter((id) => id !== productId));
 
-  setFavorites((prev) => [...prev, productId]); // optimistic
+    try {
+      await axios.post(
+        `${backendUrl}/api/favorites/remove`,
+        { productId },
+        { headers: { token } }
+      );
+    } catch (error) {
+      setFavorites((prev) => [...prev, productId]); // rollback
+    }
+  };
 
-  try {
-    await axios.post(
-      `${backendUrl}/api/favorites/add`,
-      { productId },
-      { headers: { token } }
-    );
-  } catch (error) {
-    setFavorites((prev) => prev.filter((id) => id !== productId)); // rollback
-  }
-};
-
-
-
-/* ---------------- REMOVE FROM FAVORITES ---------------- */
-const removeFromFavorites = async (productId) => {
-  if (!token) return;
-
-  setFavorites((prev) => prev.filter((id) => id !== productId));
-
-  try {
-    await axios.post(
-      `${backendUrl}/api/favorites/remove`,
-      { productId },
-      { headers: { token } }
-    );
-  } catch (error) {
-    setFavorites((prev) => [...prev, productId]); // rollback
-  }
-};
-
-const getFavoriteCount = () => {
-  return favorites.length;
-};
-
-
+  const getFavoriteCount = () => {
+    return favorites.length;
+  };
 
   /* ---------------------- CART COUNT ---------------------- */
   const getCartCount = () => {
@@ -137,40 +130,39 @@ const getFavoriteCount = () => {
 
   /* ---------------------- UPDATE QUANTITY ---------------------- */
   const updateQuantity = async (itemId, size, quantity) => {
-  let cartData = structuredClone(cartItems);
+    let cartData = structuredClone(cartItems);
 
-  if (quantity === 0) {
-    // ❌ remove size
-    delete cartData[itemId]?.[size];
+    if (quantity === 0) {
+      // ❌ remove size
+      delete cartData[itemId]?.[size];
 
-    // ❌ if no sizes left, remove productId
-    if (cartData[itemId] && Object.keys(cartData[itemId]).length === 0) {
-      delete cartData[itemId];
+      // ❌ if no sizes left, remove productId
+      if (cartData[itemId] && Object.keys(cartData[itemId]).length === 0) {
+        delete cartData[itemId];
+      }
+    } else {
+      // ✅ normal update
+      if (!cartData[itemId]) cartData[itemId] = {};
+      cartData[itemId][size] = quantity;
     }
-  } else {
-    // ✅ normal update
-    if (!cartData[itemId]) cartData[itemId] = {};
-    cartData[itemId][size] = quantity;
-  }
 
-  setCartItems(cartData);
+    setCartItems(cartData);
 
-  const storedToken = localStorage.getItem("token");
+    const storedToken = localStorage.getItem("token");
 
-  if (storedToken) {
-    try {
-      await axios.post(
-        backendUrl + "/api/cart/update",
-        { itemId, size, quantity },
-        { headers: { token: storedToken } }
-      );
-    } catch (error) {
-      console.log(error);
-      toast.error("Failed to update cart");
+    if (storedToken) {
+      try {
+        await axios.post(
+          backendUrl + "/api/cart/update",
+          { itemId, size, quantity },
+          { headers: { token: storedToken } }
+        );
+      } catch (error) {
+        console.log(error);
+        toast.error("Failed to update cart");
+      }
     }
-  }
-};
-
+  };
 
   /* ---------------------- TOTAL CART AMOUNT (UPDATED MODEL) ---------------------- */
   const getCartAmount = () => {
@@ -236,72 +228,71 @@ const getFavoriteCount = () => {
   };
 
   /* ---------------------- FETCH FAVORITES ---------------------- */
-/* ---------------- FETCH FAVORITES (CART-STYLE) ---------------- */
-const fetchFavorites = async (authToken) => {
-  if (!authToken) return;
+  /* ---------------- FETCH FAVORITES (CART-STYLE) ---------------- */
+  const fetchFavorites = async (authToken) => {
+    if (!authToken) return;
 
-  setFavoritesLoading(true);
-
-  try {
-    const res = await axios.post(
-      `${backendUrl}/api/favorites/get`,
-      {},
-      { headers: { token: authToken } }
-    );
-
-    if (res.data.success) {
-      setFavorites(res.data.favorites || []);
-    }
-  } catch (error) {
-    console.error("FETCH FAVORITES ERROR:", error);
-  } finally {
-    setFavoritesLoading(false);
-  }
-};
-
-//  useEffect(() => {
-//   const saved = localStorage.getItem("token");
-//   if (saved && products.length > 0) {
-//     setToken(saved);
-//     getUserCart(saved);
-//   }
-// }, [products]);
-
-// useEffect(() => {
-//   const saved = localStorage.getItem("token");
-//   if (saved) {
-//     fetchFavorites(saved);
-//   }
-// }, []);
-
-useEffect(() => {
-  const bootstrapApp = async () => {
-    const savedToken = localStorage.getItem("token");
+    setFavoritesLoading(true);
 
     try {
-      // 1️⃣ Fetch products (public)
-      await getProductsData();
+      const res = await axios.post(
+        `${backendUrl}/api/favorites/get`,
+        {},
+        { headers: { token: authToken } }
+      );
 
-      if (savedToken) {
-        setToken(savedToken);
-
-        // 2️⃣ Fetch user-specific data in parallel
-        await Promise.all([
-          getUserCart(savedToken),
-          fetchFavorites(savedToken),
-        ]);
+      if (res.data.success) {
+        setFavorites(res.data.favorites || []);
       }
-    } catch (err) {
-      console.error("BOOTSTRAP ERROR:", err);
+    } catch (error) {
+      console.error("FETCH FAVORITES ERROR:", error);
     } finally {
-      // 3️⃣ App is ready (even if some API failed)
-      setAppLoading(false);
+      setFavoritesLoading(false);
     }
   };
 
-  bootstrapApp();
-}, []);
+  //  useEffect(() => {
+  //   const saved = localStorage.getItem("token");
+  //   if (saved && products.length > 0) {
+  //     setToken(saved);
+  //     getUserCart(saved);
+  //   }
+  // }, [products]);
 
+  // useEffect(() => {
+  //   const saved = localStorage.getItem("token");
+  //   if (saved) {
+  //     fetchFavorites(saved);
+  //   }
+  // }, []);
+
+  useEffect(() => {
+    const bootstrapApp = async () => {
+      const savedToken = localStorage.getItem("token");
+
+      try {
+        // 1️⃣ Fetch products (public)
+        await getProductsData();
+
+        if (savedToken) {
+          setToken(savedToken);
+
+          // 2️⃣ Fetch user-specific data in parallel
+          await Promise.all([
+            getUserCart(savedToken),
+            fetchFavorites(savedToken),
+          ]);
+        }
+      } catch (err) {
+        console.error("BOOTSTRAP ERROR:", err);
+      } finally {
+        // 3️⃣ App is ready (even if some API failed)
+        setAppLoading(false);
+      }
+    };
+
+    bootstrapApp();
+  }, []);
 
   /* ---------------------- CONTEXT VALUE ---------------------- */
   const value = {
@@ -327,13 +318,12 @@ useEffect(() => {
     setCartItems,
     favorites,
     favoritesLoading,
-  fetchFavorites,
-  addToFavorites,
-  removeFromFavorites,
-  getFavoriteCount,
-  buyNowItem,
-setBuyNowItem,
-
+    fetchFavorites,
+    addToFavorites,
+    removeFromFavorites,
+    getFavoriteCount,
+    buyNowItem,
+    setBuyNowItem,
   };
 
   return (
