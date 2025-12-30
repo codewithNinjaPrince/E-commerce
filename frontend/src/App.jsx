@@ -101,6 +101,7 @@ const App = () => {
     "/address",
     "/order-preview",
     "/payment",
+    "/favorites"
   ];
 
   const showFooter = !hideFooterRoutes.some((route) =>
@@ -162,24 +163,24 @@ const App = () => {
         theme="dark"
         closeButton={({ closeToast }) => (
           <button
-            onClick={closeToast}
-            style={{
-              position: "absolute",
-              top: "20%",
-              right: "12px", // 👈 always right
-              transform: "translateY(-50%)",
-              fontSize: "18px",
-              color: "#fff",
-              fontWeight: "bold",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-            }}
+          onClick={closeToast}
+          style={{
+            position: "absolute",
+            top: "20%",
+            right: "12px", // 👈 always right
+            transform: "translateY(-50%)",
+            fontSize: "18px",
+            color: "#fff",
+            fontWeight: "bold",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+          }}
           >
             ✕
           </button>
         )}
-      />
+        />
 
       {/* ================= NAVBAR ================= */}
       {!isSearchPage && !isAddressFlow && <Navbar showNavbar={showNavbar} />}
@@ -199,7 +200,7 @@ const App = () => {
               <SearchPage />
             </SearchRouteGuard>
           }
-        />
+          />
 
         <Route path="/cart" element={<Cart />} />
         <Route path="/order-preview" element={<OrderPreview />} />
@@ -225,12 +226,12 @@ const App = () => {
           path="*"
           element={
             <div
-              className={`
-    ${isSearchPage ? "no-navbar-offset" : "page-wrapper"}
-    page-container
-    page-max
-  `}
-            >
+            className={`
+              ${isSearchPage ? "no-navbar-offset" : "page-wrapper"}
+              page-container
+              page-max
+              `}
+              >
               {!loading && (
                 <>
                   <Routes>
@@ -245,7 +246,7 @@ const App = () => {
                     <Route
                       path="/forgot-password"
                       element={<ForgotPassword />}
-                    />
+                      />
 
                     {/* USER */}
                     <Route path="/user" element={<User />} />
@@ -257,7 +258,7 @@ const App = () => {
               )}
             </div>
           }
-        />
+          />
       </Routes>
 
       {/* ================= FOOTER ================= */}

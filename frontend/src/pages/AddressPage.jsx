@@ -4,6 +4,7 @@ import axios from "axios";
 import { ShopContext } from "../context/ShopContext";
 import { toast } from "react-toastify";
 import { useLayoutEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 import {
   FaArrowLeft,
@@ -47,8 +48,10 @@ const AddressPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  /* ================= FETCH ADDRESSES ================= */
+  const location = useLocation();
+  const from = location.state?.from;
 
+  /* ================= FETCH ADDRESSES ================= */
 
   const loadAddresses = async () => {
     if (!token) {
@@ -176,16 +179,22 @@ const AddressPage = () => {
   //   );
   // };
 
-
   return (
     <section className="min-h-screen mt-4 lg:mt-0 bg-black text-white overflow-x-hidden">
       {/* ================= FIXED HEADER ================= */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 py-3 grid grid-cols-[auto_1fr_auto] items-center gap-3">
-
           {/* LEFT */}
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              if (from === "payment") {
+                navigate("/payment", { replace: true });
+              } else if (from === "order-preview") {
+                navigate("/order-preview", { replace: true });
+              } else {
+                navigate("/order-preview", { replace: true });
+              }
+            }}
             className="p-2 rounded-lg hover:bg-white/10 transition cursor-pointer"
             aria-label="Go back"
           >
@@ -216,7 +225,15 @@ const AddressPage = () => {
 
           {/* RIGHT */}
           <button
-            onClick={() => navigate("/cart")}
+            onClick={() => {
+              if (from === "payment") {
+                navigate("/payment", { replace: true });
+              } else if (from === "order-preview") {
+                navigate("/order-preview", { replace: true });
+              } else {
+                navigate("/cart", { replace: true });
+              }
+            }}
             className="p-2 rounded-lg hover:bg-white/10 transition cursor-pointer"
             aria-label="Close"
           >
@@ -224,7 +241,6 @@ const AddressPage = () => {
           </button>
         </div>
       </div>
-
 
       {/* ================= CONTENT ================= */}
       <div className="px-2 py-2 sm:px-4 sm:py-2 lg:px-6 lg:py-6 pb-24 max-w-7xl mx-auto">
@@ -279,10 +295,11 @@ const AddressPage = () => {
     transition-all duration-200
     overflow-hidden
     hover:shadow-lg hover:-translate-y-[2px]
-    ${addr.addressId === pendingId
-                    ? "border-green-500 bg-green-500/10 ring-2 ring-green-500/30"
-                    : "border-white/10 hover:border-white/30"
-                  }
+    ${
+      addr.addressId === pendingId
+        ? "border-green-500 bg-green-500/10 ring-2 ring-green-500/30"
+        : "border-white/10 hover:border-white/30"
+    }
   `}
               >
                 <div className="flex gap-3">
@@ -290,7 +307,6 @@ const AddressPage = () => {
                   <div className="mt-1 text-lg">
                     {addr.type === "home" ? <FaHome /> : <FaMapMarkerAlt />}
                   </div>
-
 
                   {/* DETAILS */}
                   <div className="flex-1 min-w-0 flex flex-col">
@@ -319,9 +335,7 @@ const AddressPage = () => {
                           )}
                         </div>
                       </div>
-
                     </div>
-
 
                     <p className="text-sm text-gray-400 truncate">
                       {addr.houseNo}, {addr.street}, {addr.locality},{" "}
@@ -430,6 +444,12 @@ const AddressPage = () => {
                   localStorage.setItem("selectedAddressId", pendingId);
                   setShowConfirm(false);
                   toast.success("Delivery address updated");
+
+                  if (from === "payment") {
+                    navigate("/payment", { replace: true });
+                  } else if (from === "order-preview") {
+                    navigate("/order-preview", { replace: true });
+                  }
                 }}
                 className="flex-1 py-2 rounded-xl bg-green-400 text-black font-medium hover:bg-green-600 transition cursor-pointer"
               >

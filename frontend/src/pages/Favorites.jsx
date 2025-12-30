@@ -30,15 +30,15 @@ const FavoritesPageSkeleton = () => {
           {/* PRODUCT GRID SKELETON */}
           <div
             className="
-              mt-6
-              grid
-              grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5
-              gap-4 sm:gap-5
+            mt-6
+            grid
+            grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5
+            gap-4 sm:gap-5
             "
-          >
+            >
             {Array.from({ length: 10 }).map((_, i) => (
               
-                <ProductItemSkeleton />
+              <ProductItemSkeleton />
             ))}
           </div>
 
@@ -62,7 +62,7 @@ const Favorites = () => {
   const [favoriteProducts, setFavoriteProducts] = useState([]);
 
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  
+
 
   useEffect(() => {
     const online = () => setIsOnline(true);
@@ -79,10 +79,10 @@ const Favorites = () => {
 
   /* -------- AUTH GUARD -------- */
   useEffect(() => {
-  if (!appLoading && !token) {
-    navigate("/login?redirect=/favorites");
-  }
-}, [appLoading, token]);
+    if (!appLoading && !token) {
+      navigate("/login?redirect=/favorites");
+    }
+  }, [appLoading, token]);
 
 
   /* -------- MAP FAVORITES -------- */
@@ -95,24 +95,24 @@ const Favorites = () => {
   }, [products, favorites]);
 
   if (!isOnline || appLoading || favoritesLoading) {
-  return <FavoritesPageSkeleton />;
-}
+    return <FavoritesPageSkeleton />;
+  }
 
 
   return (
     <section>
       <div
         className="
-          bg-black/90
-          border border-white/10
-          rounded-xl
-          overflow-hidden
-          shadow-[0_0_40px_rgba(255,255,255,0.06)]
-          mt-6 mb-6
-          sm:mt-8 sm:mb-8
-          lg:mt-10 lg:mb-10
+        bg-black/90
+        border border-white/10
+        rounded-xl
+        overflow-hidden
+        shadow-[0_0_40px_rgba(255,255,255,0.06)]
+        mt-6 mb-6
+        sm:mt-8 sm:mb-8
+        lg:mt-10 lg:mb-10
         "
-      >
+        >
         <div className="w-full sm:px-2 md:px-3 lg:px-4">
           {/* HEADER */}
           <div className="text-center text-white py-4 sm:py-6 md:py-8">
@@ -126,6 +126,8 @@ const Favorites = () => {
             </p>
           </div>
 
+
+
           {/* EMPTY STATE */}
           {!favoritesLoading && favoriteProducts.length === 0 && (
             <div className="flex flex-col items-center text-center py-16 text-white">
@@ -138,7 +140,7 @@ const Favorites = () => {
               <button
                 onClick={() => navigate("/collections")}
                 className="mt-6 bg-white text-black px-6 py-2 rounded-lg font-semibold hover:bg-gray-300 transition cursor-pointer"
-              >
+                >
                 Browse Products →
               </button>
             </div>
@@ -147,12 +149,12 @@ const Favorites = () => {
           {/* FAVORITES GRID */}
           {favoriteProducts.length > 0 && (
             <div
-              className="
-                mt-6
-                grid
-                grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5
-                gap-4 sm:gap-5
-              "
+            className="
+            mt-6
+            grid
+            grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5
+            gap-4 sm:gap-5
+            "
             >
               {favoriteProducts.map((item) => (
                 <div key={item._id} className="bg-[#2a2a2a] rounded-xl p-2">
@@ -166,6 +168,29 @@ const Favorites = () => {
           <div className="pb-4 sm:pb-6 md:pb-8"></div>
         </div>
       </div>
+      {/* FUN WARNING CARD */}
+      <div className="mt-4 pb-4 sm:pb-6 lg:pb-8 sm:mt-6 flex justify-center px-3">
+        <div
+          className="
+          w-full
+          sm:w-[90%]
+          md:w-[80%]
+          lg:w-[70%]
+          bg-gradient-to-r from-[#1a1a1a] to-[#111]
+          border border-white/10
+          rounded-xl
+          px-4 py-3 sm:px-6 sm:py-4
+          text-center
+          shadow-[0_0_25px_rgba(255,255,255,0.05)]
+          "
+          >
+          <p className="text-sm pb- sm:text-base md:text-lg text-gray-300 font-medium">
+            ⚠️ <span className="text-white font-semibold">Warning:</span> Looking at
+            your favorites may cause sudden shopping impulses.
+          </p>
+        </div>
+      </div>
+
     </section>
   );
 };

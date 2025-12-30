@@ -30,19 +30,13 @@ const ProductItem = ({
     removeFromFavorites,
     token,
     addToCart,
-    setBuyNowItem,
-    buyNowItem,
+    setBuyNowSafe,
   } = useContext(ShopContext);
 
   const navigate = useNavigate();
   const isFav = token && favorites.includes(_id);
   const [showSizeModal, setShowSizeModal] = useState(false);
   const [actionType, setActionType] = useState(null);
-
-  const getSkeletonCount = () => {
-    if (window.innerWidth < 640) return 10; // mobile
-    return 15; // desktop
-  };
 
   /* AUTO CALCULATED DISCOUNT */
   const discountPercent =
@@ -92,7 +86,7 @@ const ProductItem = ({
             onClick={(e) => {
               e.stopPropagation();
               if (!token) {
-                navigate("/login");
+                navigate(`/login?redirect=/product/${_id}`);
                 return;
               }
               isFav ? removeFromFavorites(_id) : addToFavorites(_id);
@@ -159,7 +153,7 @@ const ProductItem = ({
                 e.stopPropagation();
 
                 if (!token) {
-                  navigate("/login");
+                  navigate(`/login?redirect=/product/${_id}`);
                   return;
                 }
 
@@ -190,7 +184,7 @@ const ProductItem = ({
               onClick={(e) => {
                 e.stopPropagation();
                 if (!token) {
-                  navigate("/login");
+                  navigate(`/login?redirect=/product/${_id}`);
                   return;
                 }
                 setActionType("buy");
@@ -230,16 +224,15 @@ const ProductItem = ({
 
           // 🚀 BUY NOW FLOW (NEW)
           if (actionType === "buy") {
-            setBuyNowItem({
+            setBuyNowSafe({
               productId: _id,
               size: selectedSize,
               quantity: 1,
+              source: "product",
             });
 
             setShowSizeModal(false);
             setActionType(null);
-
-            navigate("/order-preview");
 
             toast.success("Great choice! Let’s checkout 🚀", {
               position: "top-center",
@@ -247,6 +240,10 @@ const ProductItem = ({
               hideProgressBar: true,
               theme: "dark",
             });
+
+            setTimeout(() => {
+              navigate("/order-preview");
+            }, 400);
           }
         }}
       />

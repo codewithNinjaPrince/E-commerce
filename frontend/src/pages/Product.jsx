@@ -49,8 +49,7 @@ const Product = () => {
     favorites = [],
     addToFavorites,
     removeFromFavorites,
-    buyNowItem,
-    setBuyNowItem,
+    setBuyNowSafe
   } = useContext(ShopContext);
 
   const [productData, setProductData] = useState(null);
@@ -274,13 +273,14 @@ const Product = () => {
       return;
     }
 
-    setBuyNowItem({
+    setBuyNowSafe({
       productId: productData._id,
       size,
       quantity: 1,
+      
     });
 
-    showCartToast("Item added • Taking you to cart");
+    showCartToast("Item ready • Taking you to checkout ⚡");
 
     setTimeout(() => {
       navigate("/order-preview");
@@ -839,7 +839,7 @@ const Product = () => {
           }
 
           if (actionType === "buy") {
-            setBuyNowItem({
+            setBuyNowSafe({
               productId: productData._id,
               size: selectedSize,
               quantity: 1,

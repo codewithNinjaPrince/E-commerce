@@ -7,7 +7,7 @@ import CartTotal from "../components/CartTotal";
 import { useLayoutEffect } from "react";
 import AddressPage from "./AddressPage";
 import { FaArrowLeft, FaTimes, FaTrash } from "react-icons/fa";
-
+import { useLocation } from "react-router-dom";
 
 const CartPageSkeleton = () => {
   return (
@@ -62,7 +62,11 @@ const Cart = () => {
     removeFromFavorites,
     buyNowItem,
     favorites = [],
-    setBuyNowItem,
+    setBuyNowSafe,
+    saveForLater,
+    savedForLater,
+    removeSavedForLater,
+    moveSavedToCart,
   } = useContext(ShopContext);
 
   const cartTotalRef = useRef(null);
@@ -72,12 +76,31 @@ const Cart = () => {
   const [cartOpenKey, setCartOpenKey] = useState(0);
   const [cartFinalAmount, setCartFinalAmount] = useState(0);
   const [priceData, setPriceData] = useState(null);
+  const [confirmSavedOpen, setConfirmSavedOpen] = useState(false);
+  const [savedDeleteItem, setSavedDeleteItem] = useState(null);
 
   // delete confirmation
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState(null);
 
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  const location = useLocation();
+
+  const safeCartBack = () => {
+    // 🚫 If cart was entered from checkout flow → always go collections
+    if (
+      location.state?.from === "cart-checkout" ||
+      document.referrer.includes("/order-preview") ||
+      document.referrer.includes("/payment")
+    ) {
+      navigate("/collections", { replace: true });
+      return;
+    }
+
+    // 🧠 Normal browsing back
+    navigate(-1);
+  };
 
   useEffect(() => {
     const online = () => setIsOnline(true);
@@ -91,7 +114,6 @@ const Cart = () => {
       window.removeEventListener("offline", offline);
     };
   }, []);
-
 
   useEffect(() => {
     const tempData = [];
@@ -197,26 +219,6 @@ const Cart = () => {
 
   const finalTotal = computeFinalTotal();
 
-  // EMPTY CART
-  if (cartData.length === 0) {
-    return (
-      <div className="pt-20 flex flex-col items-center text-white">
-        <img src={assets.bin_icon} className="w-14 opacity-70 mb-4" />
-        <p className="text-xl font-semibold">Your cart is empty</p>
-        <p className="text-gray-400 mt-1 text-sm">
-          Looks like you haven’t added anything yet 👀
-        </p>
-
-        <button
-          onClick={() => navigate("/collections")}
-          className="mt-6 bg-white text-black px-6 py-2 rounded-lg font-semibold hover:bg-gray-300 transition cursor-pointer"
-        >
-          Browse Products →
-        </button>
-      </div>
-    );
-  }
-
   const QuantityInput = ({ item }) => {
     const { updateQuantity } = useContext(ShopContext);
 
@@ -308,7 +310,7 @@ const Cart = () => {
           <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
             {/* BACK */}
             <button
-              onClick={() => navigate(-1)}
+              onClick={safeCartBack}
               className="p-2 rounded-lg hover:bg-white/10 cursor-pointer"
               aria-label="Go back"
             >
@@ -331,8 +333,27 @@ const Cart = () => {
           </div>
         </div>
 
+        {/* EMPTY CART MESSAGE */}
+        {cartData.length === 0 && savedForLater.length === 0 && (
+          <div className="pt-20 flex flex-col items-center text-white">
+            <img src={assets.bin_icon} className="w-14 opacity-70 mb-4" />
+            <p className="text-xl font-semibold">Your cart is empty</p>
+            <p className="text-gray-400 mt-1 text-sm">
+              Looks like you haven’t added anything yet 👀
+            </p>
+
+            <button
+              onClick={() => navigate("/collections")}
+              className="mt-6 bg-white text-black px-6 py-2 rounded-lg font-semibold hover:bg-gray-300 transition cursor-pointer"
+            >
+              Browse Products →
+            </button>
+          </div>
+        )}
+
         <div className="max-w-7xl mx-auto px-2 sm:px-4 space-y-6 mt-4 sm:mt-6">
           {/* CART ITEMS */}
+          {cartData.length > 0 && (
           <div className="space-y-6">
             {cartData.map((item, index) => {
               const isFavorited = favorites.includes(item._id);
@@ -344,7 +365,7 @@ const Cart = () => {
               const discountPercent = Math.round(
                 ((productData.actualPrice - productData.discountedPrice) /
                   productData.actualPrice) *
-                100
+                  100
               );
 
               return (
@@ -386,8 +407,10 @@ const Cart = () => {
                   </div>
 
                   {/* TOP — IMAGE + DETAILS */}
-                  <div onClick={() => navigate(`/product/${item._id}`)}
-                    className="flex gap-4 cursor-pointer">
+                  <div
+                    onClick={() => navigate(`/product/${item._id}`)}
+                    className="flex gap-4 cursor-pointer"
+                  >
                     <img
                       src={productData.image[0]}
                       alt={productData.name}
@@ -456,43 +479,47 @@ const Cart = () => {
                       onClick={(e) => {
                         e.stopPropagation();
 
-                        setBuyNowItem({
+                        setBuyNowSafe({
                           productId: item._id,
                           size: item.size,
                           quantity: item.quantity,
+                          source: "cart",
                         });
 
-                        navigate("/order-preview");
+                        navigate("/order-preview", {
+                          state: { from: "cart" },
+                        });
                       }}
                       className="py-2 rounded-lg bg-yellow-400 text-black font-semibold hover:bg-yellow-300 transition cursor-pointer"
                     >
                       Buy this now
                     </button>
 
-
                     {/* MOVE TO WISHLIST (future-ready) */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        
+
                         if (isFavorited) {
                           removeFromFavorites(item._id);
                         } else {
                           addToFavorites(item._id);
                         }
                       }}
-                      
                       className={`
                         py-2 rounded-lg text-sm font-medium transition
                         border
-                        ${isFavorited
-                          ? "bg-pink-500/20 text-pink-400 border-pink-400 hover:bg-pink-500/30"
-                          : "border-white/20 text-pink-400 hover:bg-pink-500/10 hover:border-pink-400"
+                        ${
+                          isFavorited
+                            ? "bg-pink-500/20 text-pink-400 border-pink-400 hover:bg-pink-500/30"
+                            : "border-white/20 text-pink-400 hover:bg-pink-500/10 hover:border-pink-400"
                         }
                         cursor-pointer
                         `}
-                        >
-                      {isFavorited ? "Remove from Favorites 💔" : "Add to Favorites ❤️"}
+                    >
+                      {isFavorited
+                        ? "Remove from Favorites 💔"
+                        : "Add to Favorites ❤️"}
                     </button>
 
                     {isFavorited && (
@@ -500,20 +527,109 @@ const Cart = () => {
                         Saved to your favorites
                       </span>
                     )}
-
-
                   </div>
                 </div>
               );
             })}
           </div>
+          )}
+
+          {savedForLater?.length > 0 && (
+            <div className="mt-10">
+              <div className="space-y-4">
+                {savedForLater?.length > 0 && (
+                  <div className="mt-10">
+                    <h2 className="text-lg font-semibold mb-4">
+                      Saved for Later ({savedForLater.length})
+                    </h2>
+
+                    <div className="space-y-4">
+                      {savedForLater.map((item, idx) => {
+                        const product = products.find(
+                          (p) => p._id === item.productId
+                        );
+
+                        if (!product) return null;
+
+                        return (
+                          <div
+                            key={idx}
+                            className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+                          >
+                            {/* LEFT */}
+                            <div className="flex gap-4">
+                              <img
+                                src={product.image[0]}
+                                alt={product.name}
+                                className="w-20 h-24 object-cover rounded-lg"
+                              />
+
+                              <div>
+                                <p className="font-semibold text-white">
+                                  {product.name}
+                                </p>
+                                <p className="text-xs text-gray-400 uppercase">
+                                  {product.brandName}
+                                </p>
+
+                                <p className="text-sm text-gray-300 mt-1">
+                                  Size:{" "}
+                                  <span className="font-medium">
+                                    {item.size}
+                                  </span>
+                                </p>
+
+                                <p className="text-sm text-gray-300">
+                                  Qty:{" "}
+                                  <span className="font-medium">
+                                    {item.quantity}
+                                  </span>
+                                </p>
+
+                                <p className="text-green-400 font-semibold mt-1">
+                                  {currency}
+                                  {product.discountedPrice}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* RIGHT ACTIONS */}
+                            <div className="flex gap-3">
+                              {/* MOVE TO CART */}
+                              <button
+                                onClick={() => moveSavedToCart(item)}
+                                className="px-4 py-2 bg-white text-black rounded-lg font-semibold hover:bg-gray-200 transition cursor-pointer"
+                              >
+                                Move to Cart
+                              </button>
+
+                              {/* REMOVE PERMANENTLY */}
+                              <button
+                                onClick={() => {
+                                  setSavedDeleteItem(item);
+                                  setConfirmSavedOpen(true);
+                                }}
+                                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition cursor-pointer"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* CART TOTAL (MOBILE + DESKTOP) */}
           <div className="flex justify-end my-5">
             <div
               ref={cartTotalRef}
               className="w-full sm:w-[450px] cursor-pointer"
-              >
+            >
               <CartTotal forceOpenKey={cartOpenKey} priceData={priceData} />
             </div>
           </div>
@@ -535,7 +651,7 @@ const Cart = () => {
               cursor-pointer
               group
               "
-              >
+            >
               <p className="text-xs text-green-400 flex items-center gap-1">
                 Total Amount
                 <span className="transition-transform duration-200 group-hover:translate-x-1">
@@ -554,7 +670,7 @@ const Cart = () => {
                   group-hover:text-white
                   group-hover:translate-x-1
                   "
-                  />
+                />
               </p>
             </div>
 
@@ -562,20 +678,19 @@ const Cart = () => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                navigate("/order-preview");
+
+                // 🔥 IMPORTANT: Cart checkout must clear Buy Now
+                setBuyNowSafe(null);
+
+                navigate("/order-preview", {
+                  state: { from: "cart-checkout" },
+                });
               }}
-              className="
-              bg-white text-black
-              px-6 py-3
-              rounded-lg
-              font-semibold
-              border border-black
-              transition-all duration-200
-              hover:bg-black hover:text-white
-              cursor-pointer
-              whitespace-nowrap
-              "
-              >
+              className=" bg-white text-black px-6 py-3 rounded-lg font-semibold
+              border border-black transition-all duration-200 hover:bg-black
+              hover:text-white cursor-pointer whitespace-nowrap "
+            >
+              {" "}
               Proceed to Checkout →
             </button>
           </div>
@@ -598,7 +713,7 @@ const Cart = () => {
                       setConfirmOpen(false);
                     }}
                     className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 cursor-pointer"
-                    >
+                  >
                     Cancel
                   </button>
                   <button
@@ -607,7 +722,7 @@ const Cart = () => {
                       confirmDelete();
                     }}
                     className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 cursor-pointer"
-                    >
+                  >
                     Remove
                   </button>
                 </div>
@@ -615,7 +730,50 @@ const Cart = () => {
             </div>
           )}
         </div>
+        {confirmSavedOpen && savedDeleteItem && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+            <div
+              className="bg-[#1a1a1a] p-6 rounded-xl w-[90%] max-w-sm
+                    border border-white/10 shadow-xl"
+            >
+              <p className="text-lg font-semibold text-white">Remove item?</p>
 
+              <p className="text-sm text-gray-400 mt-2">
+                Are you sure you want to remove this item from saved for later?
+              </p>
+
+              <div className="flex justify-end gap-3 mt-6">
+                {/* CANCEL */}
+                <button
+                  onClick={() => {
+                    setConfirmSavedOpen(false);
+                    setSavedDeleteItem(null);
+                  }}
+                  className="px-4 py-2 rounded-lg bg-white/10 text-white
+                     hover:bg-white/20 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+
+                {/* CONFIRM REMOVE */}
+                <button
+                  onClick={() => {
+                    removeSavedForLater(
+                      savedDeleteItem.productId,
+                      savedDeleteItem.size
+                    );
+                    setConfirmSavedOpen(false);
+                    setSavedDeleteItem(null);
+                  }}
+                  className="px-4 py-2 rounded-lg bg-red-500 text-white
+                     hover:bg-red-600 transition cursor-pointer"
+                >
+                  Yes, Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
     </>
   );

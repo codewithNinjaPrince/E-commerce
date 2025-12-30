@@ -56,8 +56,8 @@ const OrderPreviewSkeleton = () => {
         {/* PRODUCT SKELETON */}
         {[1, 2].map((i) => (
           <div
-          key={i}
-          className="bg-[#121212] p-5 rounded-2xl border border-white/10"
+            key={i}
+            className="bg-[#121212] p-5 rounded-2xl border border-white/10"
           >
             <div className="flex gap-4">
               <div className="w-24 h-32 bg-white/10 rounded-xl" />
@@ -87,7 +87,7 @@ const randomQuote = () => QUOTES[Math.floor(Math.random() * QUOTES.length)];
 const deliveryDate = () => {
   const d = new Date();
   d.setDate(d.getDate() + 9);
-  
+
   return d.toLocaleDateString("en-US", {
     weekday: "short",
     month: "short",
@@ -112,14 +112,13 @@ const OrderPreview = () => {
     updateQuantity,
     addToCart,
     buyNowItem,
-    setBuyNowItem,
+    setBuyNowSafe,
   } = useContext(ShopContext);
-  
-  const location = useLocation();
+
   const navigate = useNavigate();
-  
+
   const cartTotalRef = useRef(null);
-  
+
   const [priceData, setPriceData] = useState(null);
   const [couponCode, setCouponCode] = useState("");
   const [couponValid, setCouponValid] = useState(false);
@@ -130,34 +129,79 @@ const OrderPreview = () => {
   const [orderUpdating, setOrderUpdating] = useState(false);
   const [previewItems, setPreviewItems] = useState(null);
   const [addressChecked, setAddressChecked] = useState(false);
-  
+
   const [address, setAddress] = useState(null);
-  
+
+  const location = useLocation();
+
+  useEffect(() => {
+  // If coming from cart checkout, Buy Now must not exist
+  if (location.state?.from === "cart-checkout" && buyNowItem) {
+    setBuyNowSafe(null);
+  }
+}, []);
+
+
+  useEffect(() => {
+    if (!addressChecked) return;
+
+    const items = buildItems();
+    if (!items.length && !buyNowItem) {
+      navigate("/cart", { replace: true });
+    }
+  }, [buyNowItem, cartItems, addressChecked]);
+
+  const handleBack = () => {
+    if (buyNowItem) {
+      if (buyNowItem.source === "cart") {
+        navigate("/cart", { replace: true });
+      } else {
+        navigate(`/product/${buyNowItem.productId}`, { replace: true });
+      }
+      return;
+    }
+
+    navigate("/cart", { replace: true });
+  };
+
+  const handleClose = () => {
+    if (buyNowItem) {
+      if (buyNowItem.source === "cart") {
+        navigate("/cart", { replace: true });
+      } else {
+        navigate(`/product/${buyNowItem.productId}`, { replace: true });
+      }
+      return;
+    }
+
+    navigate("/cart", { replace: true });
+  };
+
   /* ---------------- BUILD ITEMS ---------------- */
-  
+
   const handleConfirmSizeChange = async () => {
     if (!sizeConfirm) return;
-    
+
     const { productId, oldSize, newSize, quantity } = sizeConfirm;
-    
+
     if (oldSize === newSize) {
       setSizeConfirm(null);
       return;
     }
-    
+
     // 🔒 Lock UI
     setPreviewItems([{ productId, size: newSize, quantity }]);
-    
+
     setSizeConfirm(null);
-    
+
     toast.success(`Size changed to ${newSize}`, {
       theme: "dark",
       autoClose: 500,
     });
-    
+
     try {
       setOrderUpdating(true);
-      
+
       // backend sync
       await updateQuantity(productId, oldSize, 0);
       await updateQuantity(productId, newSize, quantity);
@@ -171,41 +215,44 @@ const OrderPreview = () => {
       setTimeout(() => {
         setPreviewItems(null);
       }, 0);
-      
+
       setOrderUpdating(false);
     }
   };
-  
-  const buildItems = () => {
-    // 🔒 absolute lock during preview
-    if (previewItems) return previewItems;
-    
-    if (buyNowItem) {
-      return [
-        {
-          productId: buyNowItem.productId,
-          size: buyNowItem.size,
-          quantity: buyNowItem.quantity,
-        },
-      ];
-    }
-    
-    const items = [];
-    Object.keys(cartItems).forEach((pid) => {
-      Object.keys(cartItems[pid]).forEach((size) => {
-        if (cartItems[pid][size] > 0) {
-          items.push({
-            productId: pid,
-            size,
-            quantity: cartItems[pid][size],
-          });
-        }
-      });
+
+ const buildItems = () => {
+  // 🔒 lock during preview mutation
+  if (previewItems) return previewItems;
+
+  // ✅ SINGLE-ITEM FLOW (Buy Now from anywhere)
+  if (buyNowItem) {
+    return [
+      {
+        productId: buyNowItem.productId,
+        size: buyNowItem.size,
+        quantity: buyNowItem.quantity,
+      },
+    ];
+  }
+
+  // 🛒 FULL CART FLOW
+  const items = [];
+  Object.keys(cartItems).forEach((pid) => {
+    Object.keys(cartItems[pid]).forEach((size) => {
+      if (cartItems[pid][size] > 0) {
+        items.push({
+          productId: pid,
+          size,
+          quantity: cartItems[pid][size],
+        });
+      }
     });
-    
-    return items;
-  };
-  
+  });
+
+  return items;
+};
+
+
   const handleContinue = () => {
     if (!address) {
       toast.info("Please add a delivery address", {
@@ -213,14 +260,14 @@ const OrderPreview = () => {
         autoClose: 1200,
         theme: "dark",
       });
-      
+
       navigate("/address", {
         state: { from: "order-preview" },
       });
-      
+
       return;
     }
-    
+
     navigate("/payment", {
       state: {
         payableAmount: priceData.payableAmount,
@@ -228,7 +275,7 @@ const OrderPreview = () => {
       },
     });
   };
-  
+
   useEffect(() => {
     const loadSelectedAddress = async () => {
       try {
@@ -236,11 +283,11 @@ const OrderPreview = () => {
           setAddressChecked(true);
           return;
         }
-        
+
         const res = await axios.get(`${backendUrl}/api/address/get`, {
           headers: { token },
         });
-        
+
         if (res.data.success) {
           const { addresses, selectedAddressId } = res.data;
           const found = addresses?.find(
@@ -254,43 +301,44 @@ const OrderPreview = () => {
         setAddressChecked(true);
       }
     };
-    
+
     loadSelectedAddress();
   }, [token, backendUrl]);
-  
+
   /* ---------------- LOAD PRICE ---------------- */
   useEffect(() => {
-    if (!token) return;
-    
-    const items = buildItems();
-    if (!items.length) return;
-    
-    const loadPreview = async () => {
-      try {
-        const res = await axios.post(
-          `${backendUrl}/api/order/preview`,
-          {
-            items,
-            couponCode: couponValid ? couponCode : null,
-          },
-          { headers: { token } }
-        );
-        
-        if (res.data.success) {
-          setPriceData(res.data);
-        }
-      } catch {
-        toast.error("Failed to load order preview");
+  if (!token) return;
+
+  const items = buildItems();
+  if (!items.length) return;
+
+  const loadPreview = async () => {
+    try {
+      const res = await axios.post(
+        `${backendUrl}/api/order/preview`,
+        {
+          items,
+          couponCode: couponValid ? couponCode : null,
+        },
+        { headers: { token } }
+      );
+
+      if (res.data.success) {
+        setPriceData(res.data);
       }
-    };
-    
-    loadPreview();
-  }, [cartItems, buyNowItem, previewItems, couponValid, couponCode]);
-  
+    } catch {
+      toast.error("Failed to load order preview");
+    }
+  };
+
+  loadPreview();
+}, [cartItems, buyNowItem, previewItems, couponValid, couponCode]);
+
+
   if (!addressChecked || !priceData) {
     return <OrderPreviewSkeleton />;
   }
-  
+
   if (orderUpdating) {
     return (
       <section className="min-h-screen bg-black flex flex-col items-center justify-center text-white">
@@ -301,13 +349,6 @@ const OrderPreview = () => {
       </section>
     );
   }
-  
-  {
-    buildItems().length === 0 && (
-      <p className="text-center text-gray-400 py-10">No items to preview</p>
-    );
-  }
-  
   /* ================= RENDER ================= */
   return (
     <section className="min-h-screen bg-black text-white pt-[64px] pb-28">
@@ -316,9 +357,9 @@ const OrderPreview = () => {
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           {/* BACK */}
           <button
-            onClick={() => navigate("/cart")}
+            onClick={handleBack}
             className="p-2 rounded-lg hover:bg-white/10 cursor-pointer"
-            >
+          >
             <FaArrowLeft />
           </button>
 
@@ -330,13 +371,10 @@ const OrderPreview = () => {
 
           {/* CLOSE → CART */}
           <button
-            onClick={() => {
-              setBuyNowItem(null);
-              navigate("/cart");
-            }}
+            onClick={handleClose}
             className="p-2 rounded-lg hover:bg-white/10 cursor-pointer"
             aria-label="Close"
-            >
+          >
             <FaTimes />
           </button>
         </div>
@@ -346,9 +384,11 @@ const OrderPreview = () => {
       <div className="max-w-7xl mx-auto px-2 sm:px-4 space-y-6 mt-4 sm:mt-6">
         {/* ================= ADDRESS ================= */}
         <div
-          onClick={() => navigate("/address")}
+          onClick={() =>
+            navigate("/address", { state: { from: "order-preview" } })
+          }
           className="bg-[#121212] p-5 rounded-2xl border border-white/10 cursor-pointer transition hover:border-white/30"
-          >
+        >
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5">
             {/* LEFT */}
             <div className="flex gap-4">
@@ -408,12 +448,13 @@ const OrderPreview = () => {
                 }}
                 className={`
                   px-4 py-2 rounded-lg border text-sm transition cursor-pointer whitespace-nowrap
-                  ${address
-                    ? "border-white/20 text-green-500 hover:border-white/40 hover:bg-white/5"
-                    : "border-yellow-400 text-yellow-400 hover:bg-yellow-400/10"
+                  ${
+                    address
+                      ? "border-white/20 text-green-500 hover:border-white/40 hover:bg-white/5"
+                      : "border-yellow-400 text-yellow-400 hover:bg-yellow-400/10"
                   }
                   `}
-                  >
+              >
                 {address ? "Change address" : "Add address"}
               </button>
             </div>
@@ -429,12 +470,13 @@ const OrderPreview = () => {
               }}
               className={`
                 w-full py-2 rounded-xl border text-sm transition cursor-pointer
-                ${address
-                  ? "border-white/20 text-green-500 hover:bg-white/5"
-                  : "border-yellow-400 text-yellow-400 hover:bg-yellow-400/10"
+                ${
+                  address
+                    ? "border-white/20 text-green-500 hover:bg-white/5"
+                    : "border-yellow-400 text-yellow-400 hover:bg-yellow-400/10"
                 }
                 `}
-                >
+            >
               {address ? "Change delivery address" : "+ Add delivery address"}
             </button>
           </div>
@@ -444,34 +486,38 @@ const OrderPreview = () => {
         {buildItems().map((item, idx) => {
           const product = products.find((p) => p._id === item.productId);
           if (!product) return null;
-          
+
           const rating = product.review || 4.5;
           const discountPercent = Math.round(
             ((product.actualPrice - product.discountedPrice) /
-            product.actualPrice) *
-            100
+              product.actualPrice) *
+              100
           );
-          
+
           return (
             <div
-            key={idx}
-            className={`bg-[#121212] p-5 rounded-2xl border transition cursor-pointer
-              ${!address ? "border-yellow-400/60" : "border-white/10 hover:border-white/30"}
+              key={idx}
+              className={`bg-[#121212] p-5 rounded-2xl border transition cursor-pointer
+              ${
+                !address
+                  ? "border-yellow-400/60"
+                  : "border-white/10 hover:border-white/30"
+              }
               `}
-              >
+            >
               <p className="text-green-400 text-sm mb-3">{randomQuote()}</p>
 
               <div
                 onClick={() => navigate(`/product/${item.productId}`)}
                 className="flex gap-4 sm:gap-5 cursor-pointer"
-                >
+              >
                 {/* IMAGE + QTY */}
                 <div className="w-24 sm:w-28 flex-shrink-0 flex flex-col items-center">
                   <img
                     src={product.image[0]}
                     alt={product.name}
                     className="w-full h-28 sm:h-32 object-cover rounded-xl border border-white/10"
-                    />
+                  />
 
                   {/* QUANTITY BELOW IMAGE */}
                   <div className="flex items-center gap-2 mt-3 border border-white/20 rounded-lg overflow-hidden">
@@ -486,7 +532,7 @@ const OrderPreview = () => {
                       }}
                       disabled={item.quantity <= 1}
                       className="px-2 py-1 text-lg hover:bg-white/10 disabled:opacity-40 cursor-pointer"
-                      >
+                    >
                       −
                     </button>
 
@@ -504,7 +550,7 @@ const OrderPreview = () => {
                         );
                       }}
                       className="px-2 py-1 text-lg hover:bg-white/10 cursor-pointer"
-                      >
+                    >
                       +
                     </button>
                   </div>
@@ -534,11 +580,11 @@ const OrderPreview = () => {
                     <div className="hidden md:flex">
                       {sizeEdit === item.productId + item.size ? (
                         <select
-                        defaultValue={item.size}
-                        onChange={(e) =>
-                          handleSizeChange(item, product, e.target.value)
-                        }
-                        className="px-4 py-2 rounded-lg border border-white/20 bg-black text-sm text-white cursor-pointer"
+                          defaultValue={item.size}
+                          onChange={(e) =>
+                            handleSizeChange(item, product, e.target.value)
+                          }
+                          className="px-4 py-2 rounded-lg border border-white/20 bg-black text-sm text-white cursor-pointer"
                         >
                           {product.sizes
                             .filter(
@@ -552,26 +598,29 @@ const OrderPreview = () => {
                         </select>
                       ) : (
                         <button
-  onClick={(e) => {
-    e.stopPropagation();
+                          onClick={(e) => {
+                            e.stopPropagation();
 
-    if (!address) {
-      toast.info("Please add a delivery address first", {
-        position: "top-center",
-        autoClose: 1200,
-        theme: "dark",
-      });
-      return;
-    }
+                            if (!address) {
+                              toast.info(
+                                "Please add a delivery address first",
+                                {
+                                  position: "top-center",
+                                  autoClose: 1200,
+                                  theme: "dark",
+                                }
+                              );
+                              return;
+                            }
 
-    navigate("/payment", {
-      state: {
-        payableAmount: priceData.payableAmount,
-        priceData,
-      },
-    });
-  }}
-  className="
+                            navigate("/payment", {
+                              state: {
+                                payableAmount: priceData.payableAmount,
+                                priceData,
+                              },
+                            });
+                          }}
+                          className="
     px-4 py-2
     rounded-lg
     border border-green-500/40
@@ -583,10 +632,9 @@ const OrderPreview = () => {
     cursor-pointer
     whitespace-nowrap
   "
->
-  Go to payment
-</button>
-
+                        >
+                          Go to payment
+                        </button>
                       )}
                     </div>
                   </div>
@@ -595,14 +643,14 @@ const OrderPreview = () => {
                   <div className="md:hidden mt-3">
                     {sizeEdit === item.productId + item.size ? (
                       <select
-                      defaultValue={item.size}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={(e) => {
-                        const newSize = e.target.value;
-                        if (newSize === item.size) return;
-                        setSizeEdit(null);
-                      }}
-                      className="w-full py-2 rounded-xl border border-white/20 bg-black text-sm text-white focus:border-white/40 outline-none cursor-pointer"
+                        defaultValue={item.size}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => {
+                          const newSize = e.target.value;
+                          if (newSize === item.size) return;
+                          setSizeEdit(null);
+                        }}
+                        className="w-full py-2 rounded-xl border border-white/20 bg-black text-sm text-white focus:border-white/40 outline-none cursor-pointer"
                       >
                         {product.sizes.map((sz) => (
                           <option key={sz} value={sz}>
@@ -612,13 +660,13 @@ const OrderPreview = () => {
                       </select>
                     ) : (
                       <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(
-                          `/product/${item.productId}?from=orderpreview`
-                        );
-                      }}
-                      className="px-4 py-2 rounded-lg border border-white/20 text-sm text-green-500 hover:border-white/40 hover:bg-white/5 transition cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(
+                            `/product/${item.productId}?from=orderpreview`
+                          );
+                        }}
+                        className="px-4 py-2 rounded-lg border border-white/20 text-sm text-green-500 hover:border-white/40 hover:bg-white/5 transition cursor-pointer"
                       >
                         Change size
                       </button>
@@ -626,15 +674,15 @@ const OrderPreview = () => {
 
                     {sizeEdit === item.productId + item.size && (
                       <div
-                      className="mt-2"
-                      onClick={(e) => e.stopPropagation()}
+                        className="mt-2"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <select
                           defaultValue={item.size}
                           onChange={(e) => {
                             const newSize = e.target.value;
                             if (newSize === item.size) return;
-                            
+
                             // ✅ SUCCESS TOAST
                             toast.success(`Size changed to ${newSize}`, {
                               position: "top-center",
@@ -642,7 +690,7 @@ const OrderPreview = () => {
                               hideProgressBar: true,
                               theme: "dark",
                             });
-                            
+
                             setSizeEdit(null);
                           }}
                           className="
@@ -654,7 +702,7 @@ const OrderPreview = () => {
                           cursor-pointer
                           focus:border-white/40
                           "
-                          >
+                        >
                           {product.sizes.map((sz) => (
                             <option key={sz} value={sz}>
                               {sz}
@@ -708,7 +756,7 @@ const OrderPreview = () => {
                   text-gray-300
                   whitespace-nowrap
                   "
-                  >
+                >
                   🚚 Delivery Expected by{" "}
                   <span className="text-white font-medium">
                     {deliveryDate()}
@@ -731,11 +779,11 @@ const OrderPreview = () => {
             onChange={(e) => setCouponCode(e.target.value)}
             placeholder="Enter coupon code"
             className="w-full bg-black border border-white/20 rounded p-3"
-            />
+          />
           <button
             onClick={() => setCouponValid(true)}
             className="mt-3 w-full bg-white text-black py-2 rounded font-semibold hover:bg-white/80 hover:text-black/80 cursor-pointer"
-            >
+          >
             Apply Coupon
           </button>
         </div>
@@ -754,7 +802,7 @@ const OrderPreview = () => {
             transition-all duration-200
             cursor-pointer
             "
-            >
+          >
             Terms & Conditions
           </Link>{" "}
           and{" "}
@@ -768,7 +816,7 @@ const OrderPreview = () => {
             transition-all duration-200
             cursor-pointer
             "
-            >
+          >
             Privacy Policy
           </Link>
           .
@@ -788,7 +836,7 @@ const OrderPreview = () => {
             group
             flex items-center gap-2
             "
-            >
+          >
             <div className="flex flex-col">
               <p className="text-xs text-gray-400 flex items-center gap-1">
                 Total Amount
@@ -800,7 +848,7 @@ const OrderPreview = () => {
                   transition
                   "
                   title="View price breakdown"
-                  >
+                >
                   ⓘ
                 </span>
               </p>
@@ -815,7 +863,7 @@ const OrderPreview = () => {
                   group-hover:translate-y-0.5
                   group-hover:text-white
                   "
-                  />
+                />
               </p>
             </div>
           </div>
@@ -823,7 +871,7 @@ const OrderPreview = () => {
           <button
             onClick={handleContinue}
             className="bg-yellow-400 text-black px-6 py-3 rounded-lg font-semibold hover:bg-yellow-300 cursor-pointer"
-            >
+          >
             Continue
           </button>
         </div>
@@ -843,7 +891,7 @@ const OrderPreview = () => {
                     setSizeConfirm((p) => ({ ...p, newSize: e.target.value }))
                   }
                   className="w-full mt-4 bg-black border border-white/20 rounded-lg px-3 py-2 text-white cursor-pointer"
-                  >
+                >
                   <option value="" disabled>
                     Select size
                   </option>
@@ -861,7 +909,7 @@ const OrderPreview = () => {
                   <button
                     onClick={() => setSizeConfirm(null)}
                     className="flex-1 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 cursor-pointer "
-                    >
+                  >
                     Cancel
                   </button>
 
@@ -869,7 +917,7 @@ const OrderPreview = () => {
                     disabled={!sizeConfirm?.newSize}
                     onClick={handleConfirmSizeChange}
                     className="bg-green-500 text-black px-4 py-2 rounded cursor-pointer"
-                    >
+                  >
                     Confirm
                   </button>
                 </div>

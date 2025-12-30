@@ -18,8 +18,20 @@ const ShopContextProvider = (props) => {
   const [favoritesLoading, setFavoritesLoading] = useState(true);
   const [buyNowItem, setBuyNowItem] = useState(null);
   const [appLoading, setAppLoading] = useState(true);
+  const [savedForLater, setSavedForLater] = useState([]);
 
   const navigate = useNavigate();
+
+  // 🔒 SAFE BUY NOW SETTER (checkout-persistent)
+  const setBuyNowSafe = (item) => {
+    setBuyNowItem(item);
+
+    if (item) {
+      sessionStorage.setItem("buyNowItem", JSON.stringify(item));
+    } else {
+      sessionStorage.removeItem("buyNowItem");
+    }
+  };
 
   /* ---------------------- LOGOUT ---------------------- */
   const logout = () => {
@@ -34,6 +46,7 @@ const ShopContextProvider = (props) => {
     setFavorites([]);
     setSearch("");
     setShowSearch(false);
+    setSavedForLater([]);
 
     toast.success("Logged out successfully 👋");
   };
@@ -251,6 +264,57 @@ const ShopContextProvider = (props) => {
     }
   };
 
+  const fetchSavedForLater = async (authToken) => {
+    if (!authToken) return;
+
+    try {
+      const res = await axios.post(
+        `${backendUrl}/api/cart/save-for-later/get`,
+        {},
+        { headers: { token: authToken } }
+      );
+
+      if (res.data.success) {
+        setSavedForLater(res.data.items || []);
+      }
+    } catch (err) {
+      console.error("FETCH SAVED FOR LATER ERROR", err);
+    }
+  };
+
+  const removeSavedForLater = async (productId, size) => {
+  try {
+    await axios.post(
+      `${backendUrl}/api/cart/save-for-later/remove`,
+      { productId, size },
+      { headers: { token } }
+    );
+
+    setSavedForLater((prev) =>
+      prev.filter(
+        (item) => !(item.productId === productId && item.size === size)
+      )
+    );
+  } catch (err) {
+    toast.error("Failed to remove item");
+  }
+};
+
+const moveSavedToCart = async (item) => {
+  try {
+    // 1️⃣ Add to cart
+    await updateQuantity(item.productId, item.size, item.quantity);
+
+    // 2️⃣ Remove from saved (backend + local)
+    await removeSavedForLater(item.productId, item.size);
+
+    toast.success("Moved to cart");
+  } catch {
+    toast.error("Failed to move item");
+  }
+};
+
+
   //  useEffect(() => {
   //   const saved = localStorage.getItem("token");
   //   if (saved && products.length > 0) {
@@ -271,28 +335,76 @@ const ShopContextProvider = (props) => {
       const savedToken = localStorage.getItem("token");
 
       try {
-        // 1️⃣ Fetch products (public)
         await getProductsData();
 
         if (savedToken) {
           setToken(savedToken);
-
-          // 2️⃣ Fetch user-specific data in parallel
           await Promise.all([
             getUserCart(savedToken),
             fetchFavorites(savedToken),
+            fetchSavedForLater(savedToken),
           ]);
+        }
+
+        // ✅ BUY NOW RECOVERY
+        const storedBuyNow = sessionStorage.getItem("buyNowItem");
+        if (storedBuyNow) {
+          setBuyNowItem(JSON.parse(storedBuyNow));
         }
       } catch (err) {
         console.error("BOOTSTRAP ERROR:", err);
       } finally {
-        // 3️⃣ App is ready (even if some API failed)
         setAppLoading(false);
       }
     };
 
     bootstrapApp();
   }, []);
+
+  const saveForLater = async (item) => {
+    if (!token) {
+      toast.info("Please login to save items");
+      navigate("/login");
+      return;
+    }
+
+    try {
+      await axios.post(
+        `${backendUrl}/api/cart/save-for-later`,
+        {
+          productId: item._id,
+          size: item.size,
+          quantity: item.quantity,
+        },
+        { headers: { token } }
+      );
+
+      // remove from cart
+      updateQuantity(item._id, item.size, 0);
+
+      // add locally (instant UI)
+      setSavedForLater((prev) => {
+        const exists = prev.some(
+          (p) => p.productId === item._id && p.size === item.size
+        );
+
+        if (exists) return prev;
+
+        return [
+          ...prev,
+          {
+            productId: item._id,
+            size: item.size,
+            quantity: item.quantity,
+          },
+        ];
+      });
+
+      toast.success("Saved for later");
+    } catch (err) {
+      toast.error("Failed to save item");
+    }
+  };
 
   /* ---------------------- CONTEXT VALUE ---------------------- */
   const value = {
@@ -323,7 +435,12 @@ const ShopContextProvider = (props) => {
     removeFromFavorites,
     getFavoriteCount,
     buyNowItem,
-    setBuyNowItem,
+    setBuyNowSafe,
+    savedForLater,
+    fetchSavedForLater,
+    saveForLater,
+    removeSavedForLater,
+    moveSavedToCart,
   };
 
   return (

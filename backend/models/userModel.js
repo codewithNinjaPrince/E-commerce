@@ -62,6 +62,18 @@ const userSchema = new mongoose.Schema(
     phoneOtp: String,
     phoneOtpExpiry: Date,
 
+    /* ---------------- Saved to Later ---------------- */
+    savedForLater: {
+      type: [
+        {
+          productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+          size: String,
+          quantity: Number,
+        },
+      ],
+      default: [],
+    },
+
     /* ---------------- OLD ADDRESS (KEEP FOR NOW) ---------------- */
     address: {
       street: { type: String, default: "" },
@@ -106,7 +118,6 @@ const userSchema = new mongoose.Schema(
 
 export default mongoose.models.User || mongoose.model("User", userSchema);
 
-
 // import mongoose from "mongoose";
 
 // const userSchema = new mongoose.Schema(
@@ -121,7 +132,7 @@ export default mongoose.models.User || mongoose.model("User", userSchema);
 //       lowercase: true,
 //       trim: true,
 //       unique: true,
-//       sparse: true, 
+//       sparse: true,
 //     },
 
 //     phone: {
@@ -157,7 +168,7 @@ export default mongoose.models.User || mongoose.model("User", userSchema);
 //       of: Map,
 //       default: {},
 //     },
-    
+
 //     favorites: [
 //       {
 //         type: mongoose.Schema.Types.ObjectId,
@@ -168,7 +179,6 @@ export default mongoose.models.User || mongoose.model("User", userSchema);
 //   type: [String], // ["PRINCE20", "SAVE10"]
 //   default: [],
 // },
-
 
 //   },
 //   { timestamps: true }
