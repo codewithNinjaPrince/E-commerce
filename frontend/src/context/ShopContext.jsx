@@ -282,37 +282,54 @@ const ShopContextProvider = (props) => {
     }
   };
 
-  const removeSavedForLater = async (productId, size) => {
+ const removeSavedForLater = async (productId, size) => {
+  // 🔒 backup for rollback
+  const prevSaved = [...savedForLater];
+
+  // 🔥 1️⃣ INSTANT UI REMOVE
+  setSavedForLater((prev) =>
+    prev.filter(
+      (item) =>
+        !(item.productId === productId && item.size === size)
+    )
+  );
+
+  // 🔄 2️⃣ BACKGROUND SYNC
   try {
     await axios.post(
       `${backendUrl}/api/cart/save-for-later/remove`,
       { productId, size },
       { headers: { token } }
     );
-
-    setSavedForLater((prev) =>
-      prev.filter(
-        (item) => !(item.productId === productId && item.size === size)
-      )
-    );
   } catch (err) {
+    // 🔁 3️⃣ ROLLBACK ONLY IF FAILED
+    setSavedForLater(prevSaved);
     toast.error("Failed to remove item");
   }
 };
 
+
 const moveSavedToCart = async (item) => {
+  const prevSaved = [...savedForLater];
+
   try {
-    // 1️⃣ Add to cart
+    // instant UI
+    setSavedForLater((prev) =>
+      prev.filter(
+        (i) =>
+          !(i.productId === item.productId && i.size === item.size)
+      )
+    );
+
     await updateQuantity(item.productId, item.size, item.quantity);
-
-    // 2️⃣ Remove from saved (backend + local)
     await removeSavedForLater(item.productId, item.size);
-
-    toast.success("Moved to cart");
   } catch {
+    setSavedForLater(prevSaved);
+    updateQuantity(item.productId, item.size, 0);
     toast.error("Failed to move item");
   }
 };
+
 
 
   //  useEffect(() => {
@@ -361,50 +378,55 @@ const moveSavedToCart = async (item) => {
     bootstrapApp();
   }, []);
 
-  const saveForLater = async (item) => {
-    if (!token) {
-      toast.info("Please login to save items");
-      navigate("/login");
-      return;
-    }
+ const saveForLater = async (item) => {
+  if (!token) {
+    toast.info("Please login to save items");
+    navigate("/login");
+    return;
+  }
 
-    try {
-      await axios.post(
-        `${backendUrl}/api/cart/save-for-later`,
-        {
-          productId: item._id,
-          size: item.size,
-          quantity: item.quantity,
-        },
-        { headers: { token } }
-      );
+  // 🔒 BACKUP (for rollback)
+  const prevSaved = [...savedForLater];
 
-      // remove from cart
-      updateQuantity(item._id, item.size, 0);
+  // 🔥 1️⃣ INSTANT UI UPDATE (NO WAIT)
+  setSavedForLater((prev) => {
+    const exists = prev.some(
+      (p) => p.productId === item._id && p.size === item.size
+    );
+    if (exists) return prev;
 
-      // add locally (instant UI)
-      setSavedForLater((prev) => {
-        const exists = prev.some(
-          (p) => p.productId === item._id && p.size === item.size
-        );
+    return [
+      ...prev,
+      {
+        productId: item._id,
+        size: item.size,
+        quantity: item.quantity,
+      },
+    ];
+  });
 
-        if (exists) return prev;
+  // remove from cart instantly (already optimistic)
+  updateQuantity(item._id, item.size, 0);
 
-        return [
-          ...prev,
-          {
-            productId: item._id,
-            size: item.size,
-            quantity: item.quantity,
-          },
-        ];
-      });
+  // 🔄 2️⃣ BACKGROUND SYNC
+  try {
+    await axios.post(
+      `${backendUrl}/api/cart/save-for-later`,
+      {
+        productId: item._id,
+        size: item.size,
+        quantity: item.quantity,
+      },
+      { headers: { token } }
+    );
+  } catch (err) {
+    // 🔁 3️⃣ ROLLBACK ONLY IF FAILED
+    setSavedForLater(prevSaved);
+    updateQuantity(item._id, item.size, item.quantity);
+    toast.error("Failed to save item");
+  }
+};
 
-      toast.success("Saved for later");
-    } catch (err) {
-      toast.error("Failed to save item");
-    }
-  };
 
   /* ---------------------- CONTEXT VALUE ---------------------- */
   const value = {

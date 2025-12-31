@@ -13,6 +13,7 @@
     "@tailwindcss/vite": "^4.1.13",
     "axios": "^1.12.2",
     "browser-image-compression": "^2.0.2",
+    "firebase": "^12.7.0",
     "lucide-react": "^0.554.0",
     "nanoid": "^5.1.6",
     "react": "^19.1.1",

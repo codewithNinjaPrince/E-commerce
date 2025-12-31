@@ -6,6 +6,8 @@ import { toast } from "react-toastify";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useLayoutEffect } from "react";
 
+const SIGNUP_STORAGE_KEY = "brawvly_signup_draft";
+
 /* ---------------- HELPERS ---------------- */
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
@@ -58,6 +60,7 @@ const Login = () => {
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
   // Password
   const [password, setPassword] = useState("");
@@ -66,6 +69,68 @@ const Login = () => {
   const [showPass2, setShowPass2] = useState(false);
 
   const passwordScore = getPasswordScore(password);
+
+  useEffect(() => {
+    if (mode !== "Sign Up") return;
+
+    const data = {
+      mode,
+      firstName,
+      lastName,
+      identifier,
+      otpSent,
+      otpVerified,
+      cooldown,
+      agreeTerms,
+    };
+
+    sessionStorage.setItem(SIGNUP_STORAGE_KEY, JSON.stringify(data));
+  }, [
+    mode,
+    firstName,
+    lastName,
+    identifier,
+    otpSent,
+    otpVerified,
+    cooldown,
+    agreeTerms,
+  ]);
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem(SIGNUP_STORAGE_KEY);
+    if (!saved) {
+      setHydrated(true);
+      return;
+    }
+
+    try {
+      const data = JSON.parse(saved);
+
+      if (data.mode === "Sign Up") {
+        setMode("Sign Up");
+        setFirstName(data.firstName || "");
+        setLastName(data.lastName || "");
+        setIdentifier(data.identifier || "");
+        setOtpSent(!!data.otpSent);
+        setOtpVerified(!!data.otpVerified);
+        setCooldown(data.cooldown || 0);
+        setAgreeTerms(!!data.agreeTerms);
+      }
+    } catch {
+      sessionStorage.removeItem(SIGNUP_STORAGE_KEY);
+    } finally {
+      setHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+
+    setOtp("");
+    setOtpSent(false);
+    setOtpVerified(false);
+    setCooldown(0);
+  }, [identifier, hydrated]);
 
   /* ---------------- OTP HANDLERS ---------------- */
   const sendOtp = async () => {
@@ -161,117 +226,118 @@ const Login = () => {
 
   /* ---------------- SUBMIT ---------------- */
   const onSubmitHandler = async (e) => {
-  e.preventDefault();
-  if (loading) return;
+    e.preventDefault();
+    if (loading) return;
 
-  const normalized = normalizeIdentifier(identifier);
+    const normalized = normalizeIdentifier(identifier);
 
-  /* ================= SIGN UP VALIDATIONS ================= */
-  if (mode === "Sign Up") {
-    if (!firstName.trim() || !lastName.trim()) {
-      toast.error("First name and last name are required");
-      return;
-    }
-
-    if (!agreeTerms) {
-      toast.error("Please accept Terms & Conditions to continue");
-      return;
-    }
-
-    if (!otpVerified) {
-      toast.error("Please verify email with OTP first");
-      return;
-    }
-
-    if (passwordScore < 5) {
-      toast.error(
-        "Password must have uppercase, lowercase, number, special character & 8+ length"
-      );
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
-    }
-  }
-
-  try {
-    setLoading(true);
-
-    /* ================= API CALL ================= */
-    const res =
-      mode === "Sign Up"
-        ? await axios.post(`${backendUrl}/api/user/register`, {
-            firstName,
-            lastName,
-            identifier: normalized,
-            password,
-          })
-        : await axios.post(`${backendUrl}/api/user/login`, {
-            identifier: normalized,
-            password,
-          });
-
-    if (!res.data?.success) {
-      toast.error(res.data?.message || "Action failed");
-      setLoading(false);
-      return;
-    }
-
-    /* ================= LOGIN FLOW ================= */
-    if (mode === "Login") {
-      setToken(res.data.token);
-      localStorage.setItem("token", res.data.token);
-
-      if (res.data.user?.firstName) {
-        localStorage.setItem("userName", res.data.user.firstName);
+    /* ================= SIGN UP VALIDATIONS ================= */
+    if (mode === "Sign Up") {
+      if (!firstName.trim() || !lastName.trim()) {
+        toast.error("First name and last name are required");
+        return;
       }
 
-      await Promise.all([
-        getUserCart(res.data.token),
-        fetchFavorites(res.data.token),
-      ]);
+      if (!agreeTerms) {
+        toast.error("Please accept Terms & Conditions to continue");
+        return;
+      }
 
-      const name = res.data?.user?.firstName || "there";
+      if (!otpVerified) {
+        toast.error("Please verify email with OTP first");
+        return;
+      }
 
-      toast.success(`Welcome back, ${name} 😎`, {
-        position: "top-center",
-        autoClose: 2000,
-        hideProgressBar: true,
-        theme: "dark",
-      });
+      if (passwordScore < 5) {
+        toast.error(
+          "Password must have uppercase, lowercase, number, special character & 8+ length"
+        );
+        return;
+      }
 
-      navigate(
-        redirectPath && redirectPath.startsWith("/") ? redirectPath : "/"
-      );
+      if (password !== confirmPassword) {
+        toast.error("Passwords do not match");
+        return;
+      }
     }
 
-    /* ================= SIGN UP FLOW ================= */
-    if (mode === "Sign Up") {
-      toast.success("Account created 🎉 Please login to continue", {
-        position: "top-center",
-        autoClose: 2000,
-        hideProgressBar: true,
-        theme: "dark",
-      });
+    try {
+      setLoading(true);
 
-      setMode("Login");
-      setPassword("");
-      setConfirmPassword("");
-      setOtp("");
-      setOtpSent(false);
-      setOtpVerified(false);
-      setAgreeTerms(false);
+      /* ================= API CALL ================= */
+      const res =
+        mode === "Sign Up"
+          ? await axios.post(`${backendUrl}/api/user/register`, {
+              firstName,
+              lastName,
+              identifier: normalized,
+              password,
+            })
+          : await axios.post(`${backendUrl}/api/user/login`, {
+              identifier: normalized,
+              password,
+            });
 
-      navigate("/login");
+      if (!res.data?.success) {
+        toast.error(res.data?.message || "Action failed");
+        setLoading(false);
+        return;
+      }
+
+      /* ================= LOGIN FLOW ================= */
+      if (mode === "Login") {
+        setToken(res.data.token);
+        localStorage.setItem("token", res.data.token);
+
+        if (res.data.user?.firstName) {
+          localStorage.setItem("userName", res.data.user.firstName);
+        }
+
+        await Promise.all([
+          getUserCart(res.data.token),
+          fetchFavorites(res.data.token),
+        ]);
+
+        const name = res.data?.user?.firstName || "there";
+
+        toast.success(`Welcome back, ${name} 😎`, {
+          position: "top-center",
+          autoClose: 2000,
+          hideProgressBar: true,
+          theme: "dark",
+        });
+
+        navigate(
+          redirectPath && redirectPath.startsWith("/") ? redirectPath : "/"
+        );
+      }
+
+      /* ================= SIGN UP FLOW ================= */
+      if (mode === "Sign Up") {
+        toast.success("Account created 🎉 Please login to continue", {
+          position: "top-center",
+          autoClose: 2000,
+          hideProgressBar: true,
+          theme: "dark",
+        });
+
+        sessionStorage.removeItem(SIGNUP_STORAGE_KEY);
+        setMode("Login");
+        setPassword("");
+        setConfirmPassword("");
+        setOtp("");
+        setOtpSent(false);
+        setOtpVerified(false);
+        setAgreeTerms(false);
+
+        navigate("/login");
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Something went wrong");
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    toast.error(err?.response?.data?.message || "Something went wrong");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const normalizeIdentifier = (value) => {
     if (!value) return "";
@@ -288,21 +354,17 @@ const Login = () => {
   };
 
   useEffect(() => {
-    if (cooldown === 0) return;
+    if (cooldown <= 0) {
+      setCooldown(0);
+      return;
+    }
 
     const timer = setInterval(() => {
-      setCooldown((prev) => prev - 1);
+      setCooldown((prev) => Math.max(prev - 1, 0));
     }, 1000);
 
     return () => clearInterval(timer);
   }, [cooldown]);
-
-  useEffect(() => {
-    setOtp("");
-    setOtpSent(false);
-    setOtpVerified(false);
-    setCooldown(0);
-  }, [identifier]);
 
   /* ---------------- UI ---------------- */
   return (
@@ -519,11 +581,19 @@ const Login = () => {
       </button>
 
       {/* TOGGLE */}
+      {/* TOGGLE */}
       <p
         className="text-center text-8px text-gray-200 cursor-pointer hover:text-blue-400 transition"
         onClick={() => {
-          setMode(mode === "Login" ? "Sign Up" : "Login");
+          const nextMode = mode === "Login" ? "Sign Up" : "Login";
+
+          setMode(nextMode);
           setAgreeTerms(false);
+
+          // 🔥 Clear signup draft if switching back to Login
+          if (nextMode === "Login") {
+            sessionStorage.removeItem(SIGNUP_STORAGE_KEY);
+          }
         }}
       >
         {mode === "Login"

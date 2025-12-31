@@ -17,6 +17,8 @@ import AddressPage from "./pages/AddressPage";
 import AddressForm from "./components/AddressForm";
 import OrderPreview from "./pages/OrderPreview";
 import PaymentPage from "./pages/Paymentpage";
+import CodVerify from "./pages/CodVerify";
+import Firebase from "./pages/Firebase";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import Verify from "./pages/Verify";
@@ -205,6 +207,8 @@ const App = () => {
         <Route path="/cart" element={<Cart />} />
         <Route path="/order-preview" element={<OrderPreview />} />
         <Route path="/payment" element={<PaymentPage />} />
+        <Route path="/cod-verify" element={<CodVerify />} />
+        <Route path="/firebase-test" element={<Firebase />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/sell-with-us" element={<SellWithUs />} />

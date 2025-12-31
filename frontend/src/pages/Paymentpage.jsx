@@ -115,14 +115,8 @@ const PaymentPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const {
-    backendUrl,
-    token,
-    cartItems,
-    products,
-    buyNowItem,
-    setBuyNowSafe,
-  } = useContext(ShopContext);
+  const { backendUrl, token, cartItems, products, buyNowItem, setBuyNowSafe } =
+    useContext(ShopContext);
 
   const cartTotalRef = useRef(null);
 
@@ -143,32 +137,6 @@ const PaymentPage = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [processing, setProcessing] = useState(false);
 
-  const [card, setCard] = useState({
-    number: "",
-    expiry: "",
-    cvv: "",
-    name: "",
-  });
-
-  const formatCardNumber = (value) =>
-    value
-      .replace(/\D/g, "")
-      .slice(0, 16)
-      .replace(/(.{4})/g, "$1 ")
-      .trim();
-
-  const formatExpiry = (value) =>
-    value
-      .replace(/\D/g, "")
-      .slice(0, 4)
-      .replace(/(\d{2})(\d{0,2})/, "$1/$2");
-
-  const isCardValid =
-    card.number.replace(/\s/g, "").length === 16 &&
-    card.expiry.length === 5 &&
-    card.cvv.length === 3 &&
-    card.name.length > 2;
-
   const payableAmount = priceData?.payableAmount ?? 0;
 
   const PaymentRadio = ({ active }) => (
@@ -182,19 +150,104 @@ const PaymentPage = () => {
     </div>
   );
 
-  const handlePayClick = () => {
-  if (paymentMethod === "upi" && !selectedUpi) {
-    toast.info("Please select a UPI app");
-    return;
-  }
-  setConfirmOpen(true);
-};
+  const paymentCompletedRef = useRef(false);
 
+  const handlePayClick = async () => {
+    // 🟡 COD → normal confirm modal
+    if (paymentMethod === "cod") {
+      setConfirmOpen(true);
+      return;
+    }
+
+    // 🟡 UPI selection check
+    if (paymentMethod === "upi" && !selectedUpi) {
+      toast.info("Please select a UPI app");
+      return;
+    }
+
+    try {
+      // 1️⃣ Create Razorpay order (backend)
+      const items = buildItems();
+
+      const { data } = await axios.post(
+        `${backendUrl}/api/order/razorpay/create`,
+        {
+          items,
+          couponCode: couponValid ? couponCode : null,
+          paymentMethod: "online",
+        },
+        { headers: { token } }
+      );
+
+      if (!data.success) {
+        toast.error("Unable to initiate payment");
+        return;
+      }
+
+      // 2️⃣ Open Razorpay popup
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: data.order.amount,
+        currency: "INR",
+        name: "Brawvly",
+        description: "Secure Payment",
+        order_id: data.order.id,
+
+        handler: async function (response) {
+          try {
+            const verify = await axios.post(
+              `${backendUrl}/api/order/razorpay/verify`,
+              response,
+              { headers: { token } }
+            );
+
+            if (!verify.data.success) {
+              toast.error("Payment verification failed");
+              return;
+            }
+
+            paymentCompletedRef.current = true;
+            toast.success("Payment successful 🎉");
+
+            await new Promise((r) => setTimeout(r, 400));
+            await placeFinalOrder();
+          } catch (err) {
+            toast.error("Payment verification error");
+          }
+        },
+
+        modal: {
+          ondismiss: () => {
+            if (!paymentCompletedRef.current) {
+              toast.info("Payment cancelled");
+            }
+          },
+        },
+
+        // 🔥 THIS IS THE KEY CHANGE
+        method: {
+          card: paymentMethod === "card",
+          upi: paymentMethod === "upi",
+          netbanking: false,
+          wallet: false,
+        },
+
+        theme: {
+          color: "#3b82f6",
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      console.error(err);
+      toast.error("Payment failed");
+    }
+  };
 
   const handleBack = () => {
-  navigate("/order-preview", { replace: true });
-};
-
+    navigate("/order-preview", { replace: true });
+  };
 
   const placeFinalOrder = async () => {
     if (processing) return;
@@ -221,7 +274,6 @@ const PaymentPage = () => {
           items,
           paymentMethod,
           couponCode: couponValid ? couponCode : null,
-          address, // 🔥 NOW PASS ADDRESS
         },
         { headers: { token } }
       );
@@ -592,7 +644,6 @@ const PaymentPage = () => {
                 </div>
               </div>
 
-              {/* ================= CARD ================= */}
               {/* ================= CARD PAYMENT ================= */}
               <div className="bg-[#121212] rounded-2xl border border-white/10 overflow-hidden">
                 {/* HEADER */}
@@ -629,129 +680,36 @@ const PaymentPage = () => {
                   </p>
                 </div>
 
-                {/* BODY */}
                 <div
                   className={`
-                    transition-all duration-300 ease-in-out
-                    ${
-                      cardOpen
-                        ? "max-h-[320px] opacity-100"
-                        : "max-h-0 opacity-0"
-                    }
-                    overflow-hidden
-                    `}
+    transition-all duration-300 ease-in-out
+    ${cardOpen ? "max-h-[140px] opacity-100" : "max-h-0 opacity-0"}
+    overflow-hidden
+  `}
                 >
                   <div className="px-4 py-4 space-y-3">
-                    {/* CARD NUMBER */}
-                    <input
-                      value={card.number}
-                      onChange={(e) =>
-                        setCard({
-                          ...card,
-                          number: formatCardNumber(e.target.value),
-                        })
-                      }
-                      placeholder="Card number"
-                      className="
-                      w-full
-                      bg-black
-                      border border-white/20
-                      rounded-lg
-                      px-3 py-2
-                      text-white
-                      outline-none
-                      focus:border-blue-500
-                      cursor-text
-                      "
-                    />
+                    <p className="text-sm text-gray-400">
+                      You’ll be redirected to a secure Razorpay page to enter
+                      your card details.
+                    </p>
 
-                    {/* EXPIRY + CVV */}
-                    <div className="flex gap-2">
-                      <input
-                        value={card.expiry}
-                        onChange={(e) =>
-                          setCard({
-                            ...card,
-                            expiry: formatExpiry(e.target.value),
-                          })
-                        }
-                        placeholder="MM/YY"
-                        className="
-                        flex-1
-                        bg-black
-                        border border-white/20
-                        rounded-lg
-                        px-3 py-2
-                        text-white
-                        outline-none
-                        focus:border-blue-500
-                        cursor-text
-                        "
-                      />
-
-                      <input
-                        type="password"
-                        value={card.cvv}
-                        onChange={(e) =>
-                          setCard({
-                            ...card,
-                            cvv: e.target.value.replace(/\D/g, "").slice(0, 3),
-                          })
-                        }
-                        placeholder="CVV"
-                        className="
-                        flex-1
-                        bg-black
-                        border border-white/20
-                        rounded-lg
-                        px-3 py-2
-                        text-white
-                        outline-none
-                        focus:border-blue-500
-                        cursor-text
-                        "
-                      />
-                    </div>
-
-                    {/* NAME */}
-                    <input
-                      value={card.name}
-                      onChange={(e) =>
-                        setCard({ ...card, name: e.target.value })
-                      }
-                      placeholder="Name on card"
-                      className="
-                      w-full
-                      bg-black
-                      border border-white/20
-                      rounded-lg
-                      px-3 py-2
-                      text-white
-                      outline-none
-                      focus:border-blue-500
-                      cursor-text
-                      "
-                    />
-
-                    {/* PAY BUTTON */}
                     <button
-                      disabled={!isCardValid}
-                      onClick={isCardValid ? handlePayClick : undefined}
-                      className={`
-    w-full
-    py-3
-    rounded-xl
-    font-semibold
-    text-base
-    transition-all
-    ${
-      isCardValid
-        ? "bg-blue-500 text-black hover:bg-blue-400 active:scale-95 cursor-pointer"
-        : "bg-white/10 text-gray-500 cursor-not-allowed"
-    }
-    `}
+                      onClick={handlePayClick}
+                      className="
+        w-full
+        py-3
+        rounded-xl
+        font-semibold
+        text-base
+        bg-blue-500
+        text-black
+        hover:bg-blue-400
+        active:scale-95
+        transition-all
+        cursor-pointer
+      "
                     >
-                      Pay ₹{formatINR(payableAmount)}
+                      Continue to Secure Payment ₹{formatINR(payableAmount)}
                     </button>
                   </div>
                 </div>
@@ -868,7 +826,7 @@ const PaymentPage = () => {
               <button
                 onClick={() => setConfirmOpen(false)}
                 disabled={processing}
-                className="flex-1 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20"
+                className="flex-1 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 cursor-pointer"
               >
                 Cancel
               </button>
@@ -876,7 +834,7 @@ const PaymentPage = () => {
               <button
                 onClick={placeFinalOrder}
                 disabled={processing}
-                className="flex-1 py-2 rounded-lg bg-green-500 text-black font-semibold hover:bg-green-400"
+                className="flex-1 py-2 rounded-lg bg-green-500 text-black font-semibold hover:bg-green-400 cursor-pointer"
               >
                 {processing ? "Placing..." : "Confirm & Place Order"}
               </button>
