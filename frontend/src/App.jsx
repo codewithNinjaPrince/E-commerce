@@ -17,6 +17,8 @@ import AddressPage from "./pages/AddressPage";
 import AddressForm from "./components/AddressForm";
 import OrderPreview from "./pages/OrderPreview";
 import PaymentPage from "./pages/Paymentpage";
+import PaymentSuccessLoading from "./components/PaymentSuccessLoading";
+import OrderSuccess from "./pages/OrderSuccess";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import Verify from "./pages/Verify";
@@ -90,7 +92,9 @@ const App = () => {
     pathname.startsWith("/address/edit") ||
     pathname === "/order-preview" ||
     pathname === "/placeorder" ||
-    pathname === "/cart";
+    pathname === "/cart" ||
+    pathname === "/payment-success-loading" ||
+    pathname === "/order-success" 
 
   /* 🔥 HIDE FOOTER ON THESE ROUTES */
   const hideFooterRoutes = [
@@ -101,7 +105,9 @@ const App = () => {
     "/address",
     "/order-preview",
     "/payment",
-    "/favorites"
+    "/favorites",
+    "/order-success",
+    "/payment-success-loading",
   ];
 
   const showFooter = !hideFooterRoutes.some((route) =>
@@ -205,6 +211,8 @@ const App = () => {
         <Route path="/cart" element={<Cart />} />
         <Route path="/order-preview" element={<OrderPreview />} />
         <Route path="/payment" element={<PaymentPage />} />
+        <Route path="/payment-success-loading" element={<PaymentSuccessLoading />} />
+        <Route path="/order-success" element={<OrderSuccess />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/sell-with-us" element={<SellWithUs />} />
