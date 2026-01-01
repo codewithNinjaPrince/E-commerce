@@ -187,12 +187,10 @@ const AddressPage = () => {
           {/* LEFT */}
           <button
             onClick={() => {
-              if (from === "payment") {
-                navigate("/payment", { replace: true });
-              } else if (from === "order-preview") {
-                navigate("/order-preview", { replace: true });
+              if (from) {
+                navigate(from, { replace: true });
               } else {
-                navigate("/order-preview", { replace: true });
+                navigate(-1);
               }
             }}
             className="p-2 rounded-lg hover:bg-white/10 transition cursor-pointer"

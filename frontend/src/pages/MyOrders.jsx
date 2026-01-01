@@ -1,88 +1,88 @@
-import React, { useContext, useEffect, useState, useRef } from "react";
-import Title from "../components/Title";
-import { ShopContext } from "../context/ShopContext";
+import React, { useContext, useEffect, useLayoutEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { FaArrowLeft, FaSearch, FaFilter, FaTimes } from "react-icons/fa";
 import axios from "axios";
+import { ShopContext } from "../context/ShopContext";
 import { toast } from "react-toastify";
-import { FiBox } from "react-icons/fi";
-import { FaCheckCircle, FaTruck } from "react-icons/fa";
-import { useLayoutEffect } from "react";
 
-/**
- * Orders.jsx
- * Merged orders + per-item tracking + cancel
- * Horizontal timeline on desktop, vertical on mobile
- */
-
-const TIMELINE_STAGES = [
+const ORDER_STATUSES = [
   "Order Placed",
-  "Packing",
+  "Packed",
   "Shipped",
   "Out for Delivery",
   "Delivered",
+  "Cancelled",
 ];
 
-const OrdersSkeleton = () => {
+const OrderItemSkeleton = () => {
   return (
-    <section className="pt-20 pb-16 px-2 sm:px-4 md:px-6 animate-pulse">
-      <div className="max-w-7xl mx-auto bg-black/90 border border-white/10 rounded-2xl p-6">
-        {/* TITLE */}
-        <div className="h-7 w-40 bg-gray-700/40 rounded mb-8" />
+    <div
+      className="
+        relative
+        grid
+        grid-cols-[72px_1fr_16px]
+        md:grid-cols-[88px_1fr_20px]
+        lg:grid-cols-[120px_1fr_24px]
+        items-start
+        gap-4
+        py-5
+        px-4
+        animate-pulse
+      "
+    >
+      {/* LEFT BAR */}
+      <span className="absolute left-0 top-0 h-full w-[3px] bg-white/10 rounded-r" />
 
-        {/* ORDER CARDS */}
-        {[1, 2, 3].map((_, i) => (
-          <div
-            key={i}
-            className="bg-[#1c1c1c] border border-white/10 rounded-xl p-4 mb-6"
-          >
-            {/* HEADER */}
-            <div className="flex justify-between mb-4">
-              <div className="space-y-2">
-                <div className="h-3 w-40 bg-gray-700/40 rounded" />
-                <div className="h-3 w-32 bg-gray-700/30 rounded" />
-              </div>
-              <div className="h-4 w-20 bg-gray-700/40 rounded" />
-            </div>
-
-            {/* ITEM */}
-            <div className="flex gap-4">
-              <div className="w-24 h-24 bg-gray-700/40 rounded-lg" />
-              <div className="flex-1 space-y-3">
-                <div className="h-4 w-2/3 bg-gray-700/40 rounded" />
-                <div className="h-3 w-1/3 bg-gray-700/30 rounded" />
-                <div className="h-4 w-1/4 bg-gray-700/40 rounded" />
-              </div>
-            </div>
-
-            {/* TIMELINE */}
-            <div className="mt-6 flex gap-2">
-              {[1, 2, 3, 4, 5].map((_, j) => (
-                <div key={j} className="flex-1 h-2 bg-gray-700/30 rounded" />
-              ))}
-            </div>
-          </div>
-        ))}
+      {/* IMAGE */}
+      <div className="flex justify-center">
+        <div className="w-20 aspect-[3/4] rounded-xl bg-white/10" />
       </div>
-    </section>
+
+      {/* TEXT */}
+      <div className="space-y-2 pr-6">
+        <div className="h-3 w-40 bg-white/10 rounded" />
+        <div className="h-4 w-64 bg-white/10 rounded" />
+        <div className="h-3 w-28 bg-white/10 rounded" />
+      </div>
+
+      {/* CHEVRON */}
+      <div className="h-4 w-2 bg-white/10 rounded" />
+
+      {/* DIVIDER */}
+      <span className="absolute bottom-0 w-full right-0 h-px bg-white/10" />
+    </div>
   );
 };
 
-const Orders = () => {
+const OrdersSkeletonList = () => {
+  return (
+    <>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <OrderItemSkeleton key={i} />
+      ))}
+    </>
+  );
+};
+
+const MyOrders = () => {
   useLayoutEffect(() => {
-    // 🔥 HARD FORCE SCROLL (browser memory ignore)
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
     window.scrollTo(0, 0);
   }, []);
-  const { backendUrl, token, currency } = useContext(ShopContext);
+
+  const navigate = useNavigate();
+  const { backendUrl, token } = useContext(ShopContext);
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const [actionLoading, setActionLoading] = useState({});
-  const [confirmUI, setConfirmUI] = useState(null);
-  const [cancelModal, setCancelModal] = useState(null);
+  const [search, setSearch] = useState("");
+  const [showMobileFilter, setShowMobileFilter] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [statusFilter, setStatusFilter] = useState([]);
+  const [timeFilter, setTimeFilter] = useState(null);
+  const [tempStatusFilter, setTempStatusFilter] = useState([]);
+  const [tempTimeFilter, setTempTimeFilter] = useState(null);
 
+  /* ---------------- ONLINE / OFFLINE ---------------- */
   useEffect(() => {
     const online = () => setIsOnline(true);
     const offline = () => setIsOnline(false);
@@ -96,27 +96,11 @@ const Orders = () => {
     };
   }, []);
 
-  const animRef = useRef({});
-  const [, tick] = useState(0);
-
-  const keyFor = (orderId, productId) => `${orderId}-${productId}`;
-
-  const stageIndex = (stage) => {
-    const idx = TIMELINE_STAGES.indexOf(stage);
-    return idx === -1 ? 0 : idx;
-  };
-
-  const getItemStatus = (order, item) => {
-    if (item.itemStatus === "Cancelled") return "Cancelled";
-    if (order.status === "Cancelled") return "Cancelled";
-    return item.itemStatus || item.status || order.status || "Order Placed";
-  };
-
-  // --------------------------- LOAD ORDERS --------------------------
+  /* ---------------- LOAD ORDERS ---------------- */
   const loadOrders = async () => {
     if (!token) return;
-    setLoading(true);
 
+    setLoading(true);
     try {
       const res = await axios.post(
         `${backendUrl}/api/order/userorders`,
@@ -125,17 +109,14 @@ const Orders = () => {
       );
 
       if (!res.data.success) {
-        toast.error(res.data.message || "Could not fetch orders");
+        toast.error(res.data.message || "Failed to fetch orders");
         setOrders([]);
-        setLoading(false);
         return;
       }
 
-      const fetched = Array.isArray(res.data.orders) ? res.data.orders : [];
-
-      setOrders(fetched);
+      setOrders(Array.isArray(res.data.orders) ? res.data.orders : []);
     } catch (err) {
-      toast.error("Failed to load orders");
+      toast.error("Unable to load orders");
     } finally {
       setLoading(false);
     }
@@ -145,539 +126,513 @@ const Orders = () => {
     if (token) loadOrders();
   }, [token]);
 
-  const setAction = (key, type, value) => {
-    setActionLoading((prev) => ({
-      ...prev,
-      [key]: { ...(prev[key] || {}), [type]: value },
-    }));
-  };
+  useEffect(() => {
+    document.body.style.overflow = showMobileFilter ? "hidden" : "";
+    return () => (document.body.style.overflow = "");
+  }, [showMobileFilter]);
 
-  // --------------------------- TRACK ORDER -------------------------
-  const trackOrder = async (orderId) => {
-    if (!token) return toast.error("Not authorized");
+  /* ---------------- FLATTEN ORDERS → ITEMS ---------------- */
+  const orderItems = orders.flatMap((order) =>
+    order.items.map((item) => ({
+      orderId: order._id,
+      orderDate: order.date,
+      orderStatus: order.status,
+      address: order.address,
+      ...item,
+    }))
+  );
 
-    const k = `${orderId}-track`;
-    setAction(k, "track", true);
+  /* ---------------- SEARCH FILTER ---------------- */
+  const normalizedSearch = search.trim().toLowerCase();
 
-    try {
-      const res = await axios.post(
-        `${backendUrl}/api/order/track`,
-        { orderId },
-        { headers: { token } }
-      );
+  const filteredItems = orderItems.filter((item) => {
+    /* ---------- SEARCH ---------- */
+    if (normalizedSearch) {
+      const address = item.address || {};
 
-      if (res.data.success && res.data.order) {
-        setOrders((prev) =>
-          prev.map((o) => {
-            if (String(o._id) !== String(orderId)) return o;
+      const addressText = [
+        address.name,
+        address.phone,
+        address.email,
+        address.houseNo,
+        address.street,
+        address.locality,
+        address.landmark,
+        address.city,
+        address.district,
+        address.state,
+        address.pincode,
+        address.country,
+        address.type,
+      ]
+        .filter(Boolean)
+        .join(" ");
 
-            const oldItems = o.items || [];
-            const newItems = res.data.order.items || [];
+      const orderDate = new Date(item.orderDate);
 
-            newItems.forEach((fi) => {
-              const old = oldItems.find(
-                (oi) => String(oi.productId) === String(fi.productId)
-              );
-              const oldStage = old
-                ? old.itemStatus || old.status || o.status
-                : null;
-              const newStage =
-                fi.itemStatus || fi.status || res.data.order.status;
+      const timeText = [
+        orderDate.toLocaleString("en-IN"),
+        orderDate.toLocaleDateString("en-IN"),
+        orderDate.toLocaleTimeString("en-IN"),
+        orderDate.getFullYear(),
+        orderDate.toLocaleString("en-IN", { month: "long" }),
+        orderDate.toLocaleString("en-IN", { month: "short" }),
+        orderDate.toLocaleString("en-IN", { weekday: "long" }),
+      ].join(" ");
 
-              if (
-                oldStage &&
-                TIMELINE_STAGES.indexOf(newStage) >
-                TIMELINE_STAGES.indexOf(oldStage)
-              ) {
-                animRef.current[keyFor(orderId, fi.productId)] = Date.now();
-              }
-            });
+      const searchableText = [
+        item.name,
+        item.brandName,
+        item.category,
+        item.subCategory,
+        item.size,
+        item.offerCode,
+        item.shopId,
+        item.productId,
+        item.itemStatus,
+        item.orderStatus,
+        ...(item.statusHistory || []).map((s) => s.status),
+        addressText,
+        timeText,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
 
-            return {
-              ...o,
-              status: res.data.order.status,
-              items: o.items.map((oldItem) => {
-                const updated = res.data.order.items.find(
-                  (ni) => String(ni.productId) === String(oldItem.productId)
-                );
-
-                return updated
-                  ? { ...oldItem, ...updated } // 👈 image preserved
-                  : oldItem;
-              }),
-            };
-          })
-        );
-
-        tick((t) => t + 1);
-        toast.success("Order status updated");
-      } else {
-        toast.error(res.data.message || "Could not fetch updated status");
-      }
-    } catch (err) {
-      toast.error("Unable to update status");
-    } finally {
-      setAction(k, "track", false);
+      if (!searchableText.includes(normalizedSearch)) return false;
     }
-  };
 
-  // --------------------------- CANCEL ITEM -------------------------
-  const cancelItem = async (orderId, productId) => {
-    if (!token) return toast.error("Not authorized");
+    /* ---------- STATUS FILTER ---------- */
+    const effectiveStatus = item.itemStatus || item.orderStatus;
 
-    const k = keyFor(orderId, productId);
-    setAction(k, "cancel", true);
-
-    try {
-      const res = await axios.post(
-        `${backendUrl}/api/order/cancel`,
-        { orderId, productId },
-        { headers: { token } }
-      );
-
-      if (res.data.success) {
-        setOrders((prev) =>
-          prev.map((o) => {
-            if (String(o._id) !== String(orderId)) return o;
-
-            const items = o.items.map((it) =>
-              String(it.productId) === String(productId)
-                ? { ...it, itemStatus: "Cancelled" }
-                : it
-            );
-
-            return { ...o, items };
-          })
-        );
-        toast.success("Item cancelled");
-      } else {
-        toast.error(res.data.message);
-      }
-    } catch (err) {
-      toast.error("Unable to cancel item");
-    } finally {
-      setAction(k, "cancel", false);
+    if (statusFilter.length > 0) {
+      if (!statusFilter.includes(effectiveStatus)) return false;
     }
-  };
 
-  const isAnimated = (orderId, productId) => {
-    const ts = animRef.current[keyFor(orderId, productId)];
-    if (!ts) return false;
-    return Date.now() - ts < 3000;
-  };
+    /* ---------- TIME FILTER ---------- */
+    if (timeFilter) {
+      const now = Date.now();
+      const diff = now - item.orderDate;
 
-  const shouldShowSkeleton =
-    loading || !isOnline || (token && !loading && orders.length === 0);
+      const ranges = {
+        "Last 30 days": 30 * 24 * 60 * 60 * 1000,
+        "Last 3 months": 90 * 24 * 60 * 60 * 1000,
+        "Last 6 months": 180 * 24 * 60 * 60 * 1000,
+      };
 
-  if (shouldShowSkeleton) {
-    return <OrdersSkeleton />;
-  }
+      if (timeFilter !== "Older" && diff > ranges[timeFilter]) return false;
+      if (timeFilter === "Older" && diff <= ranges["Last 6 months"])
+        return false;
+    }
 
-  // --------------------------- UI RENDER -------------------------
+    return true;
+  });
+
   return (
-    <>
-      {/* PAGE WRAPPER */}
-      <section className="pt-20 sm:pt-22 lg:pt-26 pb-16 px-2 sm:px-4 md:px-6">
-        <div
-          className="
-          max-w-9xl mx-auto
-          bg-black/90
-          border border-white/10
-          rounded-2xl
-          shadow-[0_0_40px_rgba(255,255,255,0.06)]
-          overflow-hidden
-        "
-        >
-          <div className="px-2 sm:px-4 md:px-8 py-8 text-white">
+    <section className="h-screen bg-black text-white overflow-hidden">
+      {/* ================= HEADER ================= */}
+      <div
+        className="
+    fixed
+    top-0
+    lg:top-[64px]
+    left-0
+    right-0
+    z-40
+    bg-black/90
+    backdrop-blur
+    border-b
+    border-white/10
+  "
+      >
+        <div className="max-w-[1400px] mx-auto px-4 lg:px-10 py-4 space-y-4">
+          {/* MOBILE TITLE */}
+          <div className="lg:hidden grid grid-cols-[auto_1fr_auto] items-center">
+            {/* BACK */}
+            <button
+              onClick={() => navigate("/")}
+              className="p-2 rounded-lg hover:bg-white/10 transition cursor-pointer"
+              aria-label="Back to home"
+            >
+              <FaArrowLeft />
+            </button>
+
             {/* TITLE */}
-            <div className="text-2xl mb-6">
-              <Title text1="Your" text2="Orders" />
+            <div className="text-center text-lg font-semibold">My Orders</div>
+          </div>
+
+          {/* SEARCH + FILTER */}
+          <div className="flex items-center justify-between gap-4">
+            {/* SEARCH (RESPONSIVE WIDTH) */}
+            <div className="relative w-full lg:w-[55%] xl:w-[60%]">
+              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
+
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search your order here"
+                className="
+                   w-full
+                   bg-[#121212]
+                   pl-9 pr-10
+                   py-2.5
+                   rounded-xl
+                   text-sm
+                   border border-white/10
+                   outline-none
+                   focus:border-white/30
+                 "
+              />
+
+              {/* CLEAR SEARCH */}
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="
+                     absolute right-3 top-1/2 -translate-y-1/2
+                     text-gray-400 hover:text-white
+                     transition cursor-pointer
+                   "
+                  aria-label="Clear search"
+                >
+                  <FaTimes size={14} />
+                </button>
+              )}
             </div>
 
-            {!loading && orders.length === 0 && (
-              <div className="flex flex-col items-center py-20">
-                <FiBox size={90} className="text-gray-500 mb-4" />
-                <h2 className="text-xl font-semibold mb-2">No Orders Found</h2>
-                <p className="text-gray-500">
-                  Start shopping to place your first order!
-                </p>
+            {/* FILTERS (RIGHT SIDE) */}
+            <div className="flex items-center gap-3">
+              {/* 📱 MOBILE FILTER BUTTON */}
+              <button
+                onClick={() => {
+                  setTempStatusFilter(statusFilter);
+                  setTempTimeFilter(timeFilter);
+                  setShowMobileFilter(true);
+                }}
+                className="
+                   lg:hidden
+                   flex items-center gap-2
+                   px-4 py-2.5
+                   rounded-xl
+                   border border-white/10
+                   text-sm
+                   hover:bg-white/10
+                   active:scale-95
+                   transition
+                   cursor-pointer
+                 "
+              >
+                <FaFilter />
+                Filter
+              </button>
+
+              {/* 💻 DESKTOP FILTERS */}
+              <div className="hidden lg:flex items-center gap-3">
+                <select
+                  value={statusFilter[0] || ""}
+                  onChange={(e) =>
+                    setStatusFilter(e.target.value ? [e.target.value] : [])
+                  }
+                  className="bg-[#121212] border border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none hover:border-white/30 cursor-pointer"
+                >
+                  <option value="">All Status</option>
+                  <option value="Order Placed">Order Placed</option>
+                  <option value="Packed">Packed</option>
+                  <option value="Shipped">Shipped</option>
+                  <option value="Out for Delivery">Out for Delivery</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+
+                <select
+                  value={timeFilter || ""}
+                  onChange={(e) => setTimeFilter(e.target.value || null)}
+                  className={`bg-[#121212] border rounded-xl px-4 py-2.5 text-sm cursor-pointer
+  ${timeFilter ? "border-white/40" : "border-white/10"}
+`}
+                >
+                  <option value="">Any time</option>
+                  <option value="Last 30 days">Last 30 days</option>
+                  <option value="Last 3 months">Last 3 months</option>
+                  <option value="Last 6 months">Last 6 months</option>
+                  <option value="Older">Older</option>
+                </select>
               </div>
-            )}
-
-            {!loading && orders.length > 0 && (
-              <div className="max-w-7xl mx-auto px-1 sm:px-3 md:px-5 lg:px-8 space-y-2">
-                {orders.map((order) => (
-                  <article
-                    key={order._id}
-                    className="bg-[#1c1c1c] p-2 sm:p-3 md:p-5 lg:p-8 rounded-xl border border-white/10 shadow-md"
-                  >
-                    {/* HEADER */}
-                    <div className="flex justify-between items-start flex-wrap gap-3 md:gap-8 lg:gap-10">
-                      <div>
-                        <p className="text-sm text-gray-400">
-                          Order ID:{" "}
-                          <span className="text-gray-200 break-all">
-                            {order._id}
-                          </span>
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          Placed on{" "}
-                          <span className="text-gray-200">
-                            {new Date(order.date).toLocaleString("en-IN")}
-                          </span>
-                        </p>
-                      </div>
-
-                      <div className="text-right">
-                        <p className="text-sm text-gray-400">Payment</p>
-                        <p
-                          className={`font-semibold ${order.payment ? "text-green-400" : "text-red-400"
-                            }`}
-                        >
-                          {order.payment ? "Completed" : "Pending"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* ITEMS */}
-                    <div className="mt-6 space-y-4">
-                      {order.items.map((item, idx) => {
-                        const itemKey = keyFor(order._id, item.productId);
-                        const status = getItemStatus(order, item);
-                        const statusIdx = stageIndex(status);
-                        const animate = isAnimated(order._id, item.productId);
-                        const isCancelled =
-                          item.itemStatus === "Cancelled" ||
-                          order.status === "Cancelled";
-
-                        const loadingTrack =
-                          actionLoading[`${order._id}-track`]?.track || false;
-                        const loadingCancel =
-                          actionLoading[itemKey]?.cancel || false;
-
-                        const imageSrc =
-                          Array.isArray(item.image) && item.image.length > 0
-                            ? item.image[0]
-                            : "https://via.placeholder.com/150?text=No+Image";
-
-                        return (
-                          <div
-                            key={idx}
-                            className="flex flex-col lg:flex-row gap-4 sm:gap-8 bg-[#121212] p-4 rounded-lg border border-white/10"
-                          >
-                            <div className="flex-shrink-0">
-                              <img
-                                src={imageSrc}
-                                alt={item.name}
-                                className="w-24 h-24 md:w-28 md:h-28 rounded-lg object-cover border border-gray-700"
-                                loading="lazy"
-                              />
-                            </div>
-
-                            <div className="flex-1 flex flex-col justify-between">
-                              <div>
-                                <p className="font-semibold text-lg">
-                                  {item.name}
-                                </p>
-                                <p className="text-sm text-gray-400 mt-1">
-                                  Brand:{" "}
-                                  <span className="text-gray-300">
-                                    {item.brandName || "—"}
-                                  </span>
-                                </p>
-
-                                <div className="flex gap-2 items-center mt-3">
-                                  <p className="text-green-400 font-bold text-lg">
-                                    {currency}{" "}
-                                    {item.discountedPrice || item.price}
-                                  </p>
-                                  {item.actualPrice && (
-                                    <p className="text-gray-500 line-through">
-                                      {currency} {item.actualPrice}
-                                    </p>
-                                  )}
-                                </div>
-
-                                <div className="flex gap-4 mt-2 text-sm text-gray-300">
-                                  <p>Qty: {item.quantity}</p>
-                                  <p>Size: {item.size}</p>
-                                </div>
-                              </div>
-
-                              {/* TIMELINE */}
-                              {/* STATUS / TIMELINE */}
-                              <div className="mt-4">
-                                {/* ❌ CANCELLED UI */}
-                                {isCancelled ? (
-                                  <div className="bg-red-900/20 border border-red-500/40 rounded-lg p-4">
-                                    <p className="text-red-400 font-semibold text-sm flex items-center gap-2">
-                                      ❌ Order Cancelled
-                                    </p>
-                                    <p className="text-red-300 text-xs mt-1">
-                                      This item has been cancelled and will not
-                                      be delivered.
-                                    </p>
-                                  </div>
-                                ) : (
-                                  <>
-                                    {/* ✅ MOBILE VERTICAL TIMELINE */}
-                                    <div className="flex flex-col gap-3 lg:hidden">
-                                      {TIMELINE_STAGES.map((stage, sIdx) => {
-                                        const done = sIdx <= statusIdx;
-                                        const animateHere =
-                                          animate && sIdx === statusIdx;
-
-                                        return (
-                                          <div
-                                            key={stage}
-                                            className="flex items-center gap-3"
-                                          >
-                                            <div className="flex flex-col items-center">
-                                              <div
-                                                className={`w-6 h-6 rounded-full flex items-center justify-center ${done
-                                                    ? "bg-green-500"
-                                                    : "bg-gray-600"
-                                                  }`}
-                                              >
-                                                {done && (
-                                                  <FaCheckCircle className="text-white text-[12px]" />
-                                                )}
-                                              </div>
-
-                                              {sIdx <
-                                                TIMELINE_STAGES.length - 1 && (
-                                                  <div
-                                                    className={`w-[2px] h-6 mt-1 ${done
-                                                        ? "bg-green-500"
-                                                        : "bg-gray-700"
-                                                      }`}
-                                                  />
-                                                )}
-                                            </div>
-
-                                            <div className="flex-1">
-                                              <p
-                                                className={`text-sm ${done
-                                                    ? "text-gray-200 font-semibold"
-                                                    : "text-gray-400"
-                                                  }`}
-                                              >
-                                                {stage}
-                                              </p>
-
-                                              {animateHere && (
-                                                <div className="mt-1 w-full">
-                                                  <div className="h-1 bg-gray-700 rounded overflow-hidden">
-                                                    <div className="h-1 bg-green-500 animate-grow" />
-                                                  </div>
-                                                </div>
-                                              )}
-                                            </div>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-
-                                    {/* ✅ DESKTOP HORIZONTAL TIMELINE */}
-                                    <div className="hidden lg:flex items-start w-full">
-                                      {TIMELINE_STAGES.map((stage, sIdx) => {
-                                        const done = sIdx <= statusIdx;
-                                        const isLast =
-                                          sIdx === TIMELINE_STAGES.length - 1;
-
-                                        return (
-                                          <div
-                                            key={stage}
-                                            className="flex-1 flex flex-col items-center"
-                                          >
-                                            <div className="flex items-center w-full">
-                                              {sIdx !== 0 && (
-                                                <div
-                                                  className={`h-[2px] flex-1 ${done
-                                                      ? "bg-green-500"
-                                                      : "bg-gray-700"
-                                                    }`}
-                                                />
-                                              )}
-
-                                              <div
-                                                className={`w-6 h-6 rounded-full flex items-center justify-center ${done
-                                                    ? "bg-green-500"
-                                                    : "bg-gray-600"
-                                                  }`}
-                                              >
-                                                {done && (
-                                                  <FaCheckCircle className="text-white text-[12px]" />
-                                                )}
-                                              </div>
-
-                                              {!isLast && (
-                                                <div
-                                                  className={`h-[2px] flex-1 ${done
-                                                      ? "bg-green-500"
-                                                      : "bg-gray-700"
-                                                    }`}
-                                                />
-                                              )}
-                                            </div>
-
-                                            <p
-                                              className={`mt-3 text-sm ${done
-                                                  ? "text-gray-200 font-semibold"
-                                                  : "text-gray-400"
-                                                }`}
-                                            >
-                                              {stage}
-                                            </p>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                            {/* ACTION BUTTONS */}
-                            <div
-                              className="
-    flex
-    flex-col
-    gap-3
-    w-full
-    mt-4
-
-    lg:mt-0
-    lg:w-[140px]
-    lg:flex-col
-    lg:justify-end
-  "
-                            >
-                              {/* TRACK BUTTON */}
-                              <button
-                                onClick={() => trackOrder(order._id)}
-                                disabled={loadingTrack || isCancelled}
-                                className={`
-    w-full
-    h-[42px]
-    rounded-md
-    text-sm
-    font-semibold
-    transition
-    flex items-center justify-center gap-2 cursor-pointer
-    ${isCancelled
-                                    ? "bg-gray-600 text-gray-300 cursor-not-allowed"
-                                    : "bg-white text-black hover:bg-gray-300"
-                                  }
-  `}
-                              >
-                                {loadingTrack ? (
-                                  <div className="w-4 h-4 border-2 border-gray-400 border-t-black rounded-full animate-spin" />
-                                ) : (
-                                  <>
-                                    <FaTruck /> Track
-                                  </>
-                                )}
-                              </button>
-
-                              {/* CANCEL BUTTON — ONLY IF ORDER PLACED */}
-                              {status === "Order Placed" && !isCancelled && (
-                                <button
-                                  onClick={() =>
-                                    setCancelModal({
-                                      orderId: order._id,
-                                      productId: item.productId,
-                                    })
-                                  }
-                                  className="
-    w-full
-    cursor-pointer 
-    h-[42px]
-    bg-red-600
-    text-white
-    rounded-md
-    text-sm
-    font-semibold
-    hover:bg-red-700
-    transition
-  "
-                                >
-                                  {loadingCancel ? "Cancelling…" : "Cancel"}
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* BOTTOM SUMMARY */}
-                    <div className="mt-4 flex justify-between items-center">
-                      <p className="text-sm text-gray-400">
-                        Items:{" "}
-                        <span className="text-gray-200">
-                          {order.items.length}
-                        </span>
-                      </p>
-
-                      <div className="text-right">
-                        <p className="text-sm text-gray-400">Total</p>
-                        <p className="text-xl font-semibold text-blue-400">
-                          {currency} {order.amount}
-                        </p>
-                      </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-            {cancelModal && (
-              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-                <div className="bg-[#1f1f1f] w-[90%] max-w-sm p-6 rounded-xl border border-red-500/50 shadow-xl">
-                  <h3 className="text-lg font-semibold text-white">
-                    Cancel Item?
-                  </h3>
-                  <p className="text-gray-300 mt-2 text-sm">
-                    If you cancel now, you may not be able to avail this deal again. Do you still want to cancel?
-                  </p>
-
-                  <div className="flex justify-end gap-3 mt-6">
-                    <button
-                      onClick={() => setCancelModal(null)}
-                      className="cursor-pointer px-4 py-2 bg-gray-700 text-white rounded-lg text-sm hover:bg-gray-600"
-                    >
-                      Don't Cancel
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        cancelItem(cancelModal.orderId, cancelModal.productId);
-                        setCancelModal(null);
-                      }}
-                      className="cursor-pointer px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700"
-                    >
-                      Cancel Order
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <style>{`
-        @keyframes grow {
-          0% { width: 0%; }
-          100% { width: 100%; }
-        }
-        .animate-grow {
-          animation-name: grow;
-          animation-timing-function: ease-out;
-          animation-fill-mode: forwards;
-        }
-      `}</style>
+            </div>
           </div>
         </div>
-      </section>
-    </>
+      </div>
+      {/* ================= MOBILE FILTER PANEL ================= */}
+      {showMobileFilter && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm">
+          <div className="absolute right-0 top-0 h-full w-[85%] max-w-sm bg-[#121212] p-4 overflow-y-auto">
+            {/* HEADER */}
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-semibold">Filters</h3>
+              <button
+                onClick={() => setShowMobileFilter(false)}
+                className="p-2 rounded-lg hover:bg-white/10 transition"
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            <hr className="border-white/20 my-4" />
+
+            {/* ORDER STATUS */}
+            <h4 className="text-sm font-semibold mb-3 text-gray-300">
+              Order Status
+            </h4>
+
+            {[
+              "Order Placed",
+              "Packed",
+              "Shipped",
+              "Out for Delivery",
+              "Delivered",
+              "Cancelled",
+            ].map((status) => (
+              <label
+                key={status}
+                className="flex items-center gap-3 text-sm cursor-pointer select-none"
+              >
+                <input
+                  type="checkbox"
+                  checked={tempStatusFilter.includes(status)}
+                  onChange={() =>
+                    setTempStatusFilter((prev) =>
+                      prev.includes(status)
+                        ? prev.filter((s) => s !== status)
+                        : [...prev, status]
+                    )
+                  }
+                  className="w-4 h-4 accent-white cursor-pointer"
+                />
+                <span>{status}</span>
+              </label>
+            ))}
+
+            {/* ORDER TIME */}
+            <h4 className="text-sm font-semibold mb-3 text-gray-300 mt-6">
+              Order Time
+            </h4>
+
+            {["Last 30 days", "Last 3 months", "Last 6 months", "Older"].map(
+              (time) => (
+                <label
+                  key={time}
+                  className="flex items-center gap-3 text-sm cursor-pointer select-none"
+                >
+                  <input
+                    type="radio"
+                    name="orderTime"
+                    checked={tempTimeFilter === time}
+                    onChange={() => setTempTimeFilter(time)}
+                    className="w-4 h-4 accent-white cursor-pointer"
+                  />
+                  <span>{time}</span>
+                </label>
+              )
+            )}
+
+            {/* ACTION BUTTONS */}
+            <div className="sticky bottom-0 bg-[#121212] pt-4 border-t border-white/10">
+              <button
+                onClick={() => {
+                  setStatusFilter(tempStatusFilter);
+                  setTimeFilter(tempTimeFilter);
+                  setShowMobileFilter(false);
+                }}
+                className="w-full py-3 rounded-xl bg-white text-black font-semibold hover:bg-gray-200 transition cursor-pointer"
+              >
+                Apply Filters
+              </button>
+              {statusFilter.length > 0 && (
+                <span className="text-xs text-blue-400">
+                  {statusFilter.join(", ")}
+                </span>
+              )}
+            </div>
+
+            <button
+              onClick={() => {
+                setTempStatusFilter([]);
+                setTempTimeFilter(null);
+                setStatusFilter([]);
+                setTimeFilter(null);
+                setShowMobileFilter(false);
+              }}
+              className="w-full py-2 mt-2 rounded-xl border border-white/20 text-sm"
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="absolute top-[136px] left-0 right-0 bottom-0 overflow-y-auto">
+        <div className="max-w-[1400px] mx-auto px-4 lg:py-4 lg:px-10">
+          {/* ================= LIST ================= */}
+          {loading || !isOnline ? (
+            <OrdersSkeletonList />
+          ) : orderItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-28 text-center">
+              {/* ICON */}
+              <div className="mb-6 w-20 h-20 rounded-full bg-white/5 flex items-center justify-center text-3xl">
+                🛍️
+              </div>
+
+              {/* TITLE */}
+              <h2 className="text-lg font-semibold text-white">
+                No orders yet
+              </h2>
+
+              {/* SUBTEXT */}
+              <p className="mt-2 text-sm text-gray-400 max-w-xs">
+                Looks like you haven’t placed any orders yet. Start shopping to
+                see your orders here.
+              </p>
+
+              {/* CTA */}
+              <button
+                onClick={() => navigate("/", { replace: true })}
+                className="
+              mt-6
+              px-6
+              py-3
+              rounded-xl
+              bg-white
+              text-black
+              text-sm
+              font-semibold
+              cursor-pointer
+              transition
+              hover:bg-gray-200
+              hover:scale-[1.02]
+              active:scale-[0.98]
+              "
+              >
+                Go to Home
+              </button>
+            </div>
+          ) : (
+            filteredItems.map((item, idx) => {
+              const status =
+                item.itemStatus || item.orderStatus || "Order Placed";
+
+              const latestStatusEntry =
+                Array.isArray(item.statusHistory) &&
+                item.statusHistory.length > 0
+                  ? item.statusHistory[item.statusHistory.length - 1]
+                  : null;
+
+              const statusDate = latestStatusEntry?.date || item.orderDate;
+
+              const dateText = new Date(statusDate).toLocaleString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+
+              const imageSrc =
+                Array.isArray(item.image) && item.image.length > 0
+                  ? item.image[0]
+                  : "https://via.placeholder.com/120";
+
+              return (
+                <div
+                  key={`${item.orderId}-${item.productId}-${idx}`}
+                  onClick={() =>
+                    navigate(`/orders/${item.orderId}/${item.productId}`)
+                  }
+                  className="
+                  relative
+                  group
+                  grid
+                  grid-cols-[72px_1fr_16px]
+                  md:grid-cols-[88px_1fr_20px]
+                  lg:grid-cols-[120px_1fr_24px]
+                  items-start
+                  gap-4
+                  py-5
+                  px-4
+                  cursor-pointer
+                  transition
+                  hover:bg-white/[0.05]
+                  "
+                >
+                  {/* LEFT STATUS ACCENT */}
+                  <span
+                    className={`
+                     absolute left-0 top-0 h-full w-[3px] rounded-r
+                     ${
+                       status === "Delivered"
+                         ? "bg-green-500/70"
+                         : status === "Cancelled"
+                         ? "bg-red-500/70"
+                         : "bg-blue-500/70"
+                     }
+                     `}
+                  />
+
+                  {/* IMAGE */}
+                  <div className="flex justify-center">
+                    <div className="w-20 aspect-[3/4] rounded-xl overflow-hidden border border-white/10 bg-[#181818]">
+                      <img
+                        src={imageSrc}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </div>
+
+                  {/* TEXT CONTENT */}
+                  <div className="pr-6">
+                    <p className="text-xs lg:text-sm font-medium text-gray-400">
+                      {status} on{" "}
+                      <span className="text-gray-500">{dateText}</span>
+                    </p>
+
+                    <p className="mt-1 text-base lg:text-lg font-semibold text-white leading-snug">
+                      {item.name}
+                    </p>
+
+                    <p className="mt-0.5 text-xs lg:text-sm text-gray-400">
+                      {item.brandName || "Brawvly"}
+                    </p>
+                  </div>
+
+                  {/* CHEVRON */}
+                  <div
+                    className="
+                  pr-2
+                  text-gray-500
+                  text-xl
+                  transition
+                  group-hover:translate-x-1
+                  group-hover:text-white
+                  "
+                  >
+                    ❯
+                  </div>
+
+                  {/* DIVIDER */}
+                  <span className="absolute bottom-0 w-full right-0 h-px bg-white/10" />
+                </div>
+              );
+            })
+          )}
+          {orderItems.length > 0 && filteredItems.length === 0 && (
+            <div className="text-center py-24 text-gray-400 text-sm">
+              No orders match your search or filters
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
   );
 };
 
-export default Orders;
+export default MyOrders;

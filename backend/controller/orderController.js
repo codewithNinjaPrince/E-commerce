@@ -61,17 +61,30 @@ const placeOrder = async (req, res) => {
     }
 
     /* ================= CREATE ORDER ================= */
+
+    const now = Date.now();
+
+    const itemsWithHistory = calculation.items.map((item) => ({
+      ...item,
+      itemStatus: "Order Placed",
+      statusHistory: [
+        {
+          status: "Order Placed",
+          date: now,
+        },
+      ],
+    }));
+
     const newOrder = await orderModel.create({
       userId,
-      items: calculation.items,
+      items: itemsWithHistory,
       amount: calculation.payableAmount,
       address,
       paymentMethod,
       payment: paymentMethod !== "cod",
-      paymentInfo:
-        paymentMethod !== "cod" ? user.verifiedPayment : null,
+      paymentInfo: paymentMethod !== "cod" ? user.verifiedPayment : null,
       status: "Order Placed",
-      date: Date.now(),
+      date: now,
     });
 
     /* ================= COUPON MARK ================= */
@@ -92,7 +105,7 @@ const placeOrder = async (req, res) => {
     );
 
     /* ================= MERCHANT NOTIFICATIONS ================= */
-    for (const item of calculation.items) {
+    for (const item of itemsWithHistory) {
       if (!item.sellerId) continue;
 
       const notification = await notificationModel.create({
@@ -120,9 +133,6 @@ const placeOrder = async (req, res) => {
     });
   }
 };
-
-
-
 
 // const placeOrder = async (req, res) => {
 //   try {
@@ -360,17 +370,10 @@ const verifyRazorpayPayment = async (req, res) => {
   try {
     const userId = req.userId;
 
-    const {
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature,
-    } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
+      req.body;
 
-    if (
-      !razorpay_order_id ||
-      !razorpay_payment_id ||
-      !razorpay_signature
-    ) {
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return res.json({
         success: false,
         message: "Missing Razorpay payment details",
@@ -415,7 +418,6 @@ const verifyRazorpayPayment = async (req, res) => {
     });
   }
 };
-
 
 //placing orders using Razorpay Method
 const placeOrderRazorpay = async (req, res) => {
@@ -469,7 +471,25 @@ const userOrders = async (req, res) => {
 const updateStatus = async (req, res) => {
   try {
     const { orderId, status } = req.body;
-    await orderModel.findByIdAndUpdate(orderId, { status });
+
+    const order = await orderModel.findById(orderId);
+    if (!order) {
+      return res.json({ success: false, message: "Order not found" });
+    }
+
+    const now = Date.now();
+
+    order.status = status;
+
+    // update each item
+    order.items = order.items.map((item) => ({
+      ...item,
+      itemStatus: status,
+      statusHistory: [...(item.statusHistory || []), { status, date: now }],
+    }));
+
+    await order.save();
+
     res.json({ success: true, message: "Status Updated" });
   } catch (error) {
     console.log(error);
@@ -480,70 +500,172 @@ const updateStatus = async (req, res) => {
 const cancelOrder = async (req, res) => {
   try {
     const userId = req.userId;
-    const { orderId, productId } = req.body;
+    const { orderId, productId, cancelReason } = req.body;
 
-    const order = await orderModel.findById(orderId);
-    if (!order) return res.json({ success: false, message: "Order not found" });
-
-    if (order.status === "Cancelled") {
-      return res.json({ success: false, message: "Order already cancelled" });
-    }
-
-    if (order.items.some((i) => i.itemStatus === "Delivered")) {
+    if (!cancelReason || !cancelReason.trim()) {
       return res.json({
         success: false,
-        message: "Delivered items cannot be cancelled",
+        message: "Cancellation reason is required",
       });
     }
 
+    const order = await orderModel.findOne({ _id: orderId, userId });
+    if (!order) {
+      return res.json({ success: false, message: "Order not found" });
+    }
+
     let updatedItem = null;
+    const now = Date.now();
+    const NON_CANCELLABLE = ["Shipped", "Out for Delivery", "Delivered"];
 
     order.items = order.items.map((item) => {
       if (item.productId.toString() === productId.toString()) {
+        if (NON_CANCELLABLE.includes(item.itemStatus)) {
+          throw new Error("Item cannot be cancelled at this stage");
+        }
+
         updatedItem = item;
-        return { ...item, itemStatus: "Cancelled" };
+
+        return {
+          ...item,
+          itemStatus: "Cancelled",
+          cancelReason: cancelReason.trim(),
+          cancelledAt: now,
+          statusHistory: [
+            ...(item.statusHistory || []),
+            { status: "Cancelled", date: now },
+          ],
+        };
       }
       return item;
     });
 
-    if (!updatedItem)
+    if (!updatedItem) {
       return res.json({ success: false, message: "Item not found" });
+    }
+
+    // 🔁 Coupon rollback (IMPORTANT)
+    const couponItems = order.items.filter(
+  (item) => item.couponApplied && item.offerCode
+);
+
+if (
+  couponItems.length > 0 &&
+  couponItems.every((item) => item.itemStatus === "Cancelled")
+) {
+  await userModel.updateOne(
+    { _id: userId },
+    { $pull: { usedCoupons: couponItems[0].offerCode.toUpperCase() } }
+  );
+}
+
+
+    // Optional order status update
+    if (order.items.every((i) => i.itemStatus === "Cancelled")) {
+      order.status = "Cancelled";
+    }
 
     await order.save();
 
-    /* =====================================================
-   🔒 COUPON ROLLBACK (PARTIAL CANCEL SAFE)
-===================================================== */
-    const couponItems = order.items.filter((item) => item.couponApplied);
-
-    // agar coupon laga hi nahi tha → kuch mat karo
-    if (couponItems.length > 0) {
-      const allCouponItemsCancelled = couponItems.every(
-        (item) => item.itemStatus === "Cancelled"
-      );
-
-      if (allCouponItemsCancelled) {
-        await userModel.updateOne(
-          { _id: userId },
-          { $pull: { usedCoupons: couponItems[0].offerCode.toUpperCase() } }
-        );
-      }
+    if (updatedItem.sellerId) {
+      await notificationModel.create({
+        merchantId: updatedItem.sellerId,
+        title: "Order Item Cancelled",
+        message: `${updatedItem.name} cancelled. Reason: ${cancelReason}`,
+        read: false,
+        date: now,
+      });
     }
 
-    await notificationModel.create({
-      merchantId: updatedItem.sellerId,
-      title: "Order Item Cancelled",
-      message: `User cancelled ${updatedItem.name} (Qty ${updatedItem.quantity}).`,
-      read: false,
-      date: Date.now(),
-    });
-
-    res.json({ success: true, message: "Item cancelled" });
+    return res.json({ success: true, message: "Item cancelled successfully" });
   } catch (err) {
-    console.log("CANCEL ERROR:", err);
-    res.json({ success: false, message: "Unable to cancel" });
+    console.error("CANCEL ORDER ERROR:", err.message);
+    return res.json({
+      success: false,
+      message: err.message || "Unable to cancel order",
+    });
   }
 };
+
+
+
+// const cancelOrder = async (req, res) => {
+//   try {
+//     const userId = req.userId;
+//     const { orderId, productId } = req.body;
+
+//     const order = await orderModel.findById(orderId);
+//     if (!order) return res.json({ success: false, message: "Order not found" });
+
+//     if (order.status === "Cancelled") {
+//       return res.json({ success: false, message: "Order already cancelled" });
+//     }
+
+//     if (order.items.some((i) => i.itemStatus === "Delivered")) {
+//       return res.json({
+//         success: false,
+//         message: "Delivered items cannot be cancelled",
+//       });
+//     }
+
+//     let updatedItem = null;
+
+//     order.items = order.items.map((item) => {
+//       if (item.productId.toString() === productId.toString()) {
+//         updatedItem = item;
+//         return {
+//           ...item,
+//           itemStatus: "Cancelled",
+//           statusHistory: [
+//             ...(item.statusHistory || []),
+//             {
+//               status: "Cancelled",
+//               date: Date.now(),
+//             },
+//           ],
+//         };
+//       }
+//       return item;
+//     });
+
+//     if (!updatedItem)
+//       return res.json({ success: false, message: "Item not found" });
+
+//     await order.save();
+
+//     /* =====================================================
+//    🔒 COUPON ROLLBACK (PARTIAL CANCEL SAFE)
+// ===================================================== */
+//     const couponItems = order.items.filter((item) => item.couponApplied);
+
+//     // agar coupon laga hi nahi tha → kuch mat karo
+//     if (couponItems.length > 0) {
+//       const allCouponItemsCancelled = couponItems.every(
+//         (item) => item.itemStatus === "Cancelled"
+//       );
+
+//       if (allCouponItemsCancelled) {
+//         await userModel.updateOne(
+//           { _id: userId },
+//           { $pull: { usedCoupons: couponItems[0].offerCode.toUpperCase() } }
+//         );
+//       }
+//     }
+
+//     await notificationModel.create({
+//       merchantId: updatedItem.sellerId,
+//       title: "Order Item Cancelled",
+//       message: `User cancelled ${updatedItem.name} (Qty ${updatedItem.quantity}).`,
+//       read: false,
+//       date: Date.now(),
+//     });
+
+//     res.json({ success: true, message: "Item cancelled" });
+//   } catch (err) {
+//     console.log("CANCEL ERROR:", err);
+//     res.json({ success: false, message: "Unable to cancel" });
+//   }
+// };
 
 export const trackOrder = async (req, res) => {
   try {
@@ -656,6 +778,52 @@ const previewOrder = async (req, res) => {
   }
 };
 
+// -------------------- ORDER DETAILS (Single Order) --------------------
+const orderDetails = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { orderId } = req.body;
+
+    if (!orderId) {
+      return res.json({
+        success: false,
+        message: "Order ID required",
+      });
+    }
+
+    const order = await orderModel.findOne({
+      _id: orderId,
+      userId,
+    }).lean();
+
+    if (!order) {
+      return res.json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    // keep item order consistent with userOrders
+    order.items.sort((a, b) => {
+      const da = a.productDate || a.date || 0;
+      const db = b.productDate || b.date || 0;
+      return db - da;
+    });
+
+    return res.json({
+      success: true,
+      order,
+    });
+  } catch (err) {
+    console.log("ORDER DETAILS ERROR:", err);
+    return res.json({
+      success: false,
+      message: "Unable to fetch order details",
+    });
+  }
+};
+
+
 export default {
   // COD
   placeOrder,
@@ -671,6 +839,7 @@ export default {
   updateStatus,
   cancelOrder,
   trackOrder,
+  orderDetails,
 
   // Coupon & preview
   validateCoupon,

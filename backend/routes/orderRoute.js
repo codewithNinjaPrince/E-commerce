@@ -14,6 +14,7 @@ const {
   previewOrder,
   createRazorpayOrder,
   verifyRazorpayPayment,
+  orderDetails, 
 } = orderController;
 
 const orderRouter = express.Router();
@@ -26,6 +27,7 @@ orderRouter.post("/status", adminAuth, updateStatus);
 orderRouter.post("/place", authUser, placeOrder);
 orderRouter.post("/cancel", authUser, cancelOrder);
 orderRouter.post("/track", authUser, trackOrder);
+orderRouter.post("/details", authUser, orderDetails);
 orderRouter.post("/userorders", authUser, userOrders);
 
 /* ================= COUPON / PREVIEW ================= */

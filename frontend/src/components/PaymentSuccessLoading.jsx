@@ -91,7 +91,7 @@ const PaymentSuccessLoading = () => {
           <div className="mt-4 flex flex-col items-center gap-2">
             <div className="flex items-center gap-2 text-green-400 animate-fadeIn">
               <span className="w-2 h-2 bg-green-400 rounded-full animate-bounce" />
-              <span>Packing your order</span>
+              <span>Placing your order</span>
               <span className="w-2 h-2 bg-green-400 rounded-full animate-bounce delay-150" />
             </div>
             <p className="text-xs text-gray-400">

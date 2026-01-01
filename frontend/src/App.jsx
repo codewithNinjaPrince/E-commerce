@@ -12,7 +12,9 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Product from "./pages/Product";
 import Cart from "./pages/Cart";
-import Orders from "./pages/Orders";
+import MyOrders from "./pages/MyOrders";
+import OrderDetails from "./pages/OrderDetails";
+import Help from "./pages/Help";
 import AddressPage from "./pages/AddressPage";
 import AddressForm from "./components/AddressForm";
 import OrderPreview from "./pages/OrderPreview";
@@ -93,8 +95,16 @@ const App = () => {
     pathname === "/order-preview" ||
     pathname === "/placeorder" ||
     pathname === "/cart" ||
+    pathname === "/payment" ||
     pathname === "/payment-success-loading" ||
-    pathname === "/order-success" 
+    pathname === "/order-success";
+
+  // Orders list pages
+  const isOrdersListPage = pathname === "/orders"
+
+  // Order details page
+  const isOrderDetailsPage =
+    pathname.startsWith("/orders/") && pathname.split("/").length === 4;
 
   /* 🔥 HIDE FOOTER ON THESE ROUTES */
   const hideFooterRoutes = [
@@ -108,7 +118,11 @@ const App = () => {
     "/favorites",
     "/order-success",
     "/payment-success-loading",
+    "/orders",
   ];
+
+  const isOrdersPage =
+    pathname === "/orders" || pathname.startsWith("/orders/");
 
   const showFooter = !hideFooterRoutes.some((route) =>
     pathname.startsWith(route)
@@ -169,27 +183,32 @@ const App = () => {
         theme="dark"
         closeButton={({ closeToast }) => (
           <button
-          onClick={closeToast}
-          style={{
-            position: "absolute",
-            top: "20%",
-            right: "12px", // 👈 always right
-            transform: "translateY(-50%)",
-            fontSize: "18px",
-            color: "#fff",
-            fontWeight: "bold",
-            background: "transparent",
-            border: "none",
-            cursor: "pointer",
-          }}
+            onClick={closeToast}
+            style={{
+              position: "absolute",
+              top: "20%",
+              right: "12px", // 👈 always right
+              transform: "translateY(-50%)",
+              fontSize: "18px",
+              color: "#fff",
+              fontWeight: "bold",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+            }}
           >
             ✕
           </button>
         )}
-        />
+      />
 
       {/* ================= NAVBAR ================= */}
-      {!isSearchPage && !isAddressFlow && <Navbar showNavbar={showNavbar} />}
+      {!isSearchPage &&
+        !isAddressFlow &&
+        !isOrderDetailsPage &&
+        !(isOrdersListPage && isMobileOrTablet) && (
+          <Navbar showNavbar={showNavbar} />
+        )}
 
       {/* ================= SEARCHBAR ================= */}
       {showSearchBar && !isSearchPage && !isAddressFlow && isMobileOrTablet && (
@@ -206,18 +225,23 @@ const App = () => {
               <SearchPage />
             </SearchRouteGuard>
           }
-          />
+        />
 
         <Route path="/cart" element={<Cart />} />
         <Route path="/order-preview" element={<OrderPreview />} />
         <Route path="/payment" element={<PaymentPage />} />
-        <Route path="/payment-success-loading" element={<PaymentSuccessLoading />} />
+        <Route
+          path="/payment-success-loading"
+          element={<PaymentSuccessLoading />}
+        />
         <Route path="/order-success" element={<OrderSuccess />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/sell-with-us" element={<SellWithUs />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/orders" element={<Orders />} />
+        <Route path="/orders" element={<MyOrders />} />
+        <Route path="/help" element={<Help />} />
+        <Route path="/orders/:orderId/:productId" element={<OrderDetails />} />
         <Route path="/address" element={<AddressPage />} />
         <Route path="/address/add" element={<AddressForm />} />
         <Route path="/address/edit/:addressId" element={<AddressForm />} />
@@ -234,12 +258,12 @@ const App = () => {
           path="*"
           element={
             <div
-            className={`
+              className={`
               ${isSearchPage ? "no-navbar-offset" : "page-wrapper"}
               page-container
               page-max
               `}
-              >
+            >
               {!loading && (
                 <>
                   <Routes>
@@ -254,7 +278,7 @@ const App = () => {
                     <Route
                       path="/forgot-password"
                       element={<ForgotPassword />}
-                      />
+                    />
 
                     {/* USER */}
                     <Route path="/user" element={<User />} />
@@ -266,7 +290,7 @@ const App = () => {
               )}
             </div>
           }
-          />
+        />
       </Routes>
 
       {/* ================= FOOTER ================= */}

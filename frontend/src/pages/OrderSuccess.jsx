@@ -91,7 +91,7 @@ const OrderSuccess = () => {
           <div />
           <p className="font-semibold">Order Confirmed</p>
           <button
-            onClick={() => navigate("/", { replace: true })}
+            onClick={() => navigate("/orders")}
             className="p-2 rounded-lg hover:bg-white/10 cursor-pointer"
           >
             <FaTimes />
