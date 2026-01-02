@@ -1,11 +1,14 @@
 import express from "express";
-import { registerMerchant, loginMerchant, getMerchantProfile, updateMerchantProfile, updateMerchantPassword, verifyMerchantPassword } from "../controller/merchantController.js";
+import { registerMerchant, loginMerchant, getMerchantProfile, updateMerchantProfile, updateMerchantPassword, verifyMerchantPassword, getMerchantStoreBySlug } from "../controller/merchantController.js";
 import { merchantAuth } from "../middleware/merchantAuth.js";
 
 const merchantRouter = express.Router();
 
 // REGISTER
 merchantRouter.post("/register", registerMerchant);
+
+//GET SLUG
+merchantRouter.get("/store/:slug", getMerchantStoreBySlug);
 
 // LOGIN
 merchantRouter.post("/login", loginMerchant);

@@ -5,13 +5,12 @@ import ProductItem from "./ProductItem";
 import ProductItemSkeleton from "./ProductItemSkeleton";
 import { useLayoutEffect } from "react";
 
-const RelatedProducts = ({ category, subCategory }) => {
+const RelatedProducts = ({ category, subCategory, excludeId }) => {
   const { products } = useContext(ShopContext);
 
   const [related, setRelated] = useState([]);
   const [visible, setVisible] = useState(5);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-
 
   /* 🌐 Online / Offline handling */
   useEffect(() => {
@@ -32,15 +31,26 @@ const RelatedProducts = ({ category, subCategory }) => {
     if (!products?.length) return;
 
     const filtered = products.filter(
-      (p) => p.category === category && p.subCategory === subCategory
+      (p) =>
+        p._id !== excludeId &&
+        p.category === category &&
+        p.subCategory === subCategory
     );
 
     setRelated(filtered);
   }, [products, category, subCategory]);
 
   /* 🦴 Skeleton condition */
-  const showSkeleton =
-    !isOnline || !products?.length || related.length === 0;
+  const showSkeleton = !isOnline || !products?.length;
+
+  // 🚫 No related products → don't render section
+  if (!showSkeleton && related.length === 0) {
+    return (
+      <div className="my-10 text-center text-gray-500 text-sm">
+        Explore more products in this category soon ✨
+      </div>
+    );
+  }
 
   return (
     <div className="my-10 sm:my-12 lg:my-20">
@@ -56,10 +66,7 @@ const RelatedProducts = ({ category, subCategory }) => {
               <ProductItemSkeleton key={i} />
             ))
           : related.slice(0, visible).map((item) => (
-              <div
-                key={item._id}
-                className="bg-[#2a2a2a] rounded-lg p-2"
-              >
+              <div key={item._id} className="bg-[#2a2a2a] rounded-lg p-2">
                 <ProductItem
                   _id={item._id}
                   name={item.name}

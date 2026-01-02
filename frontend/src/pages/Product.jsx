@@ -35,7 +35,7 @@ const showCartToast = (message = "Added to cart 🛒") => {
 const Product = () => {
   const navigate = useNavigate();
   const { productId } = useParams();
-  
+
   useLayoutEffect(() => {
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
@@ -49,7 +49,7 @@ const Product = () => {
     favorites = [],
     addToFavorites,
     removeFromFavorites,
-    setBuyNowSafe
+    setBuyNowSafe,
   } = useContext(ShopContext);
 
   const [productData, setProductData] = useState(null);
@@ -277,7 +277,6 @@ const Product = () => {
       productId: productData._id,
       size,
       quantity: 1,
-      
     });
 
     showCartToast("Item ready • Taking you to checkout ⚡");
@@ -819,6 +818,7 @@ const Product = () => {
           <RelatedProducts
             category={productData.category}
             subCategory={productData.subCategory}
+            excludeId={productData._id}
           />
         </div>
       </div>

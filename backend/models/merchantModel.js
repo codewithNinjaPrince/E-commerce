@@ -19,6 +19,7 @@ const merchantSchema = new mongoose.Schema(
 
     // BASIC STORE SETUP (Required for Entry)
     storeName: { type: String, required: true },
+    slug: { type: String, unique: true, index: true },
     storeDescription: { type: String, default: "" },
     businessType: {
       type: String,

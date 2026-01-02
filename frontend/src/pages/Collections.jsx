@@ -125,7 +125,7 @@ const Collections = () => {
   }, []);
 
   return (
-    <div className=" mt-6 pt-3 sm:pt-5 lg:pt-6 border-t text-white min-h-screen ">
+    <div className=" mt-5 pt-3 sm:pt-0 text-white min-h-screen ">
       <meta
         name="description"
         content="Explore fashion, electronics, watches, shoes & more from trusted local sellers across India on Brawvly."
@@ -264,7 +264,7 @@ const Collections = () => {
           {/* ===== RIGHT SIDE ===== */}
             <div className="flex-1">
               {/* HEADER */}
-              <div className="flex justify-between items-center text-2xl mb-6">
+              <div className="flex justify-between items-center text-2xl mb-3">
                 {showSkeleton ? (
                   <div className="h-8 w-56 bg-gray-700/40 rounded animate-pulse" />
                 ) : (
@@ -282,7 +282,7 @@ const Collections = () => {
                   </>
                 )}
               </div>
-
+              
               {/* PRODUCTS */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
                 {showSkeleton &&

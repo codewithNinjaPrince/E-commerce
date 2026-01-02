@@ -8,6 +8,7 @@ import Footer from "./components/Footer";
 
 import Home from "./pages/Home";
 import Collections from "./pages/Collections";
+import MerchantStore from "./pages/MerchantStore";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Product from "./pages/Product";
@@ -48,6 +49,7 @@ const SearchRouteGuard = ({ children }) => {
   if (
     from !== "/" &&
     from !== "/collections" &&
+    from !== "/store" &&
     !from?.startsWith("/product") &&
     !from?.startsWith("/favorites")
   ) {
@@ -85,6 +87,7 @@ const App = () => {
   const showSearchBar =
     pathname === "/" ||
     pathname === "/collections" ||
+    pathname.startsWith("/store") ||
     pathname.startsWith("/product") ||
     pathname === "/favorites";
 
@@ -270,6 +273,7 @@ const App = () => {
                     {/* MAIN */}
                     <Route path="/" element={<Home />} />
                     <Route path="/collections" element={<Collections />} />
+                    <Route path="/store/:slug" element={<MerchantStore />} />
                     <Route path="/product/:productId" element={<Product />} />
 
                     {/* AUTH */}

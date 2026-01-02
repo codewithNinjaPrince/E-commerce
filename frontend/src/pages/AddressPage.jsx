@@ -186,13 +186,7 @@ const AddressPage = () => {
         <div className="max-w-7xl mx-auto px-4 py-3 grid grid-cols-[auto_1fr_auto] items-center gap-3">
           {/* LEFT */}
           <button
-            onClick={() => {
-              if (from) {
-                navigate(from, { replace: true });
-              } else {
-                navigate(-1);
-              }
-            }}
+            onClick={() => navigate(-1)}
             className="p-2 rounded-lg hover:bg-white/10 transition cursor-pointer"
             aria-label="Go back"
           >
@@ -223,15 +217,7 @@ const AddressPage = () => {
 
           {/* RIGHT */}
           <button
-            onClick={() => {
-              if (from === "payment") {
-                navigate("/payment", { replace: true });
-              } else if (from === "order-preview") {
-                navigate("/order-preview", { replace: true });
-              } else {
-                navigate("/cart", { replace: true });
-              }
-            }}
+            onClick={() => navigate("/", { replace: true })}
             className="p-2 rounded-lg hover:bg-white/10 transition cursor-pointer"
             aria-label="Close"
           >
@@ -259,7 +245,7 @@ const AddressPage = () => {
           <h2 className="font-semibold">Saved Addresses</h2>
 
           <button
-            onClick={() => navigate("/address/add")}
+            onClick={() => navigate("/address/add", { replace: true })}
             className="flex items-center gap-2 px-5 py-3 bg-white text-black rounded-xl font-medium cursor-pointer transition-all duration-200 hover:bg-gray-100 hover:scale-[1.03] active:scale-[0.97] shadow-md"
           >
             <FaPlus /> Add New Address
@@ -376,7 +362,10 @@ const AddressPage = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/address/edit/${addr.addressId}`);
+                          navigate(`/address/edit/${addr.addressId}`, {
+                            replace: true,
+                            state: { from: location.pathname },
+                          });
                         }}
                         className="
       inline-flex items-center gap-1

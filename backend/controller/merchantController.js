@@ -478,3 +478,51 @@ export const verifyMerchantPassword = async (req, res) => {
     });
   }
 };
+
+// --------------------------------------------------
+// GET PUBLIC MERCHANT STORE (BY SLUG)
+// --------------------------------------------------
+export const getMerchantStoreBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    // 1️⃣ Find merchant by slug
+    const merchant = await merchantModel
+      .findOne({ slug, status: "active" })
+      .select(
+        "storeName storeDescription profileImage address slug isVerified createdAt"
+      );
+
+    if (!merchant) {
+      return res.status(404).json({
+        success: false,
+        message: "Store not found",
+      });
+    }
+
+    const merchantId = merchant._id.toString();
+
+    // 2️⃣ Fetch products (supports BOTH old & new product formats)
+    const products = await productModel
+      .find({
+        $or: [
+          { sellerId: merchantId },   // ✅ your current product structure
+          { merchantId: merchantId }, // ✅ future-safe
+        ],
+      })
+      .sort({ createdAt: -1 });
+
+    // 3️⃣ Send response
+    return res.json({
+      success: true,
+      merchant,
+      products,
+    });
+  } catch (error) {
+    console.error("GET STORE ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};

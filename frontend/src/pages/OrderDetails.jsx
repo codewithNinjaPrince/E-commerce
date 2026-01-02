@@ -195,7 +195,7 @@ const OrderDetails = () => {
               transition-all
               cursor-pointer
               "
-              >
+            >
               Help
             </button>
           </div>
@@ -215,7 +215,7 @@ const OrderDetails = () => {
                   src={imageSrc}
                   alt={focusedItem.name}
                   className="w-28 h-36 sm:w-32 sm:h-40 rounded-lg object-cover"
-                  />
+                />
               </div>
             </div>
 
@@ -226,7 +226,7 @@ const OrderDetails = () => {
               </h2>
 
               {focusedItem.brandName && (
-                 <p className="text-sm text-gray-400">
+                <p className="text-sm text-gray-400">
                   Brand:{" "}
                   <span className="text-gray-300">{focusedItem.brandName}</span>
                 </p>
@@ -246,17 +246,17 @@ const OrderDetails = () => {
                 {focusedItem.actualPrice &&
                   focusedItem.discountedPrice &&
                   focusedItem.discountedPrice < focusedItem.actualPrice && (
-                     <>
+                    <>
                       <p className="text-sm text-gray-500 line-through">
                         ₹{focusedItem.actualPrice}
                       </p>
                       <span className="text-xs text-green-400 font-medium">
                         {Math.round(
-                           ((focusedItem.actualPrice -
-                              focusedItem.discountedPrice) /
-                              focusedItem.actualPrice) *
-                              100
-                           )}
+                          ((focusedItem.actualPrice -
+                            focusedItem.discountedPrice) /
+                            focusedItem.actualPrice) *
+                            100
+                        )}
                         % OFF
                       </span>
                     </>
@@ -267,7 +267,7 @@ const OrderDetails = () => {
 
           {/* ================= PAY NOW (RAZORPAY) ================= */}
           {!order.payment && (
-             <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <p className="text-sm text-blue-300">
                 Complete payment to continue order processing
               </p>
@@ -275,7 +275,7 @@ const OrderDetails = () => {
               <button
                 onClick={() => handleRazorpayPayment(order)}
                 className="px-6 py-2.5 rounded-lg bg-blue-500 text-black font-semibold hover:bg-blue-600 transition"
-                >
+              >
                 Pay ₹{order.amount}
               </button>
             </div>
@@ -288,19 +288,19 @@ const OrderDetails = () => {
             {/* DEFAULT: ONLY 2 STEPS */}
             <div className="flex items-center gap-3">
               {TIMELINE.slice(0, TIMELINE.indexOf(status) + 1).map(
-                 (stage, idx) => (
-                    <div key={stage} className="flex items-center gap-2">
+                (stage, idx) => (
+                  <div key={stage} className="flex items-center gap-2">
                     <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-xs">
                       ✓
                     </div>
                     <p className="text-sm text-gray-300">{stage}</p>
 
                     {idx !== TIMELINE.indexOf(status) && (
-                       <div className="w-6 h-[2px] bg-green-500" />
-                     )}
+                      <div className="w-6 h-[2px] bg-green-500" />
+                    )}
                   </div>
                 )
-               )}
+              )}
             </div>
 
             {/* CURRENT STATUS TIME */}
@@ -313,15 +313,15 @@ const OrderDetails = () => {
             <button
               onClick={() => setShowFullTimeline((p) => !p)}
               className="text-xs text-blue-400 hover:underline cursor-pointer"
-              >
+            >
               {showFullTimeline ? "Hide full tracking" : "View full tracking"}
             </button>
 
             {/* FULL TIMELINE */}
             {showFullTimeline && (
-               <div className="mt-3 space-y-2 border-l border-white/10 pl-4">
+              <div className="mt-3 space-y-2 border-l border-white/10 pl-4">
                 {TIMELINE.map((stage) => (
-                   <div key={stage} className="text-sm text-gray-400">
+                  <div key={stage} className="text-sm text-gray-400">
                     • {stage} —{" "}
                     <span className="text-gray-500">
                       {new Date(order.updatedAt).toLocaleString("en-IN")}
@@ -364,7 +364,7 @@ const OrderDetails = () => {
 
             {/* LANDMARK */}
             {order.address.landmark && (
-               <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500">
                 Landmark: {order.address.landmark}
               </p>
             )}
@@ -378,15 +378,15 @@ const OrderDetails = () => {
           </div>
 
           {(() => {
-             const actual = focusedItem.actualPrice || 0;
-             const discounted =
-             focusedItem.discountedPrice ?? focusedItem.actualPrice ?? 0;
-             
-             const discount = Math.max(actual - discounted, 0);
-             const totalFees = Math.max(order.amount - discounted, 0);
-             
-             return (
-                <div className="px-4 py-4 space-y-3 text-sm">
+            const actual = focusedItem.actualPrice || 0;
+            const discounted =
+              focusedItem.discountedPrice ?? focusedItem.actualPrice ?? 0;
+
+            const discount = Math.max(actual - discounted, 0);
+            const totalFees = Math.max(order.amount - discounted, 0);
+
+            return (
+              <div className="px-4 py-4 space-y-3 text-sm">
                 {/* ACTUAL PRICE */}
                 <div className="flex justify-between items-center text-gray-400">
                   <span>Actual Price</span>
@@ -401,7 +401,7 @@ const OrderDetails = () => {
 
                 {/* DISCOUNT */}
                 {discount > 0 && (
-                   <div className="flex justify-between items-center text-green-400">
+                  <div className="flex justify-between items-center text-green-400">
                     <span>You Save</span>
                     <span className="font-medium">-₹{discount}</span>
                   </div>
@@ -409,7 +409,7 @@ const OrderDetails = () => {
 
                 {/* FEES */}
                 {totalFees > 0 && (
-                   <div className="flex justify-between items-center text-gray-400">
+                  <div className="flex justify-between items-center text-gray-400">
                     <span>Total Fees</span>
                     <span>₹{totalFees}</span>
                   </div>
@@ -435,25 +435,25 @@ const OrderDetails = () => {
 
                   <p
                     className={`font-medium ${
-                       order.payment ? "text-green-400" : "text-yellow-400"
-                     }`}
-                     >
+                      order.payment ? "text-green-400" : "text-yellow-400"
+                    }`}
+                  >
                     {order.payment ? "Payment Successful" : "Payment Pending"}
                   </p>
                 </div>
               </div>
             );
-         })()}
+          })()}
         </div>
       </div>
 
       {/* ================= HELP PANEL ================= */}
       {helpOpen && (
-         <div className="fixed inset-0 z-50">
+        <div className="fixed inset-0 z-50">
           <div
             onClick={() => setHelpOpen(false)}
             className="absolute inset-0 bg-black/60"
-            />
+          />
 
           <div
             className="
@@ -466,41 +466,41 @@ const OrderDetails = () => {
             shadow-2xl
             animate-slide-up
             "
-            >
+          >
             <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
               <p className="font-semibold">Need Help?</p>
               <button
                 onClick={() => setHelpOpen(false)}
                 className="p-2 hover:bg-white/10 rounded-lg cursor-pointer"
-                >
+              >
                 ✕
               </button>
             </div>
 
             <div className="p-4 space-y-3 text-sm">
               {!isCancelled && !isDelivered && !isShipped && (
-                 <>
+                <>
                   <button
                     onClick={() => {
-                       setHelpOpen(false);
-                       setTimeout(() => {
-                          setShowAddressConfirm(true);
-                        }, 100);
-                     }}
-                     className="w-full px-4 py-3 rounded-xl border border-white/10 hover:bg-white/5 cursor-pointer"
-                     >
+                      setHelpOpen(false);
+                      setTimeout(() => {
+                        setShowAddressConfirm(true);
+                      }, 100);
+                    }}
+                    className="w-full px-4 py-3 rounded-xl border border-white/10 hover:bg-white/5 cursor-pointer"
+                  >
                     Change delivery address
                   </button>
 
                   <button
                     onClick={() => {
-                       setHelpOpen(false);
-                       
-                       setCancelReason("");
-                       setOtherReason("");
-                       setCancelOpen(true);
-                     }}
-                     className="
+                      setHelpOpen(false);
+
+                      setCancelReason("");
+                      setOtherReason("");
+                      setCancelOpen(true);
+                    }}
+                    className="
                      w-full px-4 py-3
                      rounded-xl
                      border border-red-500/30
@@ -509,7 +509,7 @@ const OrderDetails = () => {
                      transition
                      cursor-pointer
                      "
-                     >
+                  >
                     Cancel this item
                   </button>
                 </>
@@ -517,26 +517,25 @@ const OrderDetails = () => {
 
               <button
                 onClick={() => {
-                   setHelpOpen(false);
-                   navigate("/help");
-                  }}
-                  className="w-full px-4 py-3 rounded-xl border border-white/10 hover:bg-white/5 cursor-pointer"
-                  >
+                  setHelpOpen(false);
+                  navigate("/help");
+                }}
+                className="w-full px-4 py-3 rounded-xl border border-white/10 hover:bg-white/5 cursor-pointer"
+              >
                 Chat with us
               </button>
             </div>
           </div>
         </div>
       )}
-      
 
       {cancelOpen && (
-         <div className="fixed inset-0 z-[70]">
+        <div className="fixed inset-0 z-[70]">
           {/* OVERLAY */}
           <div
             onClick={() => setCancelOpen(false)}
             className="absolute inset-0 bg-black/60 cursor-pointer"
-            />
+          />
 
           {/* PANEL */}
           <div
@@ -552,14 +551,14 @@ const OrderDetails = () => {
             max-h-[90vh]
             flex flex-col
             "
-            >
+          >
             {/* ================= HEADER (FIXED) ================= */}
             <div className="flex items-center justify-between px-4 py-4 border-b border-white/10 shrink-0">
               <p className="font-semibold">Cancel this item</p>
               <button
                 onClick={() => setCancelOpen(false)}
                 className="p-2 rounded-lg hover:bg-white/10 cursor-pointer"
-                >
+              >
                 ✕
               </button>
             </div>
@@ -579,7 +578,7 @@ const OrderDetails = () => {
                   src={imageSrc}
                   alt={focusedItem.name}
                   className="w-10 h-12 rounded-lg object-cover object-center border border-white/10 bg-black"
-                  />
+                />
               </div>
 
               <p className="text-sm font-medium">Reason for cancellation</p>
@@ -587,9 +586,9 @@ const OrderDetails = () => {
               {/* RADIO OPTIONS */}
               <div className="space-y-2">
                 {CANCEL_REASONS.map((reason) => (
-                   <label
-                   key={reason}
-                   className="
+                  <label
+                    key={reason}
+                    className="
                    flex items-center gap-3
                    px-3 py-2
                    rounded-xl
@@ -597,25 +596,25 @@ const OrderDetails = () => {
                    hover:bg-white/5
                    cursor-pointer
                    "
-                   >
+                  >
                     <input
                       type="radio"
                       name="cancelReason"
                       value={reason}
                       checked={cancelReason === reason}
                       onChange={() => {
-                         setCancelReason(reason);
-                         if (reason === "Other") {
-                            setTimeout(() => {
-                               otherRef.current?.scrollIntoView({
-                                  behavior: "smooth",
-                                  block: "center",
-                                 });
-                              }, 100);
-                           }
-                        }}
-                        className="accent-blue-500"
-                        />
+                        setCancelReason(reason);
+                        if (reason === "Other") {
+                          setTimeout(() => {
+                            otherRef.current?.scrollIntoView({
+                              behavior: "smooth",
+                              block: "center",
+                            });
+                          }, 100);
+                        }
+                      }}
+                      className="accent-blue-500"
+                    />
                     <span>{reason}</span>
                   </label>
                 ))}
@@ -623,12 +622,12 @@ const OrderDetails = () => {
 
               {/* OTHER TEXTBOX */}
               {cancelReason === "Other" && (
-                 <textarea
-                 ref={otherRef}
-                 value={otherReason}
-                 onChange={(e) => setOtherReason(e.target.value)}
-                 placeholder="Tell us the reason..."
-                 className="
+                <textarea
+                  ref={otherRef}
+                  value={otherReason}
+                  onChange={(e) => setOtherReason(e.target.value)}
+                  placeholder="Tell us the reason..."
+                  className="
                  w-full
                  mt-2
                  px-3 py-2
@@ -639,9 +638,9 @@ const OrderDetails = () => {
                  resize-none
                  focus:outline-none focus:border-white/30
                  "
-                 rows={3}
-                 />
-               )}
+                  rows={3}
+                />
+              )}
             </div>
 
             {/* ================= FOOTER (ALWAYS VISIBLE) ================= */}
@@ -656,17 +655,17 @@ const OrderDetails = () => {
                 transition cursor-pointer
                 disabled:opacity-50
                 "
-                >
+              >
                 Don’t cancel
               </button>
 
               <button
                 onClick={() => {
-                   setCancelOpen(false);
-                   setShowCancelConfirm(true);
-                  }}
-                  disabled={submitting}
-                  className="
+                  setCancelOpen(false);
+                  setShowCancelConfirm(true);
+                }}
+                disabled={submitting}
+                className="
                   flex-1 py-3 rounded-xl
                   bg-red-500 text-black
                   font-semibold
@@ -675,25 +674,25 @@ const OrderDetails = () => {
                   disabled:opacity-60
                   flex items-center justify-center
                   "
-                  >
+              >
                 {submitting ? (
-                   <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                     "Submit & Cancel"
-                  )}
+                  <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  "Submit & Cancel"
+                )}
               </button>
             </div>
           </div>
         </div>
       )}
       {showCancelConfirm && (
-         <div
-         className="
+        <div
+          className="
          fixed inset-0 z-[80]
          flex items-center justify-center
          bg-black/40 backdrop-blur-[2px]
          "
-         >
+        >
           {/* CONFIRM BOX */}
           <div
             onClick={(e) => e.stopPropagation()}
@@ -706,7 +705,7 @@ const OrderDetails = () => {
             shadow-[0_0_0_1px_rgba(255,255,255,0.05)]
             text-center
             "
-            >
+          >
             <h3 className="text-lg font-semibold text-white">
               Cancel this item?
             </h3>
@@ -729,24 +728,24 @@ const OrderDetails = () => {
                 hover:bg-white/10
                 transition cursor-pointer
                 "
-                >
+              >
                 No, keep item
               </button>
 
               {/* YES */}
               <button
                 onClick={() => {
-                   setShowCancelConfirm(false);
-                   submitCancellation();
-                  }}
-                  className="
+                  setShowCancelConfirm(false);
+                  submitCancellation();
+                }}
+                className="
                   flex-1 py-2.5 rounded-xl
                   bg-red-500 text-black
                   font-semibold
                   hover:bg-red-600
                   transition cursor-pointer
                   "
-                  >
+              >
                 Yes, cancel item
               </button>
             </div>
@@ -755,13 +754,13 @@ const OrderDetails = () => {
       )}
 
       {showAddressConfirm && (
-         <div
-         className="
+        <div
+          className="
          fixed inset-0 z-[80]
          flex items-center justify-center
          bg-black/40 backdrop-blur-[2px]
          "
-         >
+        >
           <div
             onClick={(e) => e.stopPropagation()}
             className="
@@ -773,7 +772,7 @@ const OrderDetails = () => {
             shadow-2xl
             text-center
             "
-            >
+          >
             <h3 className="text-lg font-semibold text-white">
               Change delivery address?
             </h3>
@@ -796,21 +795,21 @@ const OrderDetails = () => {
                 border border-white/20
                 hover:bg-white/10 transition cursor-pointer
                 "
-                >
+              >
                 No
               </button>
 
               <button
                 onClick={() => {
-                   setShowAddressConfirm(false);
-                   navigate("/address");
-                  }}
-                  className="
+                  setShowAddressConfirm(false);
+                  navigate("/address");
+                }}
+                className="
                   flex-1 py-2.5 rounded-xl
                   bg-blue-500 text-black font-semibold
                   hover:bg-blue-600 transition cursor-pointer
                   "
-                  >
+              >
                 Yes, change address
               </button>
             </div>
