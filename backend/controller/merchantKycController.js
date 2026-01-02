@@ -2,16 +2,37 @@ import merchantModel from "../models/merchantModel.js";
 //Merchant Kyc related thing starts from here
 import { v2 as cloudinary } from "cloudinary";
 
+// ---------------- SLUG HELPERS ----------------
+const normalize = (str = "") =>
+  str
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
+
+const generateMerchantSlug = async ({ storeName, city, phone }) => {
+  const base = `${normalize(storeName)}-${normalize(city)}-${phone.slice(-4)}`;
+
+  let slug = base;
+  let counter = 1;
+
+  while (await merchantModel.exists({ slug })) {
+    slug = `${base}-${counter}`;
+    counter++;
+  }
+
+  return slug;
+};
+
 // UPLOAD helper
 const uploadToCloudinary = (file, folder) => {
   return new Promise((resolve, reject) => {
-    cloudinary.uploader.upload_stream(
-      { folder },
-      (err, result) => {
+    cloudinary.uploader
+      .upload_stream({ folder }, (err, result) => {
         if (err) reject(err);
         else resolve(result.secure_url);
-      }
-    ).end(file.buffer);
+      })
+      .end(file.buffer);
   });
 };
 
@@ -65,17 +86,62 @@ const submitKyc = async (req, res) => {
       upi,
     } = req.body;
 
-    // REQUIRED CHECK
-    if (!firstName || !lastName || !aadhaarNumber || !panNumber) {
+    // ---------------- REQUIRED FIELD VALIDATION ----------------
+    if (
+      !firstName ||
+      !lastName ||
+      !fullAddress ||
+      !city ||
+      !state ||
+      !pincode ||
+      !country ||
+      !aadhaarNumber ||
+      !panNumber ||
+      !accountName ||
+      !accountNumber ||
+      !ifsc ||
+      !bankName
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Required fields are missing.",
+        message: "All mandatory KYC fields must be provided.",
       });
     }
 
+    // ---------------- REQUIRED FILE VALIDATION ----------------
+    const hasAadhaar =
+      merchant.documents?.aadhaarFront && merchant.documents?.aadhaarBack;
+    const hasPan = merchant.documents?.panFile;
+    const hasPassbook = merchant.bank?.passbookFile;
+    const hasProfile = merchant.profileImage;
+
+    if (
+      (!files.aadhaarFront && !hasAadhaar) ||
+      (!files.aadhaarBack && !hasAadhaar) ||
+      (!files.panFile && !hasPan) ||
+      (!files.passbookFile && !hasPassbook) ||
+      (!files.profileImage && !hasProfile)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "All mandatory KYC documents must be uploaded.",
+      });
+    }
+
+    // ---------------- GST CONDITIONAL VALIDATION ----------------
+    if (gstNumber && !files.gstFile && !merchant.documents?.gstFile) {
+      return res.status(400).json({
+        success: false,
+        message: "GST certificate is required when GST number is provided.",
+      });
+    }
     // PERSONAL DETAILS
-    merchant.firstName = firstName;
-    merchant.lastName = lastName;
+    merchant.firstName = firstName.trim();
+    merchant.lastName = lastName.trim();
+    merchant.aadhaarNumber = aadhaarNumber.trim();
+    merchant.panNumber = panNumber.trim();
+    merchant.bank.ifsc = ifsc.trim();
+
     merchant.fatherName = fatherName || "";
     merchant.dateOfBirth = dateOfBirth || "";
     merchant.gender = gender || "";
@@ -90,14 +156,11 @@ const submitKyc = async (req, res) => {
     };
 
     // KYC IDs
-    merchant.aadhaarNumber = aadhaarNumber;
-    merchant.panNumber = panNumber;
     merchant.gstNumber = gstNumber || null;
 
     // BANK DETAILS
     merchant.bank.accountName = accountName || "";
     merchant.bank.accountNumber = accountNumber || "";
-    merchant.bank.ifsc = ifsc || "";
     merchant.bank.bankName = bankName || "";
     merchant.bank.upi = upi || "";
 
@@ -141,6 +204,15 @@ const submitKyc = async (req, res) => {
 
     // Mark as pending verification
     merchant.isVerified = false;
+
+    // ---------------- GENERATE SLUG (ONLY ON FIRST KYC) ----------------
+    if (!merchant.slug) {
+      merchant.slug = await generateMerchantSlug({
+        storeName: merchant.storeName,
+        city: merchant.address.city,
+        phone: merchant.phone,
+      });
+    }
 
     await merchant.save();
 
@@ -248,6 +320,16 @@ const updateKyc = async (req, res) => {
         files.profileImage[0],
         "merchant_kyc"
       );
+
+      // ---------------- ENSURE SLUG EXISTS (for old merchants) ----------------
+if (!merchant.slug) {
+  merchant.slug = await generateMerchantSlug({
+    storeName: merchant.storeName,
+    city: merchant.address.city || "india",
+    phone: merchant.phone,
+  });
+}
+
 
     merchant.isVerified = false; // re-verification
 

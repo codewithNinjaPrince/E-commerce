@@ -9,6 +9,7 @@ import { FaStar } from "react-icons/fa6";
 import { useLayoutEffect } from "react";
 import ProductSkeleton from "../components/ProductSkeleton";
 import SizeSelectorModal from "../components/SizeSelectorModal";
+import { Helmet } from "react-helmet-async";
 
 const showCartToast = (message = "Added to cart 🛒") => {
   const isMobile = window.innerWidth < 768;
@@ -61,6 +62,7 @@ const Product = () => {
   const [showZoom, setShowZoom] = useState(false);
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
   const [showSizeModal, setShowSizeModal] = useState(false);
+  const [color, setColor] = useState("");
   const [actionType, setActionType] = useState(null);
   const isDesktop = window.innerWidth >= 1024;
 
@@ -72,6 +74,14 @@ const Product = () => {
   const location = useLocation();
   const fromOrderPreview =
     new URLSearchParams(location.search).get("from") === "orderpreview";
+
+  const colors = Array.isArray(productData?.colors) ? productData.colors : [];
+
+  const normalizedColors = colors.map((c) =>
+    typeof c === "string"
+      ? { name: c, hex: null }
+      : { name: c.name, hex: c.hex || null }
+  );
 
   const handleShare = async () => {
     const shareUrl = window.location.href;
@@ -155,6 +165,7 @@ const Product = () => {
     setProductData(null);
     setImage("");
     setSize("");
+    setColor("");
     setCurrentIndex(0);
     window.scrollTo(0, 0);
 
@@ -235,6 +246,11 @@ const Product = () => {
     return <ProductSkeleton />;
   }
 
+
+/* ---------------- SAFE DERIVED VALUES ---------------- */
+const merchantId =
+  productData.merchantId || productData.sellerId || null;
+
   /* ---------------- SAFE DERIVED VALUES ---------------- */
   const images = Array.isArray(productData.image)
     ? productData.image
@@ -251,13 +267,18 @@ const Product = () => {
       return;
     }
 
+    if (!color) {
+      toast.error("Please select a color");
+      return;
+    }
+
     if (!size) {
       setActionType("add");
       setShowSizeModal(true);
       return;
     }
 
-    addToCart(productData._id, size);
+    addToCart(productData._id, size, color);
     showCartToast("Added to cart 🛒");
   };
 
@@ -266,6 +287,11 @@ const Product = () => {
       navigate(`/login?redirect=/product/${productId}`);
       return;
     }
+    if (!color) {
+  toast.error("Please select a color");
+  return;
+}
+
 
     if (!size) {
       setActionType("buy");
@@ -276,6 +302,7 @@ const Product = () => {
     setBuyNowSafe({
       productId: productData._id,
       size,
+      color,
       quantity: 1,
     });
 
@@ -290,6 +317,39 @@ const Product = () => {
 
   return (
     <>
+      <Helmet>
+        <title>{productData.name} | Brawvly</title>
+
+        <meta property="og:type" content="product" />
+        <meta property="og:title" content={productData.name} />
+        <meta
+          property="og:description"
+          content={`Buy ${productData.name} at best price on Brawvly`}
+        />
+        <meta
+          property="og:image"
+          content={
+            Array.isArray(productData.image)
+              ? productData.image[0]
+              : productData.image
+          }
+        />
+        <meta
+          property="og:url"
+          content={`${window.location.origin}/product/${productData._id}`}
+        />
+
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={productData.name} />
+        <meta
+          name="twitter:image"
+          content={
+            Array.isArray(productData.image)
+              ? productData.image[0]
+              : productData.image
+          }
+        />
+      </Helmet>
       <div className="bg-[#0e0e0e] text-white">
         <div
           className="
@@ -649,14 +709,51 @@ const Product = () => {
                   {/* ========== TOP CONTENT ========== */}
                   <div className="flex flex-col gap-6">
                     {/* Brand */}
-                    <p
-                      className="text-xl uppercase text-gray-400 cursor-pointer"
-                      onClick={() =>
-                        navigate(`/seller/${productData.brandName || "store"}`)
-                      }
-                    >
-                      {productData.brandName}
-                    </p>
+                    {/* BRAND + VISIT STORE */}
+<div className="flex items-center gap-3">
+  <p className="text-xl uppercase text-gray-400">
+    {productData.brandName}
+  </p>
+
+  <button
+  onClick={async () => {
+    const merchantId =
+      productData.merchantId || productData.sellerId;
+
+    if (!merchantId) {
+      toast.error("Store not available");
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/merchant/slug/${merchantId}`
+      );
+      const data = await res.json();
+
+      if (data.success && data.slug) {
+        navigate(`/store/${data.slug}`);
+      } else {
+        toast.error("Store not found");
+      }
+    } catch (err) {
+      toast.error("Unable to open store");
+    }
+  }}
+  className="
+    text-sm px-3 py-1
+    border border-white/20
+    rounded-full
+    hover:bg-white hover:text-black
+    transition
+    cursor-pointer
+  "
+>
+  Visit Store →
+</button>
+
+</div>
+
 
                     {/* Name */}
                     <h1 className="font-semibold text-2xl leading-tight">
@@ -695,6 +792,70 @@ const Product = () => {
                         % OFF
                       </p>
                     </div>
+
+                    {/* COLOR SELECTOR */}
+                    {normalizedColors.length > 0 && (
+                      <div className="flex flex-col gap-3">
+                        <p className="font-medium">Select Color</p>
+
+                        <div className="flex gap-4 flex-wrap">
+                          {normalizedColors.map((c) => {
+                            const isSelected = color === c.name;
+
+                            return (
+                              <button
+                                key={c.name}
+                                onClick={() =>
+                                  setColor((prev) =>
+                                    prev === c.name ? "" : c.name
+                                  )
+                                }
+                                className={`
+              relative
+              min-w-[44px] h-[44px]
+              rounded-full
+              border
+              flex items-center justify-center
+              transition-all duration-200
+              cursor-pointer
+              
+              ${isSelected ? "border-white scale-110" : "border-gray-500"}
+              
+              hover:scale-110
+            `}
+                                style={{
+                                  background: c.hex || "#111",
+                                }}
+                                title={c.name}
+                              >
+                                {/* fallback text if no hex */}
+                                {!c.hex && (
+                                  <span
+                                    className={`text-xs ${
+                                      isSelected ? "text-black" : "text-white"
+                                    }`}
+                                  >
+                                    {c.name}
+                                  </span>
+                                )}
+
+                                {/* selected ring */}
+                                {isSelected && (
+                                  <span className="absolute inset-0 rounded-full ring-2 ring-white" />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {color && (
+                      <p className="text-sm text-gray-400">
+                        Selected Color:{" "}
+                        <span className="text-white">{color}</span>
+                      </p>
+                    )}
 
                     {/* SIZE SELECTOR */}
                     <div className="flex flex-col gap-3">
@@ -779,7 +940,7 @@ const Product = () => {
                     </div>
 
                     {/* DESCRIPTION */}
-                    <p className="text-gray-400 leading-relaxed">
+                    <p className="text-gray-400 leading-relaxed whitespace-pre-line">
                       {productData.description}
                     </p>
 
@@ -834,7 +995,7 @@ const Product = () => {
           setSize(selectedSize);
 
           if (actionType === "add") {
-            addToCart(productData._id, selectedSize);
+            addToCart(productData._id, selectedSize, color);
             showCartToast("Added to cart 🛒");
           }
 
@@ -842,6 +1003,7 @@ const Product = () => {
             setBuyNowSafe({
               productId: productData._id,
               size: selectedSize,
+              color,
               quantity: 1,
             });
             showCartToast("Perfect fit selected 🖤");

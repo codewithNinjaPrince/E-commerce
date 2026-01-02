@@ -56,12 +56,27 @@ const ProductItem = ({
             navigate(`/product/${_id}`);
           }}
           className="relative w-full overflow-hidden rounded-xl bg-gray-100"
-        >
-          <img
+          >
+          {/* <img
             src={Array.isArray(image) ? image[0] : image}
             alt={name}
             className="w-full h-52 object-cover rounded-xl transition-transform group-hover:scale-105"
-          />
+            /> */}
+
+          <div className="w-full h-56 flex items-center justify-center bg-gray-300 rounded-xl overflow-hidden">
+            <img
+              src={Array.isArray(image) ? image[0] : image}
+              alt={name}
+              className="
+              w-full
+              h-auto
+              max-h-full
+              object-contain
+              transition-transform
+              group-hover:scale-105
+              "
+              />
+          </div>
 
           {/* SHARE BUTTON */}
           <button
@@ -69,7 +84,7 @@ const ProductItem = ({
             onClick={(e) => {
               e.stopPropagation();
               const shareUrl = `${window.location.origin}/product/${_id}`;
-
+              
               if (navigator.share) {
                 navigator.share({ title: name, url: shareUrl });
               } else {
@@ -77,7 +92,7 @@ const ProductItem = ({
                 alert("Link copied!");
               }
             }}
-          >
+            >
             <FaShareAlt size={14} />
           </button>
 
@@ -92,11 +107,11 @@ const ProductItem = ({
               isFav ? removeFromFavorites(_id) : addToFavorites(_id);
             }}
             className="absolute bottom-2 right-2 p-2 rounded-full bg-black/60 cursor-pointer"
-          >
+            >
             <FaHeart
               size={15}
               className={isFav ? "text-red-600" : "text-white/80"}
-            />
+              />
           </button>
 
           {/* RATING BOX */}
@@ -122,12 +137,21 @@ const ProductItem = ({
           </p>
 
           {/* NAME */}
-          <p className="text-sm font-semibold leading-tight mt-1 line-clamp-2 min-h-[36px]">
+          <p className="text-sm font-semibold leading-tight mt-2 line-clamp-2">
             {name}
           </p>
 
+          {/* COLORS */}
+          {colorLabel && (
+            <div className="mt-2">
+              <span className="inline-block text-xs px-2 py-[2px] rounded-full bg-gray-100 text-gray-700">
+                Color : {colorLabel}
+              </span>
+            </div>
+          )}
+
           {/* PRICE */}
-          <div className="mt-1 flex items-center gap-2 flex-wrap">
+          <div className="mt-3 flex items-center gap-2 flex-wrap">
             {actualPrice && (
               <span className="text-gray-500 line-through text-sm">
                 {currency} {actualPrice}
@@ -138,44 +162,37 @@ const ProductItem = ({
             </span>
           </div>
 
-          {/* COLORS */}
-          {colorLabel && (
-            <p className="text-xs text-gray-500 mt-1">
-              Color: <span className="text-gray-700">{colorLabel}</span>
-            </p>
-          )}
-
           {/* ACTIONS */}
           <div className="mt-3 flex items-center gap-2">
             {/* CART ICON */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
-
+                
                 if (!token) {
                   navigate(`/login?redirect=/product/${_id}`);
                   return;
                 }
-
+                
                 // 🔥 always open size selector
                 setActionType("add");
                 setShowSizeModal(true);
               }}
               className="
-    w-10 h-10
-    flex items-center justify-center
-    rounded-lg
-    border border-black/10
-    bg-white
-    text-black
-    transition-all duration-200
-    hover:bg-black hover:text-white
-    hover:scale-105
-    active:scale-95
-    cursor-pointer
-  "
+              w-10 h-10
+              flex items-center justify-center
+              rounded-lg
+              border border-black/10
+              bg-white
+              text-black
+              transition-all duration-200
+              hover:bg-black hover:text-white
+              hover:scale-105
+              active:scale-95
+              cursor-pointer
+              "
               title="Add to Cart"
-            >
+              >
               <FaShoppingCart size={16} />
             </button>
 
@@ -191,7 +208,7 @@ const ProductItem = ({
                 setShowSizeModal(true);
               }}
               className="flex-1 bg-white text-black py-2 rounded-lg text-sm font-semibold hover:bg-black hover:text-white transition cursor-pointer"
-            >
+              >
               Buy Now
             </button>
           </div>
@@ -209,19 +226,19 @@ const ProductItem = ({
           // 🛒 ADD TO CART FLOW
           if (actionType === "add") {
             addToCart(_id, selectedSize);
-
+            
             toast.success("Smile Added to cart 🛒", {
               position: "top-center",
               autoClose: 1500,
               hideProgressBar: true,
               theme: "dark",
             });
-
+            
             setShowSizeModal(false);
             setActionType(null);
             return;
           }
-
+          
           // 🚀 BUY NOW FLOW (NEW)
           if (actionType === "buy") {
             setBuyNowSafe({
@@ -230,23 +247,23 @@ const ProductItem = ({
               quantity: 1,
               source: "product",
             });
-
+            
             setShowSizeModal(false);
             setActionType(null);
-
+            
             toast.success("Great choice! Let’s checkout 🚀", {
               position: "top-center",
               autoClose: 1200,
               hideProgressBar: true,
               theme: "dark",
             });
-
+            
             setTimeout(() => {
               navigate("/order-preview");
             }, 400);
           }
         }}
-      />
+        />
     </>
   );
 };

@@ -19,6 +19,7 @@ const addProduct = async (req, res) => {
       bestseller,
       shopId,
       sellerId,
+      colors,
     } = req.body;
 
     // ======================== BASIC VALIDATIONS ========================
@@ -133,6 +134,32 @@ const addProduct = async (req, res) => {
       });
     }
 
+    // ======================== COLORS VALIDATION ========================
+
+    let parsedColors = [];
+
+    if (colors) {
+      try {
+        parsedColors = JSON.parse(colors);
+        if (!Array.isArray(parsedColors)) throw new Error();
+
+        // optional: clean values
+        parsedColors = parsedColors.map((c) => c.trim()).filter(Boolean);
+
+        if (parsedColors.length === 0) {
+          return res.json({
+            success: false,
+            message: "At least one color is required",
+          });
+        }
+      } catch (err) {
+        return res.json({
+          success: false,
+          message: "Colors must be a valid array",
+        });
+      }
+    }
+
     // ======================== FINAL PRODUCT DATA ========================
 
     const productData = {
@@ -150,6 +177,7 @@ const addProduct = async (req, res) => {
       subCategory,
       bestseller: bestseller === "true",
       sizes: parsedSizes,
+      colors: parsedColors,
       image: imagesUrl,
       date: Date.now(),
     };

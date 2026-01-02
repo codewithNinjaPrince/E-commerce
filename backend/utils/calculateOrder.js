@@ -75,7 +75,7 @@ export const calculateOrder = async ({
 
   /* ================= FEES ================= */
   const deliveryFee = finalTotal >= 999 ? 0 : 49;
-  const codFee = paymentMethod === "cod" ? 20 : 0;
+  const codFee = paymentMethod === "cod" ? 9 : 0;
 
   console.log("PAYMENT METHOD:", paymentMethod);
 console.log("COD FEE:", codFee);

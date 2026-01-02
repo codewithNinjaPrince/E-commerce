@@ -112,6 +112,7 @@ const Kyc = () => {
   const [targetDoc, setTargetDoc] = useState(null);
   const [password, setPassword] = useState("");
   const [verifying, setVerifying] = useState(false);
+  const [errors, setErrors] = useState({});
 
   // Update KYC flow state
   const [updateConfirmOpen, setUpdateConfirmOpen] = useState(false);
@@ -126,6 +127,49 @@ const Kyc = () => {
 
   // Track optimistic deletions for previews
   const [removedDocs, setRemovedDocs] = useState(new Set());
+  const validateKyc = () => {
+    const e = {};
+
+    // Name
+    if (!form.firstName.trim()) e.firstName = "First name is required";
+    if (!form.lastName.trim()) e.lastName = "Last name is required";
+
+    // Address
+    if (!form.fullAddress.trim()) e.fullAddress = "Address is required";
+    if (!form.city.trim()) e.city = "City is required";
+    if (!form.state.trim()) e.state = "State is required";
+    if (!form.pincode.trim()) e.pincode = "Pincode is required";
+    if (!form.country.trim()) e.country = "Country is required";
+
+    // IDs
+    if (!form.aadhaarNumber.trim())
+      e.aadhaarNumber = "Aadhaar number is required";
+    if (!form.panNumber.trim()) e.panNumber = "PAN number is required";
+
+    // Files (mandatory)
+    if (!files.aadhaarFront && !merchant?.documents?.aadhaarFront)
+      e.aadhaarFront = "Aadhaar front image required";
+
+    if (!files.aadhaarBack && !merchant?.documents?.aadhaarBack)
+      e.aadhaarBack = "Aadhaar back image required";
+
+    if (!files.panFile && !merchant?.documents?.panFile)
+      e.panFile = "PAN image required";
+
+    if (!files.passbookFile && !merchant?.bank?.passbookFile)
+      e.passbookFile = "Passbook image required";
+
+    if (!files.profileImage && !merchant?.profileImage)
+      e.profileImage = "Profile image required";
+
+    // 🔥 GST OPTIONAL
+    if (form.gstNumber && !files.gstFile && !merchant?.documents?.gstFile) {
+      e.gstFile = "GST certificate required if GST number is provided";
+    }
+
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
 
   // Lock body scroll when any modal is open
   useEffect(() => {
@@ -248,15 +292,9 @@ const Kyc = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.firstName || !form.lastName) {
-      toast.error("First & Last Name required");
-      return;
-    }
-
-    if (!form.aadhaarNumber || !form.panNumber) {
-      toast.error("Aadhaar & PAN required");
-      return;
-    }
+    // 🔒 STEP 1: validate mandatory fields
+    const ok = validateKyc();
+    if (!ok) return;
 
     if (!agree) {
       toast.error(
@@ -722,9 +760,7 @@ const Kyc = () => {
               className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full min-w-0 mt-4"
             >
               {/* Personal */}
-              <div
-                className="col-span-1 md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full min-w-0"
-              >
+              <div className="col-span-1 md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full min-w-0">
                 <input
                   name="firstName"
                   placeholder="First Name *"

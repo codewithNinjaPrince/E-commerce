@@ -54,9 +54,9 @@ const CartTotal = ({ forceOpenKey, priceData }) => {
   }, []);
 
   const formatINR = (amount) => {
-  if (amount === null || amount === undefined) return "0";
-  return Number(amount).toLocaleString("en-IN");
-};
+    if (amount === null || amount === undefined) return "0";
+    return Number(amount).toLocaleString("en-IN");
+  };
 
   /* ================= FORCE OPEN ================= */
   useEffect(() => {
@@ -87,7 +87,6 @@ const CartTotal = ({ forceOpenKey, priceData }) => {
       : 0;
 
   const fmt = (n) => formatINR(n);
-
 
   const FREE_LIMIT = 999;
   const remainingForFree =
@@ -157,7 +156,9 @@ const CartTotal = ({ forceOpenKey, priceData }) => {
 
         {codFee > 0 && (
           <div className="flex justify-between mt-1">
-            <span>COD Handling Fee</span>
+            <span className="text-gray-300">
+              Pay on Delivery Convenience Fee
+            </span>
             <span>
               {currency} {codFee}
             </span>
@@ -165,8 +166,6 @@ const CartTotal = ({ forceOpenKey, priceData }) => {
         )}
 
         <hr className="border-gray-400 my-3" />
-
-        
 
         <div className="flex justify-between text-lg items-center">
           <p className="text-white text-lg font-semibold ">Total Amount</p>
@@ -176,8 +175,6 @@ const CartTotal = ({ forceOpenKey, priceData }) => {
         </div>
 
         <div className="border-t border-dashed border-gray-700/40 my-3" />
-
-        
 
         {productDiscountAmount > 0 && (
           <div className="mt-4 bg-green-900/20 border border-green-500/20 rounded-xl px-4 py-3 flex items-center gap-3">

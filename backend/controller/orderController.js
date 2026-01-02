@@ -9,7 +9,6 @@ import { calculateOrder } from "../utils/calculateOrder.js";
 
 //Global Variables
 const currency = "inr";
-const deliveryCharge = 49;
 
 //placeorder COD
 // -------------------- PLACE ORDER (COD) --------------------

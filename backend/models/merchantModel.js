@@ -19,7 +19,6 @@ const merchantSchema = new mongoose.Schema(
 
     // BASIC STORE SETUP (Required for Entry)
     storeName: { type: String, required: true },
-    slug: { type: String, unique: true, index: true },
     storeDescription: { type: String, default: "" },
     businessType: {
       type: String,
@@ -59,6 +58,13 @@ const merchantSchema = new mongoose.Schema(
 
     // VERIFICATION STATUS
     isVerified: { type: Boolean, default: false },
+    // STORE SLUG (generated after KYC submit)
+    slug: {
+      type: String,
+      unique: true,
+      sparse: true, // 👈 very important (null allowed multiple times)
+      index: true,
+    },
 
     // STORE SETTINGS
     status: {

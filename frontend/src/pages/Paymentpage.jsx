@@ -34,7 +34,7 @@ const CheckoutNote = () => (
       text-center
       shadow-lg
       "
-      >
+    >
       <div className="flex justify-center mb-2">
         <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
           <FaCheckCircle className="text-green-400 text-lg" />
@@ -71,8 +71,8 @@ const OrderPreviewSkeleton = () => {
         {/* PRODUCT SKELETON */}
         {[1, 2].map((i) => (
           <div
-          key={i}
-          className="bg-[#121212] p-5 rounded-2xl border border-white/10"
+            key={i}
+            className="bg-[#121212] p-5 rounded-2xl border border-white/10"
           >
             <div className="flex gap-4">
               <div className="w-24 h-32 bg-white/10 rounded-xl" />
@@ -107,12 +107,12 @@ const ButtonLoader = ({ text = "Processing..." }) => (
         stroke="currentColor"
         strokeWidth="4"
         fill="none"
-        />
+      />
       <path
         className="opacity-75"
         fill="currentColor"
         d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-        />
+      />
     </svg>
     <span>{text}</span>
   </div>
@@ -135,18 +135,18 @@ const PaymentPage = () => {
   }, []);
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const { backendUrl, token, cartItems, products, buyNowItem, setBuyNowSafe } =
-  useContext(ShopContext);
-  
+    useContext(ShopContext);
+
   const cartTotalRef = useRef(null);
-  
+
   const [priceData, setPriceData] = useState(null);
-  
+
   const [cartOpenKey, setCartOpenKey] = useState(0);
-  
+
   const [addressLoading, setAddressLoading] = useState(true);
-  
+
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [couponValid, setCouponValid] = useState(false);
   const [couponCode, setCouponCode] = useState("");
@@ -157,22 +157,22 @@ const PaymentPage = () => {
   const [codOpen, setCodOpen] = useState(true);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [processing, setProcessing] = useState(false);
-  
+
   const payableAmount = priceData?.payableAmount ?? 0;
-  
+
   const PaymentRadio = ({ active }) => (
     <div
-    className={`
+      className={`
       w-4 h-4 rounded-full border flex items-center justify-center
       ${active ? "border-blue-500" : "border-white/40"}
       `}
-      >
+    >
       {active && <div className="w-2 h-2 rounded-full bg-blue-500" />}
     </div>
   );
-  
+
   const paymentCompletedRef = useRef(false);
-  
+
   const handlePayClick = async () => {
     if (processing) return;
     // 🟡 COD → normal confirm modal
@@ -180,18 +180,18 @@ const PaymentPage = () => {
       setConfirmOpen(true);
       return;
     }
-    
+
     // 🟡 UPI selection check
     if (paymentMethod === "upi" && !selectedUpi) {
       toast.info("Please select a UPI app");
       return;
     }
-    
+
     try {
       setProcessing(true);
       // 1️⃣ Create Razorpay order (backend)
       const items = buildItems();
-      
+
       const { data } = await axios.post(
         `${backendUrl}/api/order/razorpay/create`,
         {
@@ -201,12 +201,12 @@ const PaymentPage = () => {
         },
         { headers: { token } }
       );
-      
+
       if (!data.success) {
         toast.error("Unable to initiate payment");
         return;
       }
-      
+
       // 2️⃣ Open Razorpay popup
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
@@ -215,7 +215,7 @@ const PaymentPage = () => {
         name: "Brawvly",
         description: "Secure Payment",
         order_id: data.order.id,
-        
+
         handler: async function (response) {
           try {
             const verify = await axios.post(
@@ -223,22 +223,22 @@ const PaymentPage = () => {
               response,
               { headers: { token } }
             );
-            
+
             if (!verify.data.success) {
               toast.error("Payment verification failed");
               return;
             }
-            
+
             paymentCompletedRef.current = true;
             toast.success("Payment successful");
-            
+
             await new Promise((r) => setTimeout(r, 400));
             await placeFinalOrder();
           } catch (err) {
             toast.error("Payment verification error");
           }
         },
-        
+
         modal: {
           ondismiss: () => {
             if (!paymentCompletedRef.current) {
@@ -247,7 +247,7 @@ const PaymentPage = () => {
             }
           },
         },
-        
+
         // 🔥 THIS IS THE KEY CHANGE
         method: {
           card: paymentMethod === "card",
@@ -255,12 +255,12 @@ const PaymentPage = () => {
           netbanking: false,
           wallet: false,
         },
-        
+
         theme: {
           color: "#3b82f6",
         },
       };
-      
+
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (err) {
@@ -268,30 +268,30 @@ const PaymentPage = () => {
       toast.error("Payment failed");
     }
   };
-  
+
   const handleBack = () => {
     navigate("/order-preview", { replace: true });
   };
-  
+
   const placeFinalOrder = async () => {
     if (processing) return;
-    
+
     const items = buildItems();
-    
+
     if (!items.length) {
       toast.error("No items found to place order");
       return;
     }
-    
+
     if (!address) {
       toast.error("Please add delivery address");
       navigate("/address", { state: { from: "payment" }, replace: true });
       return;
     }
-    
+
     try {
       setProcessing(true);
-      
+
       const res = await axios.post(
         `${backendUrl}/api/order/place`,
         {
@@ -301,12 +301,12 @@ const PaymentPage = () => {
         },
         { headers: { token } }
       );
-      
+
       if (!res.data.success) {
         toast.error(res.data.message || "Order failed");
         return;
       }
-      
+
       // ✅ CLEANUP AFTER SUCCESS
       if (buyNowItem) {
         setBuyNowSafe(null);
@@ -320,7 +320,7 @@ const PaymentPage = () => {
       setProcessing(false);
     }
   };
-  
+
   /* ================= LOAD SELECTED ADDRESS ================= */
   useEffect(() => {
     const loadSelectedAddress = async () => {
@@ -330,24 +330,24 @@ const PaymentPage = () => {
           navigate("/login");
           return;
         }
-        
+
         const res = await axios.get(`${backendUrl}/api/address/get`, {
           headers: { token },
         });
-        
+
         if (!res.data.success) {
           navigate("/address", { state: { from: "payment" } });
           return;
         }
-        
+
         const { addresses, selectedAddressId } = res.data;
         const found = addresses.find((a) => a.addressId === selectedAddressId);
-        
+
         if (!found) {
           navigate("/address", { state: { from: "payment" } });
           return;
         }
-        
+
         setAddress(found);
       } catch {
         toast.error("Unable to load address");
@@ -356,10 +356,10 @@ const PaymentPage = () => {
         setAddressLoading(false); // ✅ ALWAYS fires
       }
     };
-    
+
     loadSelectedAddress();
   }, [token, backendUrl, navigate]);
-  
+
   const buildItems = () => {
     // 🚀 BUY NOW FLOW
     if (buyNowItem) {
@@ -371,10 +371,10 @@ const PaymentPage = () => {
         },
       ];
     }
-    
+
     // 🛒 NORMAL CART FLOW
     let items = [];
-    
+
     Object.keys(cartItems).forEach((pid) => {
       Object.keys(cartItems[pid]).forEach((size) => {
         if (cartItems[pid][size] > 0) {
@@ -386,16 +386,16 @@ const PaymentPage = () => {
         }
       });
     });
-    
+
     return items;
   };
-  
+
   /* ---------------- LOAD PRICE ---------------- */
   useEffect(() => {
     const loadPreview = async () => {
       const items = buildItems();
       if (!items.length) return;
-      
+
       try {
         const res = await axios.post(
           `${backendUrl}/api/order/preview`,
@@ -406,7 +406,7 @@ const PaymentPage = () => {
           },
           { headers: { token } }
         );
-        
+
         if (res.data.success) {
           setPriceData(res.data);
         }
@@ -414,13 +414,13 @@ const PaymentPage = () => {
         toast.error("Failed to load payment summary");
       }
     };
-    
+
     loadPreview();
   }, [cartItems, buyNowItem, couponValid, couponCode, paymentMethod]);
-  
+
   if (addressLoading) return <OrderPreviewSkeleton />;
   if (!priceData) return <OrderPreviewSkeleton />;
-  
+
   return (
     <section className="min-h-screen bg-black text-white pt-[64px] pb-28">
       {/* ================= HEADER ================= */}
@@ -430,7 +430,7 @@ const PaymentPage = () => {
           <button
             onClick={handleBack}
             className="p-2 rounded-lg hover:bg-white/10 cursor-pointer"
-            >
+          >
             <FaArrowLeft />
           </button>
 
@@ -470,7 +470,7 @@ const PaymentPage = () => {
                 navigate("/address", { state: { from: "payment" } })
               }
               className="bg-[#121212] p-5 rounded-2xl border border-white/10 cursor-pointer transition hover:border-white/30"
-              >
+            >
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5">
                 {/* LEFT */}
                 <div className="flex gap-4">
@@ -515,7 +515,7 @@ const PaymentPage = () => {
                       navigate("/address", { state: { from: "payment" } });
                     }}
                     className="px-4 py-2 rounded-lg border border-white/20 text-sm text-green-500 hover:border-white/40 hover:bg-white/5 transition cursor-pointer whitespace-nowrap"
-                    >
+                  >
                     Change address
                   </button>
                 </div>
@@ -529,7 +529,7 @@ const PaymentPage = () => {
                     navigate("/address", { state: { from: "payment" } });
                   }}
                   className="w-full py-2 rounded-xl border border-white/20 text-sm text-green-500 hover:bg-white/5 transition cursor-pointer"
-                  >
+                >
                   Change delivery address
                 </button>
               </div>
@@ -551,7 +551,7 @@ const PaymentPage = () => {
                   w-full px-4 py-3 flex items-center justify-between
                   border-b border-white/10 cursor-pointer
                   "
-                  >
+                >
                   <div className="flex items-center gap-3">
                     <PaymentRadio active={paymentMethod === "upi"} />
                     <p className="font-semibold text-blue-500">Pay using UPI</p>
@@ -561,7 +561,7 @@ const PaymentPage = () => {
                     className={`text-blue-500 transition-transform duration-300 ${
                       upiOpen ? "rotate-180" : ""
                     }`}
-                    />
+                  />
                 </button>
 
                 {/* COLLAPSIBLE BODY */}
@@ -570,12 +570,12 @@ const PaymentPage = () => {
                     transition-all duration-300 ease-in-out
                     ${
                       upiOpen
-                      ? "max-h-[600px] opacity-100"
-                      : "max-h-0 opacity-0"
+                        ? "max-h-[600px] opacity-100"
+                        : "max-h-0 opacity-0"
                     }
                     overflow-hidden
                     `}
-                    >
+                >
                   {/* UPI OPTIONS */}
                   {[
                     { id: "paytm", name: "Paytm" },
@@ -584,21 +584,21 @@ const PaymentPage = () => {
                     { id: "navi", name: "Navi" },
                   ].map((upi) => {
                     const active = selectedUpi === upi.id;
-                    
+
                     return (
                       <div
-                      key={upi.id}
-                      onClick={() => setSelectedUpi(upi.id)}
-                      className={`
+                        key={upi.id}
+                        onClick={() => setSelectedUpi(upi.id)}
+                        className={`
                         px-4 py-4 cursor-pointer transition
                         border-t border-white/10
                         ${
                           active
-                          ? "bg-white/5 ring-1 ring-blue-500"
-                          : "hover:bg-white/5"
+                            ? "bg-white/5 ring-1 ring-blue-500"
+                            : "hover:bg-white/5"
                         }
                         `}
-                        >
+                      >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             {/* RADIO */}
@@ -609,7 +609,7 @@ const PaymentPage = () => {
                                   active ? "border-blue-500" : "border-white/40"
                                 }
                                 `}
-                                >
+                            >
                               {active && (
                                 <div className="w-2 h-2 rounded-full bg-blue-500" />
                               )}
@@ -642,12 +642,12 @@ const PaymentPage = () => {
                         w-full py-3 rounded-xl font-semibold text-base cursor-pointer active:scale-95
                         ${
                           processing
-                          ? "bg-gray-400 cursor-not-allowed"
-                          : "bg-blue-500 hover:bg-blue-400"
+                            ? "bg-gray-400 cursor-not-allowed"
+                            : "bg-blue-500 hover:bg-blue-400"
                         }
                         text-black transition-all
                         `}
-                        >
+                    >
                       {processing ? (
                         <ButtonLoader text="Opening secure payment..." />
                       ) : (
@@ -681,7 +681,7 @@ const PaymentPage = () => {
                   w-full px-4 py-3 flex items-center justify-between
                   border-b border-white/10 cursor-pointer
                   "
-                  >
+                >
                   <div className="flex items-center gap-3">
                     <PaymentRadio active={paymentMethod === "card"} />
                     <p className="font-semibold text-blue-500">
@@ -693,7 +693,7 @@ const PaymentPage = () => {
                     className={`text-blue-500 transition-transform duration-300 ${
                       cardOpen ? "rotate-180" : ""
                     }`}
-                    />
+                  />
                 </button>
 
                 <div className="px-4 py-2 border-b border-white/10 bg-white/5">
@@ -706,10 +706,14 @@ const PaymentPage = () => {
                 <div
                   className={`
                     transition-all duration-300 ease-in-out
-                    ${cardOpen ? "max-h-[140px] opacity-100" : "max-h-0 opacity-0"}
+                    ${
+                      cardOpen
+                        ? "max-h-[140px] opacity-100"
+                        : "max-h-0 opacity-0"
+                    }
                     overflow-hidden
                     `}
-                    >
+                >
                   <div className="px-4 py-4 space-y-3">
                     <p className="text-sm text-gray-400">
                       You’ll be redirected to a secure Razorpay page to enter
@@ -732,7 +736,7 @@ const PaymentPage = () => {
                       transition-all
                       cursor-pointer
                       "
-                      >
+                    >
                       {processing ? (
                         <ButtonLoader text="Redirecting to Razorpay..." />
                       ) : (
@@ -740,7 +744,6 @@ const PaymentPage = () => {
                           payableAmount
                         )}`
                       )}
-                      
                     </button>
                   </div>
                 </div>
@@ -760,7 +763,7 @@ const PaymentPage = () => {
                   w-full px-4 py-3 flex items-center justify-between
                   border-b border-white/10 cursor-pointer
                   "
-                  >
+                >
                   <div className="flex items-center gap-3">
                     <PaymentRadio active={paymentMethod === "cod"} />
                     <p className="font-semibold text-blue-500 flex items-center gap-2">
@@ -773,7 +776,7 @@ const PaymentPage = () => {
                     className={`text-blue-500 transition-transform duration-300 ${
                       codOpen ? "rotate-180" : ""
                     }`}
-                    />
+                  />
                 </button>
 
                 {/* BODY */}
@@ -782,12 +785,12 @@ const PaymentPage = () => {
                     transition-all duration-300 ease-in-out
                     ${
                       codOpen
-                      ? "max-h-[160px] opacity-100"
-                      : "max-h-0 opacity-0"
+                        ? "max-h-[160px] opacity-100"
+                        : "max-h-0 opacity-0"
                     }
                     overflow-hidden
                     `}
-                    >
+                >
                   <div className="px-4 py-4 space-y-3">
                     <div className="flex items-start gap-3 text-sm text-gray-300">
                       <FaMoneyBillWave className="text-green-400 mt-0.5" />
@@ -799,8 +802,12 @@ const PaymentPage = () => {
 
                     {/* COD INFO */}
                     {paymentMethod === "cod" && (
-                      <p className="text-xs text-yellow-400 mt-1">
-                        ₹20 COD charge included in total
+                      <p className="text-xs text-gray-400 mt-1">
+                        Pay on Delivery convenience fee ₹9
+                        <span className="text-green-400 font-medium">
+                          {" "}
+                          — save this by paying online
+                        </span>
                       </p>
                     )}
 
@@ -820,7 +827,7 @@ const PaymentPage = () => {
                       transition-all
                       cursor-pointer
                       "
-                      >
+                    >
                       Place Order ₹{formatINR(payableAmount)}
                     </button>
                   </div>
@@ -858,7 +865,7 @@ const PaymentPage = () => {
                 onClick={() => setConfirmOpen(false)}
                 disabled={processing}
                 className="flex-1 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 cursor-pointer"
-                >
+              >
                 Cancel
               </button>
 
@@ -866,7 +873,7 @@ const PaymentPage = () => {
                 onClick={placeFinalOrder}
                 disabled={processing}
                 className="flex-1 py-2 rounded-lg bg-green-500 text-black font-semibold hover:bg-green-400 cursor-pointer"
-                >
+              >
                 {processing ? "Placing..." : "Confirm & Place Order"}
               </button>
             </div>

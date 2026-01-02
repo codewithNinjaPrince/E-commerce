@@ -17,7 +17,6 @@ export const registerMerchant = async (req, res) => {
       storeName,
       storeDescription,
       businessType,
-      address,
     } = req.body;
 
     const exists = await merchantModel.findOne({ $or: [{ email }, { phone }] });
@@ -38,7 +37,6 @@ export const registerMerchant = async (req, res) => {
       storeName,
       storeDescription,
       businessType: businessType || "Individual",
-      address: address || {},
     });
 
     await newMerchant.save();
@@ -115,6 +113,7 @@ export const getMerchantProfile = async (req, res) => {
     const merchant = await merchantModel
       .findById(req.merchant)
       .select("-password");
+
     if (!merchant)
       return res
         .status(404)
@@ -126,6 +125,7 @@ export const getMerchantProfile = async (req, res) => {
   }
 };
 
+
 // --------------------------------------------------
 // ADD MERCHANT PRODUCT  (CLOUDINARY WORKING VERSION)
 // --------------------------------------------------
@@ -133,10 +133,28 @@ export const addMerchantProduct = async (req, res) => {
   try {
     const sellerId = req.merchant;
 
+    const merchant = await merchantModel
+      .findById(sellerId)
+      .select("storeName slug");
+
+    if (!merchant) {
+      return res.json({
+        success: false,
+        message: "Merchant not found",
+      });
+    }
+
     if (!req.files || req.files.length === 0) {
       return res.json({
         success: false,
         message: "At least 1 image is required",
+      });
+    }
+
+    if (req.files.length > 10) {
+      return res.json({
+        success: false,
+        message: "Maximum 10 images allowed",
       });
     }
 
@@ -163,9 +181,10 @@ export const addMerchantProduct = async (req, res) => {
 
     const product = new productModel({
       sellerId,
+      merchantId: merchant._id,
       shopId: req.body.shopId || "",
       name: req.body.name,
-      brandName: req.body.brandName,
+      brandName: merchant.storeName,
       description: req.body.description,
       actualPrice: Number(req.body.actualPrice),
       discountedPrice: Number(req.body.discountedPrice),
@@ -175,6 +194,7 @@ export const addMerchantProduct = async (req, res) => {
       review: Number(req.body.review) || 0,
       noOfPeopleReviewed: Number(req.body.noOfPeopleReviewed) || 0,
       sizes: JSON.parse(req.body.sizes || "[]"),
+      colors: JSON.parse(req.body.colors || "[]"),
       bestseller: req.body.bestseller === "true",
       image: uploadedImages,
       date: Date.now(), // ⭐ FIXED
@@ -281,7 +301,7 @@ export const updateMerchantProduct = async (req, res) => {
       return res.json({ success: false, message: "Product ID is missing" });
     }
 
-    // Parse existing images (old cloudinary URLs)
+    // Parse existing images
     let oldImages = [];
     try {
       oldImages = JSON.parse(existingImages || "[]");
@@ -315,7 +335,16 @@ export const updateMerchantProduct = async (req, res) => {
       }
     }
 
+    // Merge images
     const finalImages = [...oldImages, ...newImages];
+
+    // 🔒 HARD IMAGE LIMIT
+    if (finalImages.length > 10) {
+      return res.json({
+        success: false,
+        message: "Maximum 10 images allowed",
+      });
+    }
 
     const updatedProduct = await productModel.findOneAndUpdate(
       { _id: productId, sellerId },
@@ -330,7 +359,8 @@ export const updateMerchantProduct = async (req, res) => {
         noOfPeopleReviewed,
         category,
         subCategory,
-        sizes: sizes ? JSON.parse(sizes) : [],
+        ...(sizes && { sizes: JSON.parse(sizes) }),
+        ...(req.body.colors && { colors: JSON.parse(req.body.colors) }),
         bestseller: bestseller === "true",
         image: finalImages,
       },
@@ -500,14 +530,14 @@ export const getMerchantStoreBySlug = async (req, res) => {
       });
     }
 
-    const merchantId = merchant._id.toString();
+    const merchantId = merchant._id;
 
     // 2️⃣ Fetch products (supports BOTH old & new product formats)
     const products = await productModel
       .find({
         $or: [
-          { sellerId: merchantId },   // ✅ your current product structure
-          { merchantId: merchantId }, // ✅ future-safe
+          { sellerId: merchantId.toString() }, // old products
+          { merchantId: merchantId }, // new products
         ],
       })
       .sort({ createdAt: -1 });
@@ -524,5 +554,31 @@ export const getMerchantStoreBySlug = async (req, res) => {
       success: false,
       message: error.message,
     });
+  }
+};
+
+// --------------------------------------------------
+// GET MERCHANT SLUG BY ID
+// --------------------------------------------------
+export const getMerchantSlugById = async (req, res) => {
+  try {
+    const { merchantId } = req.params;
+
+    if (!merchantId) {
+      return res.status(400).json({ success: false });
+    }
+
+    const merchant = await merchantModel.findById(merchantId).select("slug");
+
+    if (!merchant || !merchant.slug) {
+      return res.status(404).json({ success: false });
+    }
+
+    return res.json({
+      success: true,
+      slug: merchant.slug,
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false });
   }
 };

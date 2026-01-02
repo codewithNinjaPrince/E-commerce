@@ -1,9 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { backendUrl } from "../App";
 import { toast } from "react-toastify";
 import imageCompression from "browser-image-compression";
-
 
 const AddProduct = () => {
   const [loading, setLoading] = useState(false);
@@ -11,60 +10,95 @@ const AddProduct = () => {
   // 10 IMAGE SLOTS (null initially)
   const [images, setImages] = useState(Array(10).fill(null));
   const [dragIndex, setDragIndex] = useState(null);
+  const [colorInput, setColorInput] = useState("");
+
   const SIZE_ORDER = ["S", "M", "L", "XL", "XXL", "XXXL"];
-  const MAX_COMPRESSED_SIZE = 4 * 1024 * 1024; // 4 MB
-  const MAX_ORIGINAL_SIZE = 15 * 1024 * 1024; // optional safety (15 MB)
+  const MAX_IMAGES = 10;
+  const MAX_SINGLE_IMAGE_SIZE = 8 * 1024 * 1024; // 8 MB
+  const MAX_TOTAL_ORIGINAL = 20 * 1024 * 1024; // 20 MB
+  const MAX_TOTAL_COMPRESSED = 4 * 1024 * 1024; // 4 MB
 
-  //Image Compression
+  useEffect(() => {
+    return () => {
+      images.forEach((img) => {
+        if (img) URL.revokeObjectURL(img);
+      });
+    };
+  }, [images]);
+
+  // Image Compression
+
   const compressImage = async (file) => {
-  if (file.size > MAX_ORIGINAL_SIZE) {
-    throw new Error("Original image too large");
-  }
+    // 🔒 Per-image hard limit
+    if (file.size > MAX_SINGLE_IMAGE_SIZE) {
+      throw new Error("Single image too large");
+    }
 
-  const options = {
-    maxSizeMB: 4,
-    maxWidthOrHeight: 1920,
-    useWebWorker: true,
-    initialQuality: 0.8,
+    const options = {
+      maxSizeMB: 0.5, // 🎯 target ~500KB per image
+      maxWidthOrHeight: 1600,
+      useWebWorker: true,
+      initialQuality: 0.7,
+    };
+
+    const compressedFile = await imageCompression(file, options);
+
+    return compressedFile;
   };
 
-  const compressedFile = await imageCompression(file, options);
-
-  if (compressedFile.size > MAX_COMPRESSED_SIZE) {
-    throw new Error("Compression failed");
-  }
-
-  return compressedFile;
-};
-
-
   // ================= MULTIPLE IMAGE SELECT =================
-const handleMultiUpload = async (e, slotIndex) => {
-  const files = Array.from(e.target.files);
-  if (!files.length) return;
+  const handleMultiUpload = async (e, slotIndex) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
 
-  const updated = [...images];
-  let insertIndex = slotIndex;
+    // 🔒 TOTAL ORIGINAL SIZE CHECK
+    const existingSize = images.filter(Boolean).reduce((s, f) => s + f.size, 0);
 
-  for (let file of files) {
-    if (insertIndex >= 10) break;
+    const newFilesSize = files.reduce((s, f) => s + f.size, 0);
 
-    try {
-      // 👇 background compression starts
-      const compressed = await compressImage(file);
+    const totalOriginalSize = existingSize + newFilesSize;
 
-      updated[insertIndex] = compressed;
-      insertIndex++;
-    } catch (err) {
-      toast.error(
-        "❌ Image too large. Please select a smaller image (max 4 MB after compression)."
-      );
+    if (totalOriginalSize > MAX_TOTAL_ORIGINAL) {
+      toast.error("Total image size must be under 20 MB");
       return;
     }
-  }
 
-  setImages(updated);
-};
+    const updated = [...images];
+    let insertIndex = slotIndex;
+
+    let compressedImages = [];
+
+    for (let file of files) {
+      if (insertIndex >= MAX_IMAGES) break;
+
+      try {
+        // 👇 background compression starts
+        const compressed = await compressImage(file);
+        compressedImages.push(compressed);
+        updated[insertIndex] = compressed;
+        insertIndex++;
+      } catch (err) {
+        toast.error("Each image must be under 8 MB");
+        return;
+      }
+    }
+
+    // 🔒 TOTAL COMPRESSED SIZE CHECK (VERCEL SAFETY)
+    const existingCompressedSize = images
+      .filter(Boolean)
+      .reduce((s, f) => s + f.size, 0);
+
+    const newCompressedSize = compressedImages.reduce((s, f) => s + f.size, 0);
+
+    const totalCompressedSize = existingCompressedSize + newCompressedSize;
+
+    if (totalCompressedSize > MAX_TOTAL_COMPRESSED) {
+      toast.error("Compressed images exceed 4 MB upload limit");
+      return;
+    }
+
+    setImages(updated);
+  };
 
   //Size toggle function
   const toggleSize = (size) => {
@@ -126,6 +160,7 @@ const handleMultiUpload = async (e, slotIndex) => {
     setCategory("Men");
     setSubCategory("Topwear");
     setSizes([]);
+    setColorInput("");
     setBestseller(false);
     setImages(Array(10).fill(null));
   };
@@ -133,11 +168,33 @@ const handleMultiUpload = async (e, slotIndex) => {
   // ================= SUBMIT FORM =================
   const submitProduct = async (e) => {
     e.preventDefault();
+
+    const finalImages = images.filter(Boolean);
+
+    const finalPayloadSize = finalImages.reduce((s, img) => s + img.size, 0);
+
+    if (finalPayloadSize > MAX_TOTAL_COMPRESSED) {
+      toast.error("Final upload exceeds 4 MB limit");
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
 
     try {
       const token = localStorage.getItem("merchantToken");
       const formData = new FormData();
+
+      const parsedColors = colorInput
+        .split(",")
+        .map((c) => c.trim())
+        .filter(Boolean);
+
+      if (parsedColors.length === 0) {
+        toast.error("Please enter at least one color");
+        setLoading(false);
+        return;
+      }
 
       formData.append("brandName", brandName);
       formData.append("name", name);
@@ -150,6 +207,7 @@ const handleMultiUpload = async (e, slotIndex) => {
       formData.append("category", category);
       formData.append("subCategory", subCategory);
       formData.append("sizes", JSON.stringify(sizes));
+      formData.append("colors", JSON.stringify(parsedColors));
       formData.append("bestseller", bestseller);
 
       images.forEach((img) => {
@@ -358,7 +416,6 @@ const handleMultiUpload = async (e, slotIndex) => {
         </div>
 
         {/* ================= SIZES ================= */}
-        {/* ================= SIZES ================= */}
         <div>
           <p className="mb-1 font-medium">Sizes</p>
           <div className="flex flex-wrap gap-3">
@@ -377,6 +434,21 @@ const handleMultiUpload = async (e, slotIndex) => {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* ================= COLORS ================= */}
+        <div>
+          <p className="mb-1 font-medium">Color(s)</p>
+          <input
+            type="text"
+            value={colorInput}
+            onChange={(e) => setColorInput(e.target.value)}
+            placeholder="e.g. Black or Black, White, Navy Blue"
+            className="input-box w-full bg-[#0f0f0f] border border-[#333]"
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            Separate multiple colors with commas
+          </p>
         </div>
 
         {/* ================= BESTSELLER ================= */}

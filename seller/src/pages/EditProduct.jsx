@@ -3,6 +3,7 @@ import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { FaUpload } from "react-icons/fa";
+import imageCompression from "browser-image-compression";
 
 const EditProduct = () => {
   const { id } = useParams();
@@ -27,6 +28,7 @@ const EditProduct = () => {
   const [category, setCategory] = useState("Men");
   const [subCategory, setSubCategory] = useState("Topwear");
   const [sizes, setSizes] = useState([]);
+  const [colorInput, setColorInput] = useState("");
   const [bestseller, setBestseller] = useState(false);
 
   const [loading, setLoading] = useState(true);
@@ -35,6 +37,18 @@ const EditProduct = () => {
   // For drag reorder
   const [dragIndex, setDragIndex] = useState(null);
   const [dragType, setDragType] = useState(null); // "existing" or "new"
+
+  const compressImage = async (file) => {
+    const options = {
+      maxSizeMB: 0.5,
+      maxWidthOrHeight: 1600,
+      useWebWorker: true,
+      initialQuality: 0.7,
+    };
+
+    return await imageCompression(file, options);
+  };
+
 
   // ------------------------------------
   // FETCH PRODUCT
@@ -61,6 +75,7 @@ const EditProduct = () => {
         setCategory(p.category);
         setSubCategory(p.subCategory);
         setSizes(p.sizes);
+        setColorInput(p.colors?.join(", ") || "");
         setBestseller(p.bestseller);
 
         setExistingImages(p.image);
@@ -78,14 +93,23 @@ const EditProduct = () => {
   // ------------------------------------
   // IMAGE HANDLERS
   // ------------------------------------
-
-  const handleUpload = (e, index) => {
+  const handleUpload = async (e, index) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const updated = [...images];
-    updated[index] = file;
-    setImages(updated);
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error("Single image must be under 8 MB");
+      return;
+    }
+
+    try {
+      const compressed = await compressImage(file);
+      const updated = [...images];
+      updated[index] = compressed;
+      setImages(updated);
+    } catch {
+      toast.error("Image compression failed");
+    }
   };
 
   const removeExistingImage = (i) => {
@@ -153,6 +177,38 @@ const EditProduct = () => {
     e.preventDefault();
     setSaving(true);
 
+    // 🔒 IMAGE COUNT SAFETY CHECK (ADD HERE)
+    const totalImagesCount =
+      existingImages.length + images.filter(Boolean).length;
+
+    if (totalImagesCount > 10) {
+      toast.error("Maximum 10 images allowed");
+      setSaving(false);
+      return;
+    }
+
+    // 🔒 COLORS VALIDATION (already present)
+    const parsedColors = colorInput
+      .split(",")
+      .map((c) => c.trim())
+      .filter(Boolean);
+
+    if (parsedColors.length === 0) {
+      toast.error("Please enter at least one color");
+      setSaving(false);
+      return;
+    }
+
+    const totalNewImageSize = images
+        .filter(Boolean)
+        .reduce((s, f) => s + f.size, 0);
+
+      if (totalNewImageSize > 4 * 1024 * 1024) {
+        toast.error("Uploaded images exceed 4 MB limit");
+        setSaving(false);
+        return;
+      }
+
     try {
       const formData = new FormData();
 
@@ -168,6 +224,7 @@ const EditProduct = () => {
       formData.append("category", category);
       formData.append("subCategory", subCategory);
       formData.append("sizes", JSON.stringify(sizes));
+      formData.append("colors", JSON.stringify(parsedColors));
       formData.append("bestseller", bestseller);
 
       // NEW images
@@ -289,6 +346,7 @@ const EditProduct = () => {
                       type="file"
                       hidden
                       accept="image/*"
+                      disabled={saving}
                       onChange={(e) => handleUpload(e, i)}
                     />
                   </label>
@@ -430,6 +488,21 @@ const EditProduct = () => {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* ================= COLORS ================= */}
+        <div>
+          <p className="mb-1">Color(s)</p>
+          <input
+            type="text"
+            value={colorInput}
+            onChange={(e) => setColorInput(e.target.value)}
+            placeholder="e.g. Black or Black, White, Navy Blue"
+            className="input-box bg-[#0f0f0f] border border-[#333]"
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            Separate multiple colors with commas
+          </p>
         </div>
 
         {/* BESTSELLER */}

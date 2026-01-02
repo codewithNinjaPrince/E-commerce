@@ -35,7 +35,6 @@ const MerchantAuth = ({ setMerchantToken }) => {
   const [storeName, setStoreName] = useState("");
   const [storeDescription, setStoreDescription] = useState("");
   const [businessType, setBusinessType] = useState("Individual");
-  const [address, setAddress] = useState("");
 
   // common
   const [email, setEmail] = useState("");
@@ -70,7 +69,6 @@ const MerchantAuth = ({ setMerchantToken }) => {
       if (!storeName.trim()) errors.storeName = "Store name is required.";
       if (!storeDescription.trim())
         errors.storeDescription = "Store description is required.";
-      if (!address.trim()) errors.address = "Full address is required.";
       if (!agreeTerms) {
         errors.agreeTerms = "You must agree to Terms & Conditions.";
       }
@@ -142,13 +140,6 @@ const MerchantAuth = ({ setMerchantToken }) => {
             storeName: storeName.trim(),
             storeDescription: storeDescription.trim(),
             businessType,
-            address: {
-              fullAddress: address.trim(),
-              city: "Unknown",
-              state: "Unknown",
-              pincode: "000000",
-              country: "India",
-            },
           };
 
       const res = await axios.post(endpoint, payload);
@@ -325,12 +316,6 @@ const MerchantAuth = ({ setMerchantToken }) => {
                 <option value="Partnership">Partnership</option>
               </select>
 
-              <TextArea
-                value={address}
-                onChange={setAddress}
-                placeholder="Full Address"
-                error={fieldErrors.address}
-              />
             </>
           )}
 
