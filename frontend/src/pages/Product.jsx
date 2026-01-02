@@ -9,7 +9,6 @@ import { FaStar } from "react-icons/fa6";
 import { useLayoutEffect } from "react";
 import ProductSkeleton from "../components/ProductSkeleton";
 import SizeSelectorModal from "../components/SizeSelectorModal";
-import { Helmet } from "react-helmet-async";
 
 const showCartToast = (message = "Added to cart 🛒") => {
   const isMobile = window.innerWidth < 768;
@@ -317,39 +316,6 @@ const merchantId =
 
   return (
     <>
-      <Helmet>
-        <title>{productData.name} | Brawvly</title>
-
-        <meta property="og:type" content="product" />
-        <meta property="og:title" content={productData.name} />
-        <meta
-          property="og:description"
-          content={`Buy ${productData.name} at best price on Brawvly`}
-        />
-        <meta
-          property="og:image"
-          content={
-            Array.isArray(productData.image)
-              ? productData.image[0]
-              : productData.image
-          }
-        />
-        <meta
-          property="og:url"
-          content={`${window.location.origin}/product/${productData._id}`}
-        />
-
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={productData.name} />
-        <meta
-          name="twitter:image"
-          content={
-            Array.isArray(productData.image)
-              ? productData.image[0]
-              : productData.image
-          }
-        />
-      </Helmet>
       <div className="bg-[#0e0e0e] text-white">
         <div
           className="
