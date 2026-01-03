@@ -34,3 +34,4 @@ select,textarea,input{
 .textarea-dark:focus {
   @apply border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)];
 }
+

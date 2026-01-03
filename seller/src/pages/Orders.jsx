@@ -211,32 +211,46 @@ const Orders = () => {
                 </span>
               </div>
 
-              {/* CUSTOMER SECTION */}
+              {/* IMPORTANT NOTICE */}
+              <div className="mb-4 px-4 py-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10">
+                <p className="text-yellow-400 text-xs font-medium">
+                  ⚠️ Please confirm the customer phone number or order details
+                  before processing this order.
+                </p>
+              </div>
+
               {/* CUSTOMER SECTION */}
               <div className="mt-2 mb-4 bg-[#0f0f0f] p-4 rounded-lg border border-[#222]">
                 <p className="text-blue-400 text-xs">Customer Details</p>
 
+                {/* NAME */}
                 <p className="text-white font-semibold text-sm mt-1">
-                  {order.address?.firstName} {order.address?.lastName}
+                  {order.address?.name || "Customer"}
                 </p>
 
-                <p className="text-gray-400 text-xs mt-1">
-                  📞 {order.address?.phone}
-                </p>
+                {/* PHONE + CALL BUTTON */}
+                <div className="flex items-center gap-3 mt-2">
+                  <p className="text-gray-300 text-sm">
+                    📞 {order.address?.phone || "N/A"}
+                  </p>
 
+                  {order.address?.phone && (
+                    <a
+                      href={`tel:${order.address.phone}`}
+                      className="px-3 py-1 rounded-lg bg-green-600 text-white text-xs font-semibold
+                   hover:bg-green-700 transition cursor-pointer"
+                    >
+                      Call
+                    </a>
+                  )}
+                </div>
+
+                {/* ADDRESS */}
                 <p className="text-gray-400 text-xs mt-3">
                   <span className="font-medium text-gray-300">Address:</span>
                   <br />
-                  {order.address?.houseNo && (
-                    <>
-                      {order.address.houseNo},<br />
-                    </>
-                  )}
-                  {order.address?.street && (
-                    <>
-                      {order.address.street},<br />
-                    </>
-                  )}
+                  {order.address?.houseNo && <>{order.address.houseNo}, </>}
+                  {order.address?.street && <>{order.address.street},</>}
                   {order.address?.locality && (
                     <>
                       {order.address.locality},<br />

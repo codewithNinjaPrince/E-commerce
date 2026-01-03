@@ -5,10 +5,10 @@ const productSchema = new mongoose.Schema(
     sellerId: { type: String, required: false, default: "" },
     shopId: { type: String, required: false, default: "" },
     merchantId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "merchant",
-    required: false,
-  },
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "merchant",
+      required: false,
+    },
 
     isVisibleToMerchant: { type: Boolean, default: true },
     name: { type: String, required: true, trim: true },
@@ -23,6 +23,16 @@ const productSchema = new mongoose.Schema(
       required: false,
       default: "",
     },
+    ratingAvg: { type: Number, default: 0 },
+    ratingCount: { type: Number, default: 0 },
+    ratingBreakdown: {
+      1: { type: Number, default: 0 },
+      2: { type: Number, default: 0 },
+      3: { type: Number, default: 0 },
+      4: { type: Number, default: 0 },
+      5: { type: Number, default: 0 },
+    },
+
     review: { type: Number, default: 0, min: 0, max: 5 },
     noOfPeopleReviewed: { type: Number, default: 0, max: 100 },
     image: {

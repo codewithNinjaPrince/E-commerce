@@ -12,6 +12,34 @@ const POPULAR_KEYWORDS = [
   "Watches",
 ];
 
+const buildSearchText = (product) => {
+  if (!product) return "";
+
+  return Object.values(product)
+    .flatMap((value) => {
+      if (!value) return [];
+
+      // strings / numbers
+      if (typeof value === "string" || typeof value === "number") {
+        return value.toString();
+      }
+
+      // arrays (colors, sizes, images, etc.)
+      if (Array.isArray(value)) {
+        return value.join(" ");
+      }
+
+      // objects (ignore deep system objects like dates)
+      if (typeof value === "object") {
+        return Object.values(value).join(" ");
+      }
+
+      return [];
+    })
+    .join(" ")
+    .toLowerCase();
+};
+
 const SearchPage = () => {
   useLayoutEffect(() => {
     // 🔥 HARD FORCE SCROLL (browser memory ignore)
@@ -61,11 +89,8 @@ const SearchPage = () => {
     const timer = setTimeout(() => {
       const q = debouncedSearch.toLowerCase();
 
-      const filtered = products.filter((p) =>
-        [p.name, p.brandName, p.category, p.subCategory]
-          .join(" ")
-          .toLowerCase()
-          .includes(q)
+      const filtered = products.filter((product) =>
+        buildSearchText(product).includes(q)
       );
 
       setResults(filtered.slice(0, 15));

@@ -89,7 +89,7 @@ const RelatedProducts = ({ category, subCategory, excludeId }) => {
           {visible < related.length && (
             <button
               onClick={() => setVisible((v) => v + 5)}
-              className="text-white border border-white/30 px-6 py-2 rounded-lg hover:bg-white hover:text-black transition"
+              className="text-white border border-white/30 px-6 py-2 rounded-lg hover:bg-white hover:text-black transition cursor-pointer"
             >
               Show More
             </button>
@@ -98,7 +98,7 @@ const RelatedProducts = ({ category, subCategory, excludeId }) => {
           {visible > 5 && (
             <button
               onClick={() => setVisible(5)}
-              className="text-red-400 border border-red-400 px-6 py-2 rounded-lg hover:bg-red-400 hover:text-black transition"
+              className="text-red-400 border border-red-400 px-6 py-2 rounded-lg hover:bg-red-400 hover:text-black transition cursor-pointer"
             >
               Hide
             </button>

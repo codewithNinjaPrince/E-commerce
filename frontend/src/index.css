@@ -1,5 +1,4 @@
-
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Prata&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Prata&display=swap");
 @import "tailwindcss";
 
 /* Active nav underline */
@@ -40,14 +39,26 @@ a.active hr {
 
 /* Modern fade-out animation */
 @keyframes fadeOut {
-  from { opacity: 1; transform: scale(1); }
-  to { opacity: 0; transform: scale(0.98); }
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.98);
+  }
 }
 
 /* Modern fade-in animation */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Smooth card hover (premium look) */
@@ -57,7 +68,7 @@ a.active hr {
 
 .product-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0px 10px 30px rgba(0,0,0,0.08);
+  box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.08);
 }
 
 /* Premium button style */
@@ -72,7 +83,7 @@ a.active hr {
 
 /* Soft container shadow */
 .soft-shadow {
-  box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
 }
 
 /* Smooth image hover zoom */
@@ -140,7 +151,6 @@ body,
   background-color: #000000;
 }
 
-
 /* ======================================================
    GLOBAL LAYOUT SYSTEM — NAVBAR + SEARCHBAR SAFE
    ====================================================== */
@@ -181,7 +191,6 @@ body,
     padding-right: 8px;
   }
 }
-
 
 /* Max width */
 .page-max {
@@ -233,7 +242,6 @@ body,
 .animate-leftPanel {
   animation: leftPanel 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
-
 
 .animate-ping-slow {
   animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
@@ -308,3 +316,44 @@ body,
   animation: scaleIn 0.4s ease-out forwards;
 }
 
+@keyframes line-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes arrow-move {
+  from {
+    transform: translateX(0) translateY(-50%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(100vw) translateY(-50%);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-line-fill {
+  animation: line-fill 0.6s ease-out forwards;
+  transform-origin: left;
+}
+
+.animate-arrow-move {
+  animation: arrow-move 0.6s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.15s ease-out forwards;
+}

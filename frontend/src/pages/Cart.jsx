@@ -324,7 +324,7 @@ const Cart = () => {
 
             {/* CLOSE → COLLECTIONS */}
             <button
-              onClick={() => navigate("/collections")}
+              onClick={() => navigate("/")}
               className="p-2 rounded-lg hover:bg-white/10 cursor-pointer"
               aria-label="Close cart"
               >

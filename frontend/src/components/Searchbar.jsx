@@ -21,15 +21,16 @@ const Searchbar = ({ showNavbar }) => {
 
   return (
     <div
-      className={`
-        fixed w-full z-40
-        bg-black/90 backdrop-blur-md
-        border-b border-white/10
-        px-2 py-2
-        transition-all duration-300
-        ${showNavbar ? "top-[64px]" : "top-0"}
-      `}
-    >
+  className={`
+    fixed w-full z-40
+    bg-black/90 backdrop-blur-md
+    border-b border-white/10
+    px-2 py-2
+    transition-[top,transform] duration-300 ease-out
+    ${showNavbar ? "top-[64px]" : "top-0"}
+  `}
+>
+
       <div className="mx-auto flex items-center gap-2 sm:gap-3 lg:px-8">
         {/* BACK BUTTON */}
         <button

@@ -50,15 +50,49 @@ export const getMerchantDashboard = async (req, res) => {
 
     /* ---------------- RECENT ORDERS ---------------- */
     const recentOrders = orders
-      .map((order) => ({
-        ...order.toObject(),
-        items: order.items.filter(
+      .map((order) => {
+        const merchantItems = order.items.filter(
           (item) =>
             item.sellerId?.toString() === merchantId.toString() &&
             item.itemStatus !== "Cancelled"
-        ),
-      }))
-      .filter((o) => o.items.length > 0)
+        );
+
+        if (merchantItems.length === 0) return null;
+
+        return {
+          orderId: order._id,
+
+          // ✅ CUSTOMER NAME (FIX)
+          customerName: order.address?.name || "Customer",
+
+          // ✅ ADDRESS (OPTIONAL BUT USEFUL)
+          address: order.address
+            ? {
+                city: order.address.city,
+                state: order.address.state,
+                pincode: order.address.pincode,
+              }
+            : null,
+
+          // ✅ PAYMENT
+          paymentMethod: order.paymentMethod,
+          payment: order.payment,
+
+          // ✅ DATE
+          createdAt: order.createdAt,
+
+          // ✅ MERCHANT ITEMS ONLY
+          items: merchantItems.map((item) => ({
+            productId: item.productId,
+            productName: item.name, // 👈 IMPORTANT
+            image: item.image?.[0],
+            quantity: item.quantity,
+            price: item.discountedPrice || item.actualPrice,
+            status: item.itemStatus,
+          })),
+        };
+      })
+      .filter(Boolean)
       .slice(0, 3);
 
     res.json({

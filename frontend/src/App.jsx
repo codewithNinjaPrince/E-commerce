@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 
 import PreLoader from "./components/PreLoader";
@@ -49,7 +49,7 @@ const SearchRouteGuard = ({ children }) => {
   if (
     from !== "/" &&
     from !== "/collections" &&
-    from !== "/store" &&
+    !from?.startsWith("/store") &&
     !from?.startsWith("/product") &&
     !from?.startsWith("/favorites")
   ) {
@@ -65,6 +65,8 @@ const App = () => {
   const [showNavbar, setShowNavbar] = useState(true);
   const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
   const { appLoading } = useContext(ShopContext);
+
+  const scrollRef=useRef(null);
 
   useEffect(() => {
     setIsMobileOrTablet(window.innerWidth < 1024);
@@ -139,21 +141,43 @@ const App = () => {
   }, [products]);
 
   /* ================= NAVBAR HIDE ON SCROLL ================= */
-  useEffect(() => {
-    let lastScrollY = window.scrollY;
+useEffect(() => {
+  if (window.innerWidth >= 1024) return;
 
-    const onScroll = () => {
-      if (window.scrollY > lastScrollY && window.scrollY > 80) {
-        setShowNavbar(false);
-      } else {
-        setShowNavbar(true);
-      }
-      lastScrollY = window.scrollY;
-    };
+  let lastY = window.scrollY;
+  let accumulated = 0;
+  let lastDirection = null;
+  const THRESHOLD = 24;
 
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  const onScroll = () => {
+    const currentY = window.scrollY;
+    const delta = currentY - lastY;
+    const direction = delta > 0 ? "down" : "up";
+
+    if (direction !== lastDirection) {
+      accumulated = 0;
+      lastDirection = direction;
+    }
+
+    accumulated += Math.abs(delta);
+
+    if (direction === "down" && accumulated >= THRESHOLD && currentY > 40) {
+      setShowNavbar(false);
+      accumulated = 0;
+    }
+
+    if (direction === "up" && accumulated >= THRESHOLD) {
+      setShowNavbar(true);
+      accumulated = 0;
+    }
+
+    lastY = currentY;
+  };
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  return () => window.removeEventListener("scroll", onScroll);
+}, []);
+
 
   /* ================= RESPONSIVE ================= */
   useEffect(() => {
@@ -169,7 +193,6 @@ const App = () => {
     <div className="min-h-screen bg-black text-white relative overflow-x-hidden">
       {/* ================= LOADER ================= */}
       <PreLoader isLoading={appLoading} />
-      {!appLoading && <Routes />}
 
       {/* ================= TOAST ================= */}
       <ToastContainer
@@ -261,6 +284,7 @@ const App = () => {
           path="*"
           element={
             <div
+            ref={scrollRef}
               className={`
               ${isSearchPage ? "no-navbar-offset" : "page-wrapper"}
               page-container

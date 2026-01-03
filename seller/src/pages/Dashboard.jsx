@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
+import { useNavigate } from "react-router-dom";
 import {
   FaBoxOpen,
   FaShoppingCart,
@@ -15,6 +16,7 @@ const Dashboard = () => {
   const [stats, setStats] = useState(null);
 
   const token = localStorage.getItem("merchantToken");
+  const navigate = useNavigate();
 
   // LOAD DASHBOARD STATS
   const loadDashboard = async () => {
@@ -119,28 +121,25 @@ const Dashboard = () => {
             ) : (
               <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-4">
                 {stats.recentOrders.map((order) => {
-                  const date = new Date(order.date);
-                  const customer =
-                    order.address?.firstName + " " + order.address?.lastName;
+                  const date = new Date(order.createdAt);
+                  const customer = order.customerName || "Customer";
 
                   const merchantOrderTotal = order.items.reduce(
                     (sum, item) =>
-                      sum +
-                      Number(item.discountedPrice || item.price || 0) *
-                        item.quantity,
+                      sum + Number(item.price || 0) * item.quantity,
                     0
                   );
 
                   return (
                     <div
-                      key={order._id}
+                      key={order.orderId}
                       className="p-4 bg-black/30 rounded-lg border border-white/10 
       hover:border-blue-500 cursor-pointer flex justify-between items-center"
-                      onClick={() => (window.location.href = `/orders`)}
+                      onClick={() => navigate(`/orders`)}
                     >
                       <div>
                         <p className="font-semibold text-white">
-                          Order #{order._id.slice(-6).toUpperCase()}
+                          Order #{order.orderId.slice(-6).toUpperCase()}
                         </p>
 
                         <p className="text-gray-400 text-sm">
@@ -256,32 +255,7 @@ const DashboardCard = ({ title, value, icon, iconBg }) => {
   );
 };
 
-/* ===========================
-   RECENT ORDERS
-=========================== */
-const RecentOrders = ({ orders }) => (
-  <div className="mt-10">
-    <h2 className="text-lg font-semibold mb-4">Recent Orders</h2>
 
-    {!orders || orders.length === 0 ? (
-      <div className="bg-white/5 backdrop-blur-md p-6 rounded-xl border border-white/10 text-gray-300 h-[150px] flex items-center justify-center">
-        No recent orders yet
-      </div>
-    ) : (
-      <div className="bg-white/5 backdrop-blur-md rounded-xl border border-white/10 p-4">
-        {orders.map((order, idx) => (
-          <div
-            key={idx}
-            className="flex justify-between p-3 border-b border-white/10 text-gray-300"
-          >
-            <p>Order #{order._id.slice(-6)}</p>
-            <p>{new Date(order.date).toDateString()}</p>
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
-);
 
 /* ===========================
    RECENT PRODUCTS

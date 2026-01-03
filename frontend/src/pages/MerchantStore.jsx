@@ -262,8 +262,8 @@ const MerchantStore = () => {
               e.stopPropagation();
               setIsCollapsed((p) => !p);
             }}
-            className="flex absolute top-2 md:bottom-2 right-3 text-[11px]
-           text-blue-400 cursor-pointer hover:text-white transition"
+            className="flex absolute top-2 md:bottom-2 right-3 md:text-[14px]
+           text-red-500 cursor-pointer hover:text-white transition"
           >
             {isCollapsed ? " View More ▼" : "Collapse ▲"}
           </button>

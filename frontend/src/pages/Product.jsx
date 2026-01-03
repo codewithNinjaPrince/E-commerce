@@ -9,6 +9,8 @@ import { FaStar } from "react-icons/fa6";
 import { useLayoutEffect } from "react";
 import ProductSkeleton from "../components/ProductSkeleton";
 import SizeSelectorModal from "../components/SizeSelectorModal";
+import ProductReviews from "../components/ProductReviews";
+import RouteTransition from "../components/RouteTransition";
 
 const showCartToast = (message = "Added to cart 🛒") => {
   const isMobile = window.innerWidth < 768;
@@ -63,9 +65,13 @@ const Product = () => {
   const [showSizeModal, setShowSizeModal] = useState(false);
   const [color, setColor] = useState("");
   const [actionType, setActionType] = useState(null);
+  const [showTransition, setShowTransition] = useState(false);
+
   const isDesktop = window.innerWidth >= 1024;
 
   const LENS_SIZE = 120;
+  const isMobile = window.innerWidth < 768;
+  const [openDetails, setOpenDetails] = useState(isMobile);
 
   const [lens, setLens] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
@@ -245,10 +251,8 @@ const Product = () => {
     return <ProductSkeleton />;
   }
 
-
-/* ---------------- SAFE DERIVED VALUES ---------------- */
-const merchantId =
-  productData.merchantId || productData.sellerId || null;
+  /* ---------------- SAFE DERIVED VALUES ---------------- */
+  const merchantId = productData.merchantId || productData.sellerId || null;
 
   /* ---------------- SAFE DERIVED VALUES ---------------- */
   const images = Array.isArray(productData.image)
@@ -266,18 +270,13 @@ const merchantId =
       return;
     }
 
-    if (!color) {
-      toast.error("Please select a color");
-      return;
-    }
-
     if (!size) {
       setActionType("add");
       setShowSizeModal(true);
       return;
     }
 
-    addToCart(productData._id, size, color);
+    addToCart(productData._id, size);
     showCartToast("Added to cart 🛒");
   };
 
@@ -286,11 +285,6 @@ const merchantId =
       navigate(`/login?redirect=/product/${productId}`);
       return;
     }
-    if (!color) {
-  toast.error("Please select a color");
-  return;
-}
-
 
     if (!size) {
       setActionType("buy");
@@ -301,7 +295,6 @@ const merchantId =
     setBuyNowSafe({
       productId: productData._id,
       size,
-      color,
       quantity: 1,
     });
 
@@ -646,9 +639,11 @@ const merchantId =
               flex-1
               text-white
               relative
-              
               flex flex-col
-              lg:min-h-full
+              bg-[#111]
+              rounded-2xl
+              p-4 sm:p-6 lg:p-8
+              border border-white/10
               "
             >
               {/* ================= DESKTOP ZOOM VIEW ================= */}
@@ -676,55 +671,61 @@ const merchantId =
                   <div className="flex flex-col gap-6">
                     {/* Brand */}
                     {/* BRAND + VISIT STORE */}
-<div className="flex items-center gap-3">
-  <p className="text-xl uppercase text-gray-400">
-    {productData.brandName}
-  </p>
+                    <div className="flex items-center gap-3">
+                      <p className="text-sm uppercase tracking-widest text-gray-500">
+                        {productData.brandName}
+                      </p>
 
-  <button
-  onClick={async () => {
-    const merchantId =
-      productData.merchantId || productData.sellerId;
+                      <button
+                        onClick={async () => {
+  const merchantId = productData.merchantId || productData.sellerId;
+  if (!merchantId) {
+    toast.error("Store not available");
+    return;
+  }
 
-    if (!merchantId) {
-      toast.error("Store not available");
-      return;
+  setShowTransition(true); // 🔥 start animation
+
+  try {
+    const res = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/merchant/slug/${merchantId}`
+    );
+    const data = await res.json();
+
+    if (data.success && data.slug) {
+      navigate(`/store/${data.slug}`);
+    } else {
+      toast.error("Store not found");
+      setShowTransition(false);
     }
+  } catch (err) {
+    toast.error("Unable to open store");
+    setShowTransition(false);
+  }
+}}
 
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/merchant/slug/${merchantId}`
-      );
-      const data = await res.json();
-
-      if (data.success && data.slug) {
-        navigate(`/store/${data.slug}`);
-      } else {
-        toast.error("Store not found");
-      }
-    } catch (err) {
-      toast.error("Unable to open store");
-    }
-  }}
-  className="
-    text-sm px-3 py-1
-    border border-white/20
-    rounded-full
-    hover:bg-white hover:text-black
-    transition
-    cursor-pointer
-  "
->
-  Visit Store →
-</button>
-
-</div>
-
+                        className="
+                        text-sm px-3 py-1
+                        border border-white/20
+                        rounded-full
+                        hover:bg-white hover:text-black
+                        transition
+                        cursor-pointer
+                        "
+                      >
+                        Visit Store →
+                      </button>
+                    </div>
 
                     {/* Name */}
                     <h1 className="font-semibold text-2xl leading-tight">
                       {productData.name}
                     </h1>
+
+                    <div className="lg:hidden flex items-center gap-2 text-sm text-gray-400">
+                      ⭐ {productData.review || 0} [
+                      {productData.noOfPeopleReviewed || 0} reviews]
+                    </div>
 
                     {/* RATING (DESKTOP) */}
                     <div className="hidden lg:flex items-center gap-1.5">
@@ -736,132 +737,30 @@ const merchantId =
                       </p>
                     </div>
 
-                    <p className="text-sm uppercase tracking-wide text-green-400">
-                      Discounted Price
-                    </p>
-
                     {/* PRICE */}
-                    <div className="flex items-center gap-4">
-                      <p className="text-3xl font-bold text-green-500">
-                        {currency} {productData.discountedPrice}
+                    <div className="bg-black/40 p-4 rounded-xl border border-white/10">
+                      <p className="text-xs uppercase tracking-wide text-gray-400">
+                        Special Price
                       </p>
-                      <p className="line-through text-gray-400 text-xl">
-                        {currency} {productData.actualPrice}
-                      </p>
-                      <p className="text-red-500 font-semibold text-lg">
-                        {Math.round(
-                          ((productData.actualPrice -
-                            productData.discountedPrice) /
-                            productData.actualPrice) *
-                            100
-                        )}
-                        % OFF
-                      </p>
-                    </div>
 
-                    {/* COLOR SELECTOR */}
-                    {normalizedColors.length > 0 && (
-                      <div className="flex flex-col gap-3">
-                        <p className="font-medium">Select Color</p>
+                      <div className="flex items-center gap-3 mt-1">
+                        <p className="text-3xl font-extrabold text-green-400">
+                          {currency} {productData.discountedPrice}
+                        </p>
 
-                        <div className="flex gap-4 flex-wrap">
-                          {normalizedColors.map((c) => {
-                            const isSelected = color === c.name;
+                        <p className="line-through text-gray-500 text-lg">
+                          {currency} {productData.actualPrice}
+                        </p>
 
-                            return (
-                              <button
-                                key={c.name}
-                                onClick={() =>
-                                  setColor((prev) =>
-                                    prev === c.name ? "" : c.name
-                                  )
-                                }
-                                className={`
-              relative
-              min-w-[44px] h-[44px]
-              rounded-full
-              border
-              flex items-center justify-center
-              transition-all duration-200
-              cursor-pointer
-              
-              ${isSelected ? "border-white scale-110" : "border-gray-500"}
-              
-              hover:scale-110
-            `}
-                                style={{
-                                  background: c.hex || "#111",
-                                }}
-                                title={c.name}
-                              >
-                                {/* fallback text if no hex */}
-                                {!c.hex && (
-                                  <span
-                                    className={`text-xs ${
-                                      isSelected ? "text-black" : "text-white"
-                                    }`}
-                                  >
-                                    {c.name}
-                                  </span>
-                                )}
-
-                                {/* selected ring */}
-                                {isSelected && (
-                                  <span className="absolute inset-0 rounded-full ring-2 ring-white" />
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {color && (
-                      <p className="text-sm text-gray-400">
-                        Selected Color:{" "}
-                        <span className="text-white">{color}</span>
-                      </p>
-                    )}
-
-                    {/* SIZE SELECTOR */}
-                    <div className="flex flex-col gap-3">
-                      <p className="font-medium">Select Size</p>
-
-                      <div className="flex gap-4 flex-wrap">
-                        {productData.sizes.map((s) => {
-                          const isSelected = size === s;
-
-                          return (
-                            <button
-                              key={s}
-                              onClick={() =>
-                                setSize((prev) => (prev === s ? "" : s))
-                              }
-                              className={`
-                              py-2 px-5 rounded-md border
-                              cursor-pointer
-                              transition-all duration-200
-                              
-                              ${
-                                isSelected
-                                  ? "bg-white text-black font-semibold scale-105 border-white"
-                                  : "bg-black text-white border-gray-500"
-                              }
-                              
-                              /* 🖥 Desktop hover */
-                              hover:scale-105
-                              hover:border-white
-                              hover:bg-white
-                              hover:text-black
-                              
-                              /* 📱 Mobile tap */
-                              active:scale-95
-                              `}
-                            >
-                              {s}
-                            </button>
-                          );
-                        })}
+                        <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded-md text-sm font-semibold">
+                          {Math.round(
+                            ((productData.actualPrice -
+                              productData.discountedPrice) /
+                              productData.actualPrice) *
+                              100
+                          )}
+                          % OFF
+                        </span>
                       </div>
                     </div>
 
@@ -886,41 +785,37 @@ const merchantId =
                     </div>
 
                     {/* DESKTOP ACTION BUTTONS */}
-                    <div className="hidden lg:flex gap-4 cursor-pointer">
+                    <div className="hidden lg:flex gap-4 mt-4">
                       <button
                         onClick={handleAddToCartClick}
-                        className="flex-1 py-4 font-semibold bg-white text-black rounded-md hover:scale-[1.05] transition cursor-pointer  hover:text-black/80 hover:bg-white/80"
+                        className="
+                        flex-1 py-4
+                        rounded-xl
+                        font-bold
+                        bg-white text-black
+                        hover:scale-[1.04]
+                        transition
+                        cursor-pointer
+                        "
                       >
                         ADD TO CART
                       </button>
 
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleBuyNowClick();
-                        }}
-                        className="flex-1 py-4 font-semibold bg-orange-500 text-black rounded-md hover:scale-[1.05] transition cursor-pointer hover:text-black/80 hover:bg-orange-400/80"
+                        onClick={handleBuyNowClick}
+                        className="
+                        flex-1 py-4
+                        rounded-xl
+                        font-bold
+                        bg-orange-500 text-black
+                        hover:bg-orange-400
+                        hover:scale-[1.04]
+                        transition
+                        cursor-pointer
+                        "
                       >
                         BUY NOW
                       </button>
-                    </div>
-
-                    {/* DESCRIPTION */}
-                    <p className="text-gray-400 leading-relaxed whitespace-pre-line">
-                      {productData.description}
-                    </p>
-
-                    {/* DELIVERY INFO */}
-                    <div className="flex items-start gap-2 md:text-2xl text-gray-400">
-                      <span className="text-green-400 font-medium">
-                        🚚 Delivery:
-                      </span>
-                      <span>
-                        Expected by{" "}
-                        <span className="text-white font-medium">
-                          {getDeliveryDateRange()}
-                        </span>
-                      </span>
                     </div>
 
                     {adding && (
@@ -928,13 +823,96 @@ const merchantId =
                         Adding this masterpiece… Stay stylish 😎
                       </p>
                     )}
-                  </div>
 
-                  {/* ========== BOTTOM CONTENT (ALIGNED WITH IMAGE BOTTOM) ========== */}
-                  <div className="text-sm text-gray-500 mt-5">
-                    <p>✔ 100% Original Product</p>
-                    <p>✔ Cash on Delivery Available</p>
-                    <p>✔ Easy 7-Day Return & Exchange</p>
+                    {/* COLOR SELECTOR */}
+                    {normalizedColors.length > 0 && (
+                      <p className="text-sm text-gray-400">
+                        Available Colors:{" "}
+                        <span className="text-white">
+                          {normalizedColors.map((c) => c.name).join(", ")}
+                        </span>
+                      </p>
+                    )}
+
+                    {/* SIZE SELECTOR */}
+                    <div className="flex flex-col gap-3">
+                      <p className="font-medium">Select Size</p>
+
+                      <div className="flex gap-4 flex-wrap">
+                        {productData.sizes.map((s) => {
+                          const isSelected = size === s;
+
+                          return (
+                            <button
+                              key={s}
+                              onClick={() =>
+                                setSize((prev) => (prev === s ? "" : s))
+                              }
+                              className={`
+                              px-5 py-2 rounded-full text-sm font-medium
+                              border transition-all cursor-pointer
+                              ${
+                                isSelected
+                                  ? "bg-white text-black border-white scale-105"
+                                  : "bg-black border-gray-600 text-gray-300"
+                              }
+                              hover:border-white 
+                              `}
+                            >
+                              {s}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* DELIVERY INFO */}
+                    <div className="flex items-center gap-3 bg-black/40 p-3 rounded-xl border border-white/10">
+                      <span className="text-green-400 text-xl">🚚</span>
+                      <p className="text-sm text-gray-300">
+                        Delivery by{" "}
+                        <span className="text-white font-semibold">
+                          {getDeliveryDateRange()}
+                        </span>
+                      </p>
+                    </div>
+
+                    {/* <ProductReviews productId={productData._id} /> */}
+
+                    {/* ========== BOTTOM CONTENT (ALIGNED WITH IMAGE BOTTOM) ========== */}
+                    <div className="flex flex-wrap gap-4 text-sm text-gray-400 ">
+                      <span>✔ 100% Original</span>
+                      <span>✔ COD Available</span>
+                      <span>✔ 7-Day Return</span>
+                    </div>
+
+                    <details open={openDetails} className="text-gray-400">
+                      <summary
+                        onClick={(e) => {
+                          e.preventDefault(); // 🔥 default toggle roko
+                          setOpenDetails((prev) => !prev);
+                        }}
+                        className="cursor-pointer text-sm flex items-center justify-between select-none"
+                      >
+                        <span className="font-medium text-white">
+                          Product Details
+                        </span>
+
+                        <span
+                          className={`text-sm font-medium ${
+                            openDetails ? "text-red-600" : "text-blue-500"
+                          }`}
+                        >
+                          {openDetails ? "Hide" : "See Here"}
+                        </span>
+                      </summary>
+
+                      {openDetails && (
+                        <p className="mt-2 whitespace-pre-line leading-relaxed text-sm">
+                          {productData.description}
+                        </p>
+                      )}
+                    </details>
                   </div>
                 </>
               )}
@@ -982,6 +960,7 @@ const merchantId =
           setActionType(null);
         }}
       />
+      <RouteTransition active={showTransition} />
     </>
   );
 };
