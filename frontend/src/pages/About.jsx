@@ -69,6 +69,9 @@ export default function About() {
 
   return (
     <section className="px-2 sm:px-6 lg:px-10">
+      <h1 className="sr-only">
+        About Brawvly – India’s Local Online Marketplace
+      </h1>
       {!imagesLoaded && <AboutSkeleton />}
       <div className={imagesLoaded ? "block" : "invisible absolute inset-0"}>
         ) : (
@@ -101,7 +104,7 @@ export default function About() {
             <div className="flex flex-col md:flex-row gap-8 items-center px-2 sm:px-4">
               <img
                 src={assets.about_img}
-                alt="About Brawvly"
+                alt="About Brawvly – Indian online marketplace for local sellers"
                 onLoad={handleImageLoad}
                 className="w-full md:max-w-[420px] rounded-2xl shadow-lg"
               />
@@ -116,9 +119,21 @@ export default function About() {
                   </span>
                 </p>
                 <p>
+                  Founded in India, <strong>Brawvly</strong> serves customers
+                  across the country by bringing local stores online and making
+                  shopping simple, fast, and reliable.
+                </p>
+                <p>
                   We wanted to build a space where small businesses, homegrown
                   brands, and creators can stand tall and shine — reaching
                   customers from metros to small towns across India.
+                </p>
+                <p className="text-gray-300 text-sm sm:text-base max-w-4xl mx-auto mt-4">
+                  <strong>Brawvly</strong> is an Indian online marketplace that
+                  connects customers with local merchants selling fashion,
+                  electronics, and daily-use products. Brawvly focuses on
+                  quality, trust, and empowering small Indian businesses through
+                  technology.
                 </p>
               </div>
             </div>
@@ -268,7 +283,7 @@ export default function About() {
             <div className="grid md:grid-cols-3 gap-8">
               {[
                 {
-                  title: "Premium Quality",
+                  title: "Shop premium product on Brawvly",
                   desc: "Every product is verified and meets strict quality standards.",
                   link: "/collections",
                 },
@@ -351,6 +366,9 @@ export default function About() {
           <NewsLetter />
         </div>
       </div>
+      <p className="text-center text-xs text-gray-500 mt-6">
+        © {new Date().getFullYear()} Brawvly — India’s Local Online Marketplace
+      </p>
     </section>
   );
 }
