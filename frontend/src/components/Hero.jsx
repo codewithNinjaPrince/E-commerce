@@ -24,6 +24,12 @@ const Hero = () => {
 
   return (
     <NavLink to="/collections">
+      <p className="sr-only">
+        Explore the latest arrivals on Brawvly, an Indian online marketplace
+        offering fashion, lifestyle, and daily-use products from trusted local
+        merchants across India.
+      </p>
+
       <div
         className="
           flex flex-col sm:flex-row
@@ -53,7 +59,7 @@ const Hero = () => {
               </div>
 
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight prata-regular">
-                Latest Arrivals
+                Latest Arrivals on Brawvly
               </h1>
 
               <div className="flex items-center gap-3 group">
@@ -74,7 +80,7 @@ const Hero = () => {
 
           <img
             src={assets.hero_img}
-            alt="hero"
+            alt="Shop latest arrivals on Brawvly – Indian online marketplace for fashion and lifestyle products"
             onLoad={() => setImageLoaded(true)}
             className={`
               w-full h-full object-cover

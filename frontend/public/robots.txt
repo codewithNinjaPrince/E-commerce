@@ -1,13 +1,21 @@
 User-agent: *
 Allow: /
 
-# Block private/user pages
 Disallow: /login
 Disallow: /verify
 Disallow: /forgot-password
 Disallow: /cart
 Disallow: /orders
+Disallow: /order-preview
+Disallow: /payment
+Disallow: /payment-success-loading
+Disallow: /order-success
+Disallow: /address
 Disallow: /user
+Disallow: /favorites
 
-# Sitemap
+# ✅ Sitemap
 Sitemap: https://brawvly.com/sitemap.xml
+Sitemap: https://brawvly.com/sitemap-products.xml
+Sitemap: https://brawvly.com/sitemap-stores.xml
+

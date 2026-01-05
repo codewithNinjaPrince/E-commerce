@@ -67,7 +67,7 @@ const Product = () => {
   const [actionType, setActionType] = useState(null);
   const [showTransition, setShowTransition] = useState(false);
 
-  const isDesktop = window.innerWidth >= 1024;
+  const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1024;
 
   const LENS_SIZE = 120;
   const isMobile = window.innerWidth < 768;
@@ -174,12 +174,6 @@ const Product = () => {
     setCurrentIndex(0);
     window.scrollTo(0, 0);
 
-    requestAnimationFrame(() => {
-      setProductData(found);
-      const imgs = Array.isArray(found.image) ? found.image : [found.image];
-      setImage(imgs[0]);
-    });
-
     setProductData(found);
 
     const imgs = Array.isArray(found.image) ? found.image : [found.image];
@@ -243,8 +237,59 @@ const Product = () => {
       link.rel = "canonical";
       document.head.appendChild(link);
     }
-    link.href = `https://www.brawvly.com/product/${productData._id}`;
+    link.href = `${window.location.origin}/product/${productData._id}`;
   }, [productData]);
+
+  /* ---------------- OPEN GRAPH + TWITTER ---------------- */
+  useEffect(() => {
+  if (!productData) return;
+
+  const setMeta = (attr, key, content) => {
+    let tag = document.querySelector(`meta[${attr}="${key}"]`);
+    if (!tag) {
+      tag = document.createElement("meta");
+      tag.setAttribute(attr, key);
+      document.head.appendChild(tag);
+    }
+    tag.setAttribute("content", content);
+  };
+
+  const rawImage = Array.isArray(productData.image)
+    ? productData.image[0]
+    : productData.image;
+
+  const image = rawImage.startsWith("http")
+    ? rawImage
+    : `${window.location.origin}${rawImage}`;
+
+  const url = `${window.location.origin}/product/${productData._id}`;
+
+  // Open Graph
+  setMeta("property", "og:type", "product");
+  setMeta("property", "og:title", productData.name);
+  setMeta(
+    "property",
+    "og:description",
+    productData.description?.slice(0, 150) ||
+      `Buy ${productData.name} on Brawvly`
+  );
+  setMeta("property", "og:image", image);
+  setMeta("property", "og:image:width", "1200");
+  setMeta("property", "og:image:height", "630");
+  setMeta("property", "og:url", url);
+  setMeta("property", "og:site_name", "Brawvly");
+
+  // Twitter
+  setMeta("name", "twitter:card", "summary_large_image");
+  setMeta("name", "twitter:title", productData.name);
+  setMeta(
+    "name",
+    "twitter:description",
+    productData.description?.slice(0, 150)
+  );
+  setMeta("name", "twitter:image", image);
+}, [productData]);
+
 
   /* ---------------- GUARD ---------------- */
   if (!productData) {
@@ -678,32 +723,34 @@ const Product = () => {
 
                       <button
                         onClick={async () => {
-  const merchantId = productData.merchantId || productData.sellerId;
-  if (!merchantId) {
-    toast.error("Store not available");
-    return;
-  }
+                          const merchantId =
+                            productData.merchantId || productData.sellerId;
+                          if (!merchantId) {
+                            toast.error("Store not available");
+                            return;
+                          }
 
-  setShowTransition(true); // 🔥 start animation
+                          setShowTransition(true); // 🔥 start animation
 
-  try {
-    const res = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/api/merchant/slug/${merchantId}`
-    );
-    const data = await res.json();
+                          try {
+                            const res = await fetch(
+                              `${
+                                import.meta.env.VITE_BACKEND_URL
+                              }/api/merchant/slug/${merchantId}`
+                            );
+                            const data = await res.json();
 
-    if (data.success && data.slug) {
-      navigate(`/store/${data.slug}`);
-    } else {
-      toast.error("Store not found");
-      setShowTransition(false);
-    }
-  } catch (err) {
-    toast.error("Unable to open store");
-    setShowTransition(false);
-  }
-}}
-
+                            if (data.success && data.slug) {
+                              navigate(`/store/${data.slug}`);
+                            } else {
+                              toast.error("Store not found");
+                              setShowTransition(false);
+                            }
+                          } catch (err) {
+                            toast.error("Unable to open store");
+                            setShowTransition(false);
+                          }
+                        }}
                         className="
                         text-sm px-3 py-1
                         border border-white/20

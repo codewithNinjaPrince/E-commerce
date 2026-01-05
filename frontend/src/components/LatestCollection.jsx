@@ -88,6 +88,15 @@ const LatestCollection = () => {
               </>
             )}
           </div>
+          {/* SEO CONTEXT (SCREEN-READER ONLY) */}
+          {!showSkeleton && latestProducts.length > 0 && (
+            <p className="sr-only">
+              Browse the latest collection on Brawvly, featuring newly added
+              fashion, electronics, and lifestyle products from trusted Indian
+              merchants. Discover fresh arrivals, trending items, and new deals
+              added regularly to support local businesses across India.
+            </p>
+          )}
 
           {/* SCROLL TARGET */}
           <div ref={scrollRef}></div>

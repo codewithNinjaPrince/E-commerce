@@ -76,6 +76,16 @@ const BestSeller = () => {
             )}
           </div>
 
+          {/* SEO CONTEXT (SCREEN-READER ONLY) */}
+          {!showSkeleton && bestSeller.length > 0 && (
+            <p className="sr-only">
+              Explore best selling products on Brawvly, an Indian online
+              marketplace. These top-rated items are handpicked from trusted
+              local merchants and include fashion, electronics, and daily
+              essentials loved by customers.
+            </p>
+          )}
+
           {/* SCROLL TARGET */}
           <div ref={scrollRef}></div>
 

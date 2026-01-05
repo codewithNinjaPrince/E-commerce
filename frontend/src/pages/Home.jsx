@@ -20,10 +20,7 @@ const HomeSkeleton = () => {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, idx) => (
-              <div
-                key={idx}
-                className="rounded-xl bg-white/5 p-3 space-y-3"
-              >
+              <div key={idx} className="rounded-xl bg-white/5 p-3 space-y-3">
                 <div className="h-40 bg-white/10 rounded-lg" />
                 <div className="h-4 bg-white/10 rounded w-3/4" />
                 <div className="h-4 bg-white/10 rounded w-1/2" />
@@ -36,10 +33,7 @@ const HomeSkeleton = () => {
       {/* POLICY STRIP */}
       <section className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-16">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div
-            key={i}
-            className="h-20 rounded-xl bg-white/5"
-          />
+          <div key={i} className="h-20 rounded-xl bg-white/5" />
         ))}
       </section>
 
@@ -71,9 +65,15 @@ const Home = () => {
 
       {/* ================= MAIN CONTENT ================= */}
       <main role="main">
-        {/* HERO */}
         <section aria-label="Brawvly marketplace hero section">
           <Hero />
+          {/* SEO BRAND CONTEXT (LOW VISUAL IMPACT) */}
+          <p className="mt-4 text-xs sm:text-sm text-gray-500 max-w-4xl mx-auto text-center leading-relaxed">
+            <strong>Brawvly</strong> is an Indian online marketplace where you
+            can buy fashion, electronics, and daily-use products from trusted
+            local sellers. Built in India, Brawvly focuses on quality,
+            transparency, and empowering small businesses across the country.
+          </p>
         </section>
 
         {/* LATEST COLLECTION */}
@@ -106,6 +106,15 @@ const Home = () => {
             Subscribe for Offers and Updates
           </h2>
           <NewsLetter />
+         <div className="flex justify-center mt-6">
+  <a
+    href="/about"
+    className="text-sm text-gray-400 hover:text-white transition"
+  >
+    Learn more about Brawvly
+  </a>
+</div>
+
         </section>
       </main>
     </>

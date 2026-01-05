@@ -1,4 +1,4 @@
-import React,{useState, useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { assets } from "../assets/assets";
 
@@ -65,14 +65,15 @@ const Footer = () => {
                   <img
                     src={assets.logo}
                     className="mb-4 w-36 invert"
-                    alt="logo"
+                    alt="Brawvly logo – Indian online marketplace"
                   />
+
                   <p className="text-sm leading-relaxed text-gray-400">
-                    Discover fashion that celebrates you while uplifting the
-                    people behind every product. At{" "}
-                    <span className="text-white font-medium">Brawvly</span>, we
-                    bring premium trends, everyday essentials, and stylish
-                    accessories from local sellers straight to you.
+                    <span className="text-white font-medium">Brawvly</span> is
+                    an Indian online marketplace offering fashion, electronics,
+                    and daily-use products from trusted local sellers. Built to
+                    empower small businesses, Brawvly focuses on quality,
+                    transparency, and reliable shopping across India.
                   </p>
                 </>
               )}
@@ -144,8 +145,11 @@ const Footer = () => {
                       },
                       { label: "Refund & Return", link: "/refund-return" },
                       { label: "Privacy Policy", link: "/privacy-policy" },
-                      { label: "Terms & Conditions", link: "/terms-conditions",},
-                      { label: "Affiliate Policy", link: "/affiliate-policy",},
+                      {
+                        label: "Terms & Conditions",
+                        link: "/terms-conditions",
+                      },
+                      { label: "Affiliate Policy", link: "/affiliate-policy" },
                     ].map((item, i) => (
                       <li
                         key={i}
@@ -252,13 +256,19 @@ const Footer = () => {
             </div>
           </div>
 
+          <p className="sr-only">
+            Brawvly is a trusted Indian online shopping platform connecting
+            customers with local merchants nationwide.
+          </p>
+
           {/* DIVIDER */}
           <div className="mt-8 border-t border-white/10 cursor-pointer"></div>
 
           {/* COPYRIGHT */}
           <p className="text-center text-xs sm:text-sm text-gray-400 mt-4 cursor-pointer hover:scale-110 transition hover:text-white">
-            © 2025 <span className="text-white">Brawvly</span> Marketplace — All
-            Rights Reserved.
+            © {new Date().getFullYear()}{" "}
+            <span className="text-white">Brawvly</span> — India’s Local Online
+            Marketplace.
           </p>
         </div>
       </div>

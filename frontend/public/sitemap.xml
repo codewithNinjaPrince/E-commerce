@@ -8,18 +8,6 @@
     <changefreq>daily</changefreq>
   </url>
 
-  <!-- LOGIN -->
-  <url>
-    <loc>https://brawvly.com/login</loc>
-    <priority>0.5</priority>
-  </url>
-
-  <!-- CART -->
-  <url>
-    <loc>https://brawvly.com/cart</loc>
-    <priority>0.5</priority>
-  </url>
-
   <!-- COLLECTIONS -->
   <url>
     <loc>https://brawvly.com/collections</loc>
@@ -38,6 +26,13 @@
   <url>
     <loc>https://brawvly.com/contact</loc>
     <priority>0.6</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+
+  <!-- SELL WITH US -->
+  <url>
+    <loc>https://brawvly.com/sell-with-us</loc>
+    <priority>0.7</priority>
     <changefreq>monthly</changefreq>
   </url>
 
