@@ -2,22 +2,23 @@ import mongoose from "mongoose";
 
 const merchantSchema = new mongoose.Schema(
   {
-    // BASIC DETAILS (Required at Registration)
+    // BASIC DETAILS
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true },
     phone: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    // PERSONAL KYC DETAILS
+
+    // PERSONAL DETAILS
     firstName: { type: String, default: "" },
     lastName: { type: String, default: "" },
     fatherName: { type: String, default: "" },
     dateOfBirth: { type: String, default: "" },
     gender: { type: String, default: "" },
 
-    // PROFILE IMAGE
-    profileImage: { type: String, default: "" }, // Cloudinary URL
+    // PROFILE
+    profileImage: { type: String, default: "" },
 
-    // BASIC STORE SETUP (Required for Entry)
+    // STORE
     storeName: { type: String, required: true },
     storeDescription: { type: String, default: "" },
     businessType: {
@@ -26,16 +27,29 @@ const merchantSchema = new mongoose.Schema(
       default: "Individual",
     },
 
-    // ADDRESS — Optional Until KYC
+    // 📦 PICKUP ADDRESS (LOGISTICS READY)
     address: {
-      fullAddress: { type: String, default: "" },
-      city: { type: String, default: "" },
-      state: { type: String, default: "" },
-      pincode: { type: String, default: "" },
+      contactName: { type: String, trim: true, default: "" },
+      contactPhone: { type: String, trim: true, default: "" },
+
+      line1: { type: String, trim: true, default: "" },
+      line2: { type: String, trim: true, default: "" },
+      landmark: { type: String, trim: true, default: "" },
+
+      city: { type: String, trim: true, default: "" },
+      state: { type: String, trim: true, default: "" },
+      pincode: { type: String, trim: true, default: "" },
       country: { type: String, default: "India" },
     },
 
-    // KYC DETAILS (Optional Until Later)
+    // 🚚 SHIPROCKET
+    shiprocket: {
+      pickupLocationId: { type: String, default: "" },
+      pickupCode: { type: String, default: "" },
+      syncedAt: { type: Date },
+    },
+
+    // KYC
     gstNumber: { type: String, default: null },
     panNumber: { type: String, default: null },
     aadhaarNumber: { type: String, default: null },
@@ -46,32 +60,32 @@ const merchantSchema = new mongoose.Schema(
       aadhaarBack: { type: String, default: "" },
     },
 
-    // BANK DETAILS (Optional Until KYC)
+    // BANK
     bank: {
       accountName: { type: String, default: "" },
       accountNumber: { type: String, default: "" },
       ifsc: { type: String, default: "" },
       bankName: { type: String, default: "" },
       upi: { type: String, default: "" },
-      passbookFile: { type: String, default: "" }, // Passbook first page
+      passbookFile: { type: String, default: "" },
     },
 
-    // VERIFICATION STATUS
+    // STATUS
     isVerified: { type: Boolean, default: false },
-    // STORE SLUG (generated after KYC submit)
+
     slug: {
       type: String,
       unique: true,
-      sparse: true, // 👈 very important (null allowed multiple times)
+      sparse: true,
       index: true,
     },
 
-    // STORE SETTINGS
     status: {
       type: String,
       enum: ["active", "inactive", "banned"],
       default: "active",
     },
+
     // ANALYTICS
     totalProducts: { type: Number, default: 0 },
     totalOrders: { type: Number, default: 0 },
@@ -85,7 +99,5 @@ const merchantSchema = new mongoose.Schema(
   { timestamps: true, minimize: false }
 );
 
-const merchantModel =
-  mongoose.models.merchant || mongoose.model("merchant", merchantSchema);
-
-export default merchantModel;
+export default mongoose.models.merchant ||
+  mongoose.model("merchant", merchantSchema);

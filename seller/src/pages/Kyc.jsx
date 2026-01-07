@@ -72,7 +72,11 @@ const emptyForm = {
   fatherName: "",
   dateOfBirth: "",
   gender: "Male",
-  fullAddress: "",
+  contactName: "",
+  contactPhone: "",
+  line1: "",
+  line2: "",
+  landmark: "",
   city: "",
   state: "",
   pincode: "",
@@ -135,11 +139,25 @@ const Kyc = () => {
     if (!form.lastName.trim()) e.lastName = "Last name is required";
 
     // Address
-    if (!form.fullAddress.trim()) e.fullAddress = "Address is required";
+    if (!form.line1.trim()) e.line1 = "Address line is required";
     if (!form.city.trim()) e.city = "City is required";
     if (!form.state.trim()) e.state = "State is required";
-    if (!form.pincode.trim()) e.pincode = "Pincode is required";
+
+    if (!form.contactName.trim()) e.contactName = "Contact name required";
+
     if (!form.country.trim()) e.country = "Country is required";
+
+    if (!form.contactPhone.trim()) {
+      e.contactPhone = "Contact phone required";
+    } else if (!/^[6-9]\d{9}$/.test(form.contactPhone)) {
+      e.contactPhone = "Enter valid 10-digit mobile number";
+    }
+
+    if (!form.pincode.trim()) {
+      e.pincode = "Pincode is required";
+    } else if (!/^\d{6}$/.test(form.pincode)) {
+      e.pincode = "Enter valid 6-digit pincode";
+    }
 
     // IDs
     if (!form.aadhaarNumber.trim())
@@ -198,6 +216,14 @@ const Kyc = () => {
     });
   };
 
+  useEffect(() => {
+    return () => {
+      Object.values(files).forEach((f) => {
+        if (f) URL.revokeObjectURL(f);
+      });
+    };
+  }, [files]);
+
   const localPreview = (file) => (file ? URL.createObjectURL(file) : null);
 
   const getPreview = (field) => {
@@ -228,11 +254,18 @@ const Kyc = () => {
         fatherName: m.fatherName || prev.fatherName,
         dateOfBirth: m.dateOfBirth || prev.dateOfBirth,
         gender: m.gender || prev.gender,
-        fullAddress: m.address?.fullAddress || prev.fullAddress,
+        contactName: m.address?.contactName || prev.contactName,
+        contactPhone: m.address?.contactPhone || prev.contactPhone,
+
+        line1: m.address?.line1 || prev.line1,
+        line2: m.address?.line2 || prev.line2,
+        landmark: m.address?.landmark || prev.landmark,
+
         city: m.address?.city || prev.city,
         state: m.address?.state || prev.state,
         pincode: m.address?.pincode || prev.pincode,
         country: m.address?.country || prev.country,
+
         aadhaarNumber: m.aadhaarNumber || prev.aadhaarNumber,
         panNumber: m.panNumber || prev.panNumber,
         gstNumber: m.gstNumber || prev.gstNumber,
@@ -272,11 +305,18 @@ const Kyc = () => {
         fatherName: merchant.fatherName || prev.fatherName,
         dateOfBirth: merchant.dateOfBirth || prev.dateOfBirth,
         gender: merchant.gender || prev.gender,
-        fullAddress: merchant.address?.fullAddress || prev.fullAddress,
+        contactName: merchant.address?.contactName || prev.contactName,
+        contactPhone: merchant.address?.contactPhone || prev.contactPhone,
+
+        line1: merchant.address?.line1 || prev.line1,
+        line2: merchant.address?.line2 || prev.line2,
+        landmark: merchant.address?.landmark || prev.landmark,
+
         city: merchant.address?.city || prev.city,
         state: merchant.address?.state || prev.state,
         pincode: merchant.address?.pincode || prev.pincode,
         country: merchant.address?.country || prev.country,
+
         aadhaarNumber: merchant.aadhaarNumber || prev.aadhaarNumber,
         panNumber: merchant.panNumber || prev.panNumber,
         gstNumber: merchant.gstNumber || prev.gstNumber,
@@ -803,16 +843,50 @@ const Kyc = () => {
 
               {/* Address Section */}
               <div className="col-span-1 md:col-span-2 space-y-4 w-full">
-                {/* Full Address */}
-                <textarea
-                  name="fullAddress"
-                  rows={3}
-                  placeholder="Full Address *"
-                  className="p-3 rounded-md bg-white/5 border border-white/10 outline-none 
-               w-full min-w-0"
-                  onChange={handleChange}
-                  value={form.fullAddress}
-                />
+                {/* CONTACT */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <input
+                    name="contactName"
+                    placeholder="Contact Person Name *"
+                    className="p-3 rounded-md bg-white/5 border border-white/10 outline-none"
+                    onChange={handleChange}
+                    value={form.contactName}
+                  />
+                  <input
+                    name="contactPhone"
+                    placeholder="Contact Phone *"
+                    className="p-3 rounded-md bg-white/5 border border-white/10 outline-none"
+                    onChange={handleChange}
+                    value={form.contactPhone}
+                  />
+                </div>
+
+                {/* ADDRESS LINES */}
+                <div className="space-y-3">
+                  <input
+                    name="line1"
+                    placeholder="Address Line 1 *"
+                    className="p-3 rounded-md bg-white/5 border border-white/10 outline-none w-full"
+                    onChange={handleChange}
+                    value={form.line1}
+                  />
+
+                  <input
+                    name="line2"
+                    placeholder="Address Line 2"
+                    className="p-3 rounded-md bg-white/5 border border-white/10 outline-none w-full"
+                    onChange={handleChange}
+                    value={form.line2}
+                  />
+
+                  <input
+                    name="landmark"
+                    placeholder="Landmark (optional)"
+                    className="p-3 rounded-md bg-white/5 border border-white/10 outline-none w-full"
+                    onChange={handleChange}
+                    value={form.landmark}
+                  />
+                </div>
 
                 {/* City / State / Pincode - FULLY RESPONSIVE */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full min-w-0">
@@ -1024,7 +1098,7 @@ const Kyc = () => {
                       <button
                         title="Delete"
                         onClick={() => onPreviewDeleteClick("gstFile")}
-                        className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-black-600 text-white flex items-center justify-center shadow"
+                        className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-gray-800 text-white flex items-center justify-center shadow"
                       >
                         ×
                       </button>

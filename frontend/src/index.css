@@ -357,3 +357,8 @@ body,
 .animate-fade-in {
   animation: fade-in 0.15s ease-out forwards;
 }
+
+.custom-scrollbar {
+  scroll-behavior: smooth;
+}
+

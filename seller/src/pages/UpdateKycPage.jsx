@@ -23,7 +23,13 @@ import "cropperjs/dist/cropper.css";
    - previewUrl: cloud or local preview
    - onPick: callback receiving event-like { target: { name, files } }
    - onRemove: optional remove handler (opens confirm)
+
+   
    ---------------------- */
+
+const inputClass =
+  "w-full p-3 rounded-md bg-white/5 border border-white/10 outline-none focus:border-white/30 transition";
+
 const UploadCard = ({
   label,
   name,
@@ -108,7 +114,11 @@ const UpdateKycPage = () => {
     fatherName: "",
     dateOfBirth: "",
     gender: "Male",
-    fullAddress: "",
+    contactName: "",
+    contactPhone: "",
+    line1: "",
+    line2: "",
+    landmark: "",
     city: "",
     state: "",
     pincode: "",
@@ -188,11 +198,18 @@ const UpdateKycPage = () => {
         fatherName: m.fatherName || prev.fatherName,
         dateOfBirth: m.dateOfBirth || prev.dateOfBirth,
         gender: m.gender || prev.gender,
-        fullAddress: m.address?.fullAddress || prev.fullAddress,
+        contactName: m.address?.contactName || prev.contactName,
+        contactPhone: m.address?.contactPhone || prev.contactPhone,
+
+        line1: m.address?.line1 || prev.line1,
+        line2: m.address?.line2 || prev.line2,
+        landmark: m.address?.landmark || prev.landmark,
+
         city: m.address?.city || prev.city,
         state: m.address?.state || prev.state,
         pincode: m.address?.pincode || prev.pincode,
         country: m.address?.country || prev.country,
+
         aadhaarNumber: m.aadhaarNumber || prev.aadhaarNumber,
         panNumber: m.panNumber || prev.panNumber,
         gstNumber: m.gstNumber || prev.gstNumber,
@@ -662,6 +679,11 @@ const UpdateKycPage = () => {
           className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-6"
         >
           {/* Personal fields */}
+
+          <h3 className="col-span-1 md:col-span-2 text-lg font-semibold text-white/90 mt-2">
+            Personal Details
+          </h3>
+
           <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
             <input
               name="firstName"
@@ -713,47 +735,104 @@ const UpdateKycPage = () => {
             </select>
           </div>
 
+          <h3 className="col-span-1 md:col-span-2 text-lg font-semibold text-white/90 mt-6">
+            Pickup Address
+          </h3>
+
           {/* Address */}
-          <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
-            <textarea
-              name="fullAddress"
-              rows={3}
-              value={form.fullAddress}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, fullAddress: e.target.value }))
-              }
-              placeholder="Full Address *"
-              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none col-span-2"
-            />
+          <div className="col-span-1 md:col-span-2 space-y-4">
+            {/* Contact */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <input
+                name="contactName"
+                value={form.contactName}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, contactName: e.target.value }))
+                }
+                placeholder="Contact Person Name *"
+                className={inputClass}
+              />
+
+              <input
+                name="contactPhone"
+                value={form.contactPhone}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, contactPhone: e.target.value }))
+                }
+                placeholder="Contact Phone *"
+                className={inputClass}
+              />
+            </div>
+
+            {/* Address lines */}
             <input
-              name="city"
-              value={form.city}
-              onChange={(e) => setForm((p) => ({ ...p, city: e.target.value }))}
-              placeholder="City"
-              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
-            />
-            <input
-              name="state"
-              value={form.state}
+              name="line1"
+              value={form.line1}
               onChange={(e) =>
-                setForm((p) => ({ ...p, state: e.target.value }))
+                setForm((p) => ({ ...p, line1: e.target.value }))
               }
-              placeholder="State"
-              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
+              placeholder="Address Line 1 *"
+              className={inputClass}
             />
+
             <input
-              name="pincode"
-              value={form.pincode}
+              name="line2"
+              value={form.line2}
               onChange={(e) =>
-                setForm((p) => ({ ...p, pincode: e.target.value }))
+                setForm((p) => ({ ...p, line2: e.target.value }))
               }
-              placeholder="Pincode"
-              className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
+              placeholder="Address Line 2"
+              className={inputClass}
             />
+
+            <input
+              name="landmark"
+              value={form.landmark}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, landmark: e.target.value }))
+              }
+              placeholder="Landmark"
+              className={inputClass}
+            />
+
+            {/* City / State / Pincode */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <input
+                name="city"
+                value={form.city}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, city: e.target.value }))
+                }
+                placeholder="City"
+                className={inputClass}
+              />
+              <input
+                name="state"
+                value={form.state}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, state: e.target.value }))
+                }
+                placeholder="State"
+                className={inputClass}
+              />
+              <input
+                name="pincode"
+                value={form.pincode}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, pincode: e.target.value }))
+                }
+                placeholder="Pincode"
+                className={inputClass}
+              />
+            </div>
           </div>
 
+          <h3 className="col-span-1 md:col-span-2 text-lg font-semibold text-white/90 mt-6">
+            Identity Details
+          </h3>
+
           {/* IDs */}
-          <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="col-span-1 md:col-span-2 grid grid-cols-1 gap-3">
             <input
               name="aadhaarNumber"
               value={form.aadhaarNumber}
@@ -782,6 +861,10 @@ const UpdateKycPage = () => {
               className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
             />
           </div>
+
+          <h3 className="col-span-1 md:col-span-2 text-lg font-semibold text-white/90 mt-6">
+            Bank Details
+          </h3>
 
           {/* Bank */}
           <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -827,6 +910,10 @@ const UpdateKycPage = () => {
               className="input p-3 rounded-md bg-white/5 border border-white/10 outline-none"
             />
           </div>
+
+          <h3 className="col-span-1 md:col-span-2 text-lg font-semibold text-white/90 mt-6">
+            Documents Upload
+          </h3>
 
           {/* Upload cards (grid) */}
           <div className="col-span-1 md:col-span-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 mt-4">

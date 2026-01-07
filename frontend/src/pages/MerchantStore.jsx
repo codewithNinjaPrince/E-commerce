@@ -143,44 +143,42 @@ const MerchantStore = () => {
   }, [merchant]);
 
   useEffect(() => {
-  if (!merchant) return;
+    if (!merchant) return;
 
-  const script = document.createElement("script");
-  script.type = "application/ld+json";
-  script.innerHTML = JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "Store",
-    name: merchant.storeName,
-    description: merchant.storeDescription || "Trusted merchant on Brawvly",
-    url: `${window.location.origin}/store/${slug}`,
-    address: {
-      "@type": "PostalAddress",
-      addressCountry: "IN",
-    },
-    brand: {
-      "@type": "Brand",
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.innerHTML = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Store",
       name: merchant.storeName,
-    },
-  });
+      description: merchant.storeDescription || "Trusted merchant on Brawvly",
+      url: `${window.location.origin}/store/${slug}`,
+      address: {
+        "@type": "PostalAddress",
+        addressCountry: "IN",
+      },
+      brand: {
+        "@type": "Brand",
+        name: merchant.storeName,
+      },
+    });
 
-  document.head.appendChild(script);
-  return () => document.head.removeChild(script);
-}, [merchant, slug]);
-
+    document.head.appendChild(script);
+    return () => document.head.removeChild(script);
+  }, [merchant, slug]);
 
   useEffect(() => {
-  if (!merchant) return;
+    if (!merchant) return;
 
-  let link = document.querySelector("link[rel='canonical']");
-  if (!link) {
-    link = document.createElement("link");
-    link.rel = "canonical";
-    document.head.appendChild(link);
-  }
+    let link = document.querySelector("link[rel='canonical']");
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "canonical";
+      document.head.appendChild(link);
+    }
 
-  link.href = `${window.location.origin}/store/${slug}`;
-}, [merchant, slug]);
-
+    link.href = `${window.location.origin}/store/${slug}`;
+  }, [merchant, slug]);
 
   const skeletonCount = window.innerWidth < 640 ? 10 : 16;
   const showSkeleton = !isOnline || !merchant;
@@ -258,7 +256,9 @@ const MerchantStore = () => {
                 <span className="flex items-center gap-1.5">
                   📍
                   <span className="truncate max-w-[200px]">
-                    {merchant.address?.fullAddress || "India"}
+                    {merchant.address
+                      ? `${merchant.address.line1}, ${merchant.address.city}, ${merchant.address.state} - ${merchant.address.pincode}`
+                      : "India"}
                   </span>
                 </span>
 
@@ -310,12 +310,12 @@ const MerchantStore = () => {
         </div>
       )}
 
-{merchant && (
-  <p className="sr-only">
-    Shop products from {merchant.storeName} on Brawvly. Discover fashion,
-    electronics, and lifestyle items sold by trusted Indian merchants.
-  </p>
-)}
+      {merchant && (
+        <p className="sr-only">
+          Shop products from {merchant.storeName} on Brawvly. Discover fashion,
+          electronics, and lifestyle items sold by trusted Indian merchants.
+        </p>
+      )}
 
       <div className="flex gap-6">
         {/* ---------------- SIDEBAR ---------------- */}

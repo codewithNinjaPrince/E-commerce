@@ -36,6 +36,8 @@ const showCartToast = (message = "Added to cart 🛒") => {
 
 const Product = () => {
   const navigate = useNavigate();
+  const thumbRefs = useRef([]);
+  const fullThumbRefs = useRef([]);
   const { productId } = useParams();
 
   useLayoutEffect(() => {
@@ -88,6 +90,28 @@ const Product = () => {
       : { name: c.name, hex: c.hex || null }
   );
 
+  const scrollToThumb = (index) => {
+    const el = thumbRefs.current[index];
+    if (!el) return;
+
+    el.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest", // for desktop (vertical)
+      inline: "center", // for mobile (horizontal)
+    });
+  };
+
+  const scrollFullThumbToView = (index) => {
+    const el = fullThumbRefs.current[index];
+    if (!el) return;
+
+    el.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest",
+    });
+  };
+
   const handleShare = async () => {
     const shareUrl = window.location.href;
 
@@ -135,16 +159,20 @@ const Product = () => {
 
   const goNext = () => {
     if (images.length <= 1) return;
+
     const next = (currentIndex + 1) % images.length;
     setCurrentIndex(next);
     setImage(images[next]);
+    scrollToThumb(next);
   };
 
   const goPrev = () => {
     if (images.length <= 1) return;
+
     const prev = (currentIndex - 1 + images.length) % images.length;
     setCurrentIndex(prev);
     setImage(images[prev]);
+    scrollToThumb(prev);
   };
 
   const getDeliveryDateRange = () => {
@@ -242,54 +270,53 @@ const Product = () => {
 
   /* ---------------- OPEN GRAPH + TWITTER ---------------- */
   useEffect(() => {
-  if (!productData) return;
+    if (!productData) return;
 
-  const setMeta = (attr, key, content) => {
-    let tag = document.querySelector(`meta[${attr}="${key}"]`);
-    if (!tag) {
-      tag = document.createElement("meta");
-      tag.setAttribute(attr, key);
-      document.head.appendChild(tag);
-    }
-    tag.setAttribute("content", content);
-  };
+    const setMeta = (attr, key, content) => {
+      let tag = document.querySelector(`meta[${attr}="${key}"]`);
+      if (!tag) {
+        tag = document.createElement("meta");
+        tag.setAttribute(attr, key);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute("content", content);
+    };
 
-  const rawImage = Array.isArray(productData.image)
-    ? productData.image[0]
-    : productData.image;
+    const rawImage = Array.isArray(productData.image)
+      ? productData.image[0]
+      : productData.image;
 
-  const image = rawImage.startsWith("http")
-    ? rawImage
-    : `${window.location.origin}${rawImage}`;
+    const image = rawImage.startsWith("http")
+      ? rawImage
+      : `${window.location.origin}${rawImage}`;
 
-  const url = `${window.location.origin}/product/${productData._id}`;
+    const url = `${window.location.origin}/product/${productData._id}`;
 
-  // Open Graph
-  setMeta("property", "og:type", "product");
-  setMeta("property", "og:title", productData.name);
-  setMeta(
-    "property",
-    "og:description",
-    productData.description?.slice(0, 150) ||
-      `Buy ${productData.name} on Brawvly`
-  );
-  setMeta("property", "og:image", image);
-  setMeta("property", "og:image:width", "1200");
-  setMeta("property", "og:image:height", "630");
-  setMeta("property", "og:url", url);
-  setMeta("property", "og:site_name", "Brawvly");
+    // Open Graph
+    setMeta("property", "og:type", "product");
+    setMeta("property", "og:title", productData.name);
+    setMeta(
+      "property",
+      "og:description",
+      productData.description?.slice(0, 150) ||
+        `Buy ${productData.name} on Brawvly`
+    );
+    setMeta("property", "og:image", image);
+    setMeta("property", "og:image:width", "1200");
+    setMeta("property", "og:image:height", "630");
+    setMeta("property", "og:url", url);
+    setMeta("property", "og:site_name", "Brawvly");
 
-  // Twitter
-  setMeta("name", "twitter:card", "summary_large_image");
-  setMeta("name", "twitter:title", productData.name);
-  setMeta(
-    "name",
-    "twitter:description",
-    productData.description?.slice(0, 150)
-  );
-  setMeta("name", "twitter:image", image);
-}, [productData]);
-
+    // Twitter
+    setMeta("name", "twitter:card", "summary_large_image");
+    setMeta("name", "twitter:title", productData.name);
+    setMeta(
+      "name",
+      "twitter:description",
+      productData.description?.slice(0, 150)
+    );
+    setMeta("name", "twitter:image", image);
+  }, [productData]);
 
   /* ---------------- GUARD ---------------- */
   if (!productData) {
@@ -362,7 +389,7 @@ const Product = () => {
           px-[6px] py-[6px]
           md:px-[5px] md:py-[5px]
           "
-        >
+          >
           {/* MAIN GRID */}
           <div className="flex flex-col lg:flex-row gap-5">
             {/* ============== LEFT IMAGE SECTION ============== */}
@@ -377,56 +404,65 @@ const Product = () => {
               xl:max-w-[720px]
               2xl:max-w-[760px]
               "
-            >
+              >
               {/* ⭐ MOBILE THUMBNAILS (Horizontal Scroll) */}
               <div className="flex sm:hidden gap-3 overflow-x-auto px-1">
-                {productData.image.map((img, idx) => (
+                {images.map((img, idx) => (
                   <button
-                    key={idx}
-                    onClick={() => setImage(img)}
+                  key={idx}
+                  ref={(el) => (thumbRefs.current[idx] = el)}
+                  onClick={() => {
+                    setCurrentIndex(idx);
+                      setImage(img);
+                      scrollToThumb(idx);
+                    }}
                     className={`
-                    w-14 aspect-square rounded-xl overflow-hidden
-                    border transition cursor-pointer
-                    ${
-                      image === img
-                        ? "border-white scale-105"
-                        : "border-gray-500"
-                    }
-                    `}
-                  >
+                      w-14 aspect-square rounded-xl overflow-hidden
+                      border transition cursor-pointer
+                      ${image === img ? "border-white scale-105" : "border-gray-500"}
+                      `}
+                      >
                     <img
                       src={img}
                       alt=""
                       className="w-full h-full object-cover"
-                    />
+                      />
                   </button>
                 ))}
               </div>
 
               {/* ⭐ DESKTOP THUMBNAILS (Hover changes main image) */}
               <div className="hidden sm:flex flex-col items-center w-[70px]">
-                <div className="flex flex-col gap-3 overflow-y-auto custom-scrollbar w-full pt-3 md:pt-5 lg:pt-1 px-1">
-                  {productData.image.map((img, idx) => (
+                <div className="flex flex-col gap-3 overflow-y-auto custom-scrollbar w-full px-1">
+                  {images.map((img, idx) => (
                     <button
-                      key={idx}
-                      onMouseEnter={() => setImage(img)} // 🖱 hover support
-                      onClick={() => setImage(img)} // 👆 click support
+                    key={idx}
+                    ref={(el) => (thumbRefs.current[idx] = el)}
+                    onMouseEnter={() => {
+                      setCurrentIndex(idx);
+                        setImage(img);
+                        scrollToThumb(idx);
+                      }}
+                      onClick={() => {
+                        setCurrentIndex(idx);
+                        setImage(img);
+                        scrollToThumb(idx);
+                      }}
                       className={`
-                      w-14 aspect-square rounded-[12%]
-                      overflow-hidden border transition
-                      cursor-pointer
-                      ${
-                        image === img
-                          ? "border-white scale-105"
-                          : "border-gray-400 hover:border-white/70"
-                      }
-                      `}
-                    >
+                        w-14 aspect-square rounded-[12%]
+                        overflow-hidden border transition
+                        ${
+                          image === img
+              ? "border-white scale-105"
+              : "border-gray-400 hover:border-white/70"
+          }
+          `}
+          >
                       <img
                         src={img}
                         alt=""
                         className="w-full h-full object-cover"
-                      />
+                        />
                     </button>
                   ))}
                 </div>
@@ -465,14 +501,14 @@ const Product = () => {
                     if (diff > 50) goPrev();
                     if (diff < -50) goNext();
                   }}
-                >
+                  >
                   {/* IMAGE */}
                   <div
                     className="relative w-full cursor-pointer"
                     onMouseEnter={() => isDesktop && setIsHovering(true)}
                     onMouseLeave={() => isDesktop && setIsHovering(false)}
                     onMouseMove={handleMouseMove}
-                  >
+                    >
                     {/* IMAGE – MOBILE & TABLET */}
                     <img
                       src={image}
@@ -483,7 +519,7 @@ const Product = () => {
                       object-cover
                       bg-[#0e0e0e]
                       "
-                    />
+                      />
 
                     {/* IMAGE – DESKTOP (hover zoom enabled) */}
                     <div
@@ -491,25 +527,25 @@ const Product = () => {
                       onMouseEnter={() => setShowZoom(true)}
                       onMouseLeave={() => setShowZoom(false)}
                       onMouseMove={handleMouseMove}
-                    >
+                      >
                       <img
                         src={image}
                         alt={productData.name}
                         className={`w-full h-full object-contain transition ${
                           showZoom ? "scale-[1.02] opacity-80" : ""
                         }`}
-                      />
+                        />
 
                       {/* LENS */}
                       {showZoom && (
                         <div
-                          className="absolute border border-white rounded-lg bg-white/10 pointer-events-none"
-                          style={{
-                            width: 120,
-                            height: 120,
-                            left: lens.x,
-                            top: lens.y,
-                          }}
+                        className="absolute border border-white rounded-lg bg-white/10 pointer-events-none"
+                        style={{
+                          width: 120,
+                          height: 120,
+                          left: lens.x,
+                          top: lens.y,
+                        }}
                         />
                       )}
                     </div>
@@ -528,7 +564,7 @@ const Product = () => {
                     z-20
                     cursor-pointer
                     "
-                  >
+                    >
                     ⛶
                   </button>
 
@@ -541,7 +577,7 @@ const Product = () => {
                     hover:bg-black/80 hover:scale-110
                     transition z-10 cursor-pointer
                     "
-                  >
+                    >
                     <FaShareAlt />
                   </button>
 
@@ -564,11 +600,11 @@ const Product = () => {
                     hover:scale-110 transition z-10
                     cursor-pointer
                     "
-                  >
+                    >
                     <FaHeart
                       size={18}
                       className={isFav ? "text-red-500" : "text-white"}
-                    />
+                      />
                   </button>
 
                   {/* RATING */}
@@ -622,8 +658,21 @@ const Product = () => {
                   onTouchEnd={(e) => {
                     const diff =
                       e.changedTouches[0].clientX - touchStartX.current;
-                    if (diff > 50) goPrev();
-                    if (diff < -50) goNext();
+
+                    if (diff > 50) {
+                      const prev =
+                        (currentIndex - 1 + images.length) % images.length;
+                      setCurrentIndex(prev);
+                      setImage(images[prev]);
+                      scrollFullThumbToView(prev);
+                    }
+
+                    if (diff < -50) {
+                      const next = (currentIndex + 1) % images.length;
+                      setCurrentIndex(next);
+                      setImage(images[next]);
+                      scrollFullThumbToView(next);
+                    }
                   }}
                 >
                   <img
@@ -650,6 +699,7 @@ const Product = () => {
                   {images.map((img, idx) => (
                     <button
                       key={idx}
+                      ref={(el) => (fullThumbRefs.current[idx] = el)}
                       onClick={() => {
                         setCurrentIndex(idx);
                         setImage(img);
