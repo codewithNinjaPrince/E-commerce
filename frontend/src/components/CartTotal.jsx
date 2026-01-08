@@ -89,10 +89,26 @@ const CartTotal = ({ forceOpenKey, priceData }) => {
   const fmt = (n) => formatINR(n);
 
   const FREE_LIMIT = 999;
-  const remainingForFree =
-    deliveryFee > 0 && discountedAmount < FREE_LIMIT
-      ? FREE_LIMIT - discountedAmount
-      : 0;
+
+  const subTotalForDelivery = Number(discountedAmount || 0);
+
+  const subTotal = Number(discountedAmount || 0);
+
+  let nextTarget = null;
+  let targetMessage = "";
+
+  if (subTotal < 300) {
+    nextTarget = 300;
+    targetMessage = "₹29 delivery";
+  } else if (subTotal < 600) {
+    nextTarget = 600;
+    targetMessage = "₹19 delivery";
+  } else if (subTotal < 1000) {
+    nextTarget = 1000;
+    targetMessage = "FREE delivery";
+  }
+
+  const remainingForBetterDelivery = nextTarget ? nextTarget - subTotal : 0;
 
   /* ================= UI (UNCHANGED) ================= */
   return (
@@ -188,10 +204,10 @@ const CartTotal = ({ forceOpenKey, priceData }) => {
           </div>
         )}
 
-        {deliveryFee > 0 && remainingForFree > 0 && (
+        {remainingForBetterDelivery > 0 && (
           <p className="text-xs text-gray-400 mt-1">
-            Add {currency} {fmt(remainingForFree)} more to get
-            <span className="text-white font-medium"> free delivery</span>.
+            Add {currency} {fmt(remainingForBetterDelivery)} more to get{" "}
+            <span className="text-white font-medium">{targetMessage}</span>
           </p>
         )}
       </div>
