@@ -74,12 +74,18 @@ export const calculateOrder = async ({
   }
 
   /* ================= FEES ================= */
-  const deliveryFee = finalTotal >= 999 ? 0 : 49;
+  /* ================= DELIVERY FEE SYSTEM ================= */
+
+  let deliveryFee = 0;
+
+  if (finalTotal >= 1000) deliveryFee = 0;
+  else if (finalTotal >= 600) deliveryFee = 19;
+  else if (finalTotal >= 300) deliveryFee = 29;
+  else deliveryFee = 39;
   const codFee = paymentMethod === "cod" ? 9 : 0;
 
   console.log("PAYMENT METHOD:", paymentMethod);
-console.log("COD FEE:", codFee);
-
+  console.log("COD FEE:", codFee);
 
   const discountAmount = discountedTotal - finalTotal;
 
@@ -87,9 +93,9 @@ console.log("COD FEE:", codFee);
     items: calculatedItems,
 
     actualTotal,
-     discountedAmount: finalTotal,
+    discountedAmount: finalTotal,
 
-     discountAmount,
+    discountAmount,
 
     deliveryFee,
     codFee,

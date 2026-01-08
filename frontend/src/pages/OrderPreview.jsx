@@ -129,27 +129,62 @@ const OrderPreview = () => {
   const [orderUpdating, setOrderUpdating] = useState(false);
   const [previewItems, setPreviewItems] = useState(null);
   const [addressChecked, setAddressChecked] = useState(false);
+  const [restoredItems, setRestoredItems] = useState(null);
 
   const [address, setAddress] = useState(null);
 
   const location = useLocation();
 
   useEffect(() => {
-  // If coming from cart checkout, Buy Now must not exist
-  if (location.state?.from === "cart-checkout" && buyNowItem) {
-    setBuyNowSafe(null);
-  }
-}, []);
+    // If coming from cart checkout, Buy Now must not exist
+    if (location.state?.from === "cart-checkout" && buyNowItem) {
+      setBuyNowSafe(null);
+    }
+  }, []);
 
+  useEffect(() => {
+    const source = sessionStorage.getItem("checkout_source");
+
+    // If refresh happens and nothing exists → go home, not cart
+    const savedItems = sessionStorage.getItem("checkout_items");
+
+    if (
+      !source &&
+      !buyNowItem &&
+      !Object.keys(cartItems).length &&
+      !savedItems
+    ) {
+      navigate("/", { replace: true });
+    }
+  }, []);
+
+  useEffect(() => {
+    const items = buildItems();
+    if (items.length) {
+      sessionStorage.setItem("checkout_items", JSON.stringify(items));
+    }
+  }, [cartItems, buyNowItem, previewItems]);
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem("checkout_items");
+
+    if (saved && !buyNowItem && !Object.keys(cartItems).length) {
+      try {
+        setRestoredItems(JSON.parse(saved));
+      } catch {}
+    }
+  }, []);
 
   useEffect(() => {
     if (!addressChecked) return;
 
     const items = buildItems();
-    if (!items.length && !buyNowItem) {
-      navigate("/cart", { replace: true });
+
+    // ✅ only redirect if NOTHING exists anywhere
+    if (!items.length) {
+      navigate("/", { replace: true });
     }
-  }, [buyNowItem, cartItems, addressChecked]);
+  }, [addressChecked, restoredItems, buyNowItem, cartItems]);
 
   const handleBack = () => {
     if (buyNowItem) {
@@ -164,18 +199,12 @@ const OrderPreview = () => {
     navigate("/cart", { replace: true });
   };
 
-  const handleClose = () => {
-    if (buyNowItem) {
-      if (buyNowItem.source === "cart") {
-        navigate("/cart", { replace: true });
-      } else {
-        navigate(`/product/${buyNowItem.productId}`, { replace: true });
-      }
-      return;
-    }
+ const handleClose = () => {
+  sessionStorage.removeItem("checkout_source");
+  sessionStorage.removeItem("checkout_items"); // 🔑 clear restored items
+  navigate("/", { replace: true });
+};
 
-    navigate("/cart", { replace: true });
-  };
 
   /* ---------------- BUILD ITEMS ---------------- */
 
@@ -220,38 +249,40 @@ const OrderPreview = () => {
     }
   };
 
- const buildItems = () => {
-  // 🔒 lock during preview mutation
-  if (previewItems) return previewItems;
+  const buildItems = () => {
+    // 🔒 lock during preview mutation
+    if (previewItems) return previewItems;
 
-  // ✅ SINGLE-ITEM FLOW (Buy Now from anywhere)
-  if (buyNowItem) {
-    return [
-      {
-        productId: buyNowItem.productId,
-        size: buyNowItem.size,
-        quantity: buyNowItem.quantity,
-      },
-    ];
-  }
+    // 🔁 RESTORED FROM REFRESH
+    if (restoredItems) return restoredItems;
 
-  // 🛒 FULL CART FLOW
-  const items = [];
-  Object.keys(cartItems).forEach((pid) => {
-    Object.keys(cartItems[pid]).forEach((size) => {
-      if (cartItems[pid][size] > 0) {
-        items.push({
-          productId: pid,
-          size,
-          quantity: cartItems[pid][size],
-        });
-      }
+    // ✅ SINGLE-ITEM FLOW (Buy Now)
+    if (buyNowItem) {
+      return [
+        {
+          productId: buyNowItem.productId,
+          size: buyNowItem.size,
+          quantity: buyNowItem.quantity,
+        },
+      ];
+    }
+
+    // 🛒 FULL CART FLOW
+    const items = [];
+    Object.keys(cartItems).forEach((pid) => {
+      Object.keys(cartItems[pid]).forEach((size) => {
+        if (cartItems[pid][size] > 0) {
+          items.push({
+            productId: pid,
+            size,
+            quantity: cartItems[pid][size],
+          });
+        }
+      });
     });
-  });
 
-  return items;
-};
-
+    return items;
+  };
 
   const handleContinue = () => {
     if (!address) {
@@ -307,33 +338,32 @@ const OrderPreview = () => {
 
   /* ---------------- LOAD PRICE ---------------- */
   useEffect(() => {
-  if (!token) return;
+    if (!token) return;
 
-  const items = buildItems();
-  if (!items.length) return;
+    const items = buildItems();
+    if (!items.length) return;
 
-  const loadPreview = async () => {
-    try {
-      const res = await axios.post(
-        `${backendUrl}/api/order/preview`,
-        {
-          items,
-          couponCode: couponValid ? couponCode : null,
-        },
-        { headers: { token } }
-      );
+    const loadPreview = async () => {
+      try {
+        const res = await axios.post(
+          `${backendUrl}/api/order/preview`,
+          {
+            items,
+            couponCode: couponValid ? couponCode : null,
+          },
+          { headers: { token } }
+        );
 
-      if (res.data.success) {
-        setPriceData(res.data);
+        if (res.data.success) {
+          setPriceData(res.data);
+        }
+      } catch {
+        toast.error("Failed to load order preview");
       }
-    } catch {
-      toast.error("Failed to load order preview");
-    }
-  };
+    };
 
-  loadPreview();
-}, [cartItems, buyNowItem, previewItems, couponValid, couponCode]);
-
+    loadPreview();
+  }, [cartItems, buyNowItem, previewItems, couponValid, couponCode]);
 
   if (!addressChecked || !priceData) {
     return <OrderPreviewSkeleton />;

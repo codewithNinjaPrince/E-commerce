@@ -1,4 +1,4 @@
-import { useEffect , useState} from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaCheck } from "react-icons/fa";
 
@@ -11,9 +11,7 @@ const Confetti = () => {
           className="absolute w-2 h-2 rounded-full animate-confetti"
           style={{
             left: `${Math.random() * 100}%`,
-            backgroundColor: ["#22c55e", "#3b82f6", "#eab308"][
-              i % 3
-            ],
+            backgroundColor: ["#22c55e", "#3b82f6", "#eab308"][i % 3],
             animationDelay: `${Math.random() * 0.4}s`,
           }}
         />
@@ -22,7 +20,6 @@ const Confetti = () => {
   );
 };
 
-
 const PaymentSuccessLoading = () => {
   const navigate = useNavigate();
 
@@ -30,18 +27,17 @@ const PaymentSuccessLoading = () => {
   const [packingStep, setPackingStep] = useState(false);
 
   useEffect(() => {
+    // ✅ CLEAR CHECKOUT FLOW STATE
+    sessionStorage.removeItem("checkout_source");
 
-    // 📦 show packing step after 2s
     const packingTimer = setTimeout(() => {
       setPackingStep(true);
     }, 2000);
 
-    // 🎉 remove confetti after burst
     const confettiTimer = setTimeout(() => {
       setShowConfetti(false);
     }, 2000);
 
-    // 🚀 redirect after 5s
     const navTimer = setTimeout(() => {
       navigate("/order-success", { replace: true });
     }, 7500);
@@ -57,8 +53,7 @@ const PaymentSuccessLoading = () => {
 
   return (
     <section className="min-h-screen bg-black flex flex-col items-center justify-center text-white relative overflow-hidden">
-
-       {/* 🎉 CONFETTI */}
+      {/* 🎉 CONFETTI */}
       {showConfetti && <Confetti />}
 
       {/* BACKGROUND GLOW */}
@@ -83,10 +78,8 @@ const PaymentSuccessLoading = () => {
           Order placed successfully 🎉
         </p>
 
-         {!packingStep ? (
-          <p className="text-gray-400 mt-2">
-            Securing your payment…
-          </p>
+        {!packingStep ? (
+          <p className="text-gray-400 mt-2">Securing your payment…</p>
         ) : (
           <div className="mt-4 flex flex-col items-center gap-2">
             <div className="flex items-center gap-2 text-green-400 animate-fadeIn">
@@ -134,4 +127,3 @@ const PaymentSuccessLoading = () => {
 };
 
 export default PaymentSuccessLoading;
-

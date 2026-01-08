@@ -321,13 +321,30 @@ const PaymentPage = () => {
     }
   };
 
+  useEffect(() => {
+  if (!token) {
+    const saved = localStorage.getItem("token");
+    if (saved) {
+      // if your context has setter
+      // setToken(saved)
+    }
+  }
+}, []);
+
+
   /* ================= LOAD SELECTED ADDRESS ================= */
   useEffect(() => {
     const loadSelectedAddress = async () => {
       try {
         if (!token) {
+          // wait once before redirecting
+          setTimeout(() => {
+            if (!localStorage.getItem("token")) {
+              navigate("/login");
+            }
+          }, 300);
+
           setAddressLoading(false);
-          navigate("/login");
           return;
         }
 

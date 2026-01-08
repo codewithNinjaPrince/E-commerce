@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getShiprocketToken } from "./shiprocket.js";
+import { getShiprocketToken } from "./shipRocket.js";
 // ---------------- CREATE PICKUP ----------------
 export const createPickupLocation = async (merchant) => {
   const token = await getShiprocketToken();

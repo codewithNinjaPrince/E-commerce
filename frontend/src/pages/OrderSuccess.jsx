@@ -66,6 +66,10 @@ const OrderSuccess = () => {
     loadAddress();
   }, [backendUrl, token]);
 
+  useEffect(() => {
+    sessionStorage.removeItem("checkout_source");
+  }, []);
+
   /* ---------------- STEP ANIMATION ---------------- */
   useEffect(() => {
     const t1 = setTimeout(() => setStep(1), 600);

@@ -9,7 +9,6 @@ import AddressPage from "./AddressPage";
 import { FaArrowLeft, FaTimes, FaTrash } from "react-icons/fa";
 import { useLocation } from "react-router-dom";
 
-
 const CartPageSkeleton = () => {
   return (
     <div className="pt-20 px-4 sm:px-6 lg:px-10 animate-pulse">
@@ -20,8 +19,8 @@ const CartPageSkeleton = () => {
       <div className="space-y-6">
         {[1, 2, 3].map((i) => (
           <div
-          key={i}
-          className="bg-[#1a1a1a] border border-white/10 p-4 rounded-xl"
+            key={i}
+            className="bg-[#1a1a1a] border border-white/10 p-4 rounded-xl"
           >
             <div className="flex gap-4">
               <div className="w-20 h-24 bg-gray-700/40 rounded-lg" />
@@ -69,9 +68,9 @@ const Cart = () => {
     removeSavedForLater,
     moveSavedToCart,
   } = useContext(ShopContext);
-  
+
   const cartTotalRef = useRef(null);
-  
+
   const [cartData, setCartData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cartOpenKey, setCartOpenKey] = useState(0);
@@ -79,15 +78,15 @@ const Cart = () => {
   const [priceData, setPriceData] = useState(null);
   const [confirmSavedOpen, setConfirmSavedOpen] = useState(false);
   const [savedDeleteItem, setSavedDeleteItem] = useState(null);
-  
+
   // delete confirmation
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState(null);
-  
+
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  
+
   const location = useLocation();
-  
+
   const safeCartBack = () => {
     // 🚫 If cart was entered from checkout flow → always go collections
     if (
@@ -98,27 +97,27 @@ const Cart = () => {
       navigate("/collections", { replace: true });
       return;
     }
-    
+
     // 🧠 Normal browsing back
     navigate(-1);
   };
-  
+
   useEffect(() => {
     const online = () => setIsOnline(true);
     const offline = () => setIsOnline(false);
-    
+
     window.addEventListener("online", online);
     window.addEventListener("offline", offline);
-    
+
     return () => {
       window.removeEventListener("online", online);
       window.removeEventListener("offline", offline);
     };
   }, []);
-  
+
   useEffect(() => {
     const tempData = [];
-    
+
     for (const productId in cartItems) {
       for (const size in cartItems[productId]) {
         const qty = cartItems[productId][size];
@@ -131,16 +130,16 @@ const Cart = () => {
         }
       }
     }
-    
+
     setCartData(tempData);
     setLoading(false);
   }, [cartItems, products]);
-  
+
   // -------- LOAD CART DATA ----------
   useEffect(() => {
     const loadPreview = async () => {
       const items = [];
-      
+
       for (const productId in cartItems) {
         for (const size in cartItems[productId]) {
           const qty = cartItems[productId][size];
@@ -153,12 +152,12 @@ const Cart = () => {
           }
         }
       }
-      
+
       if (!items.length) {
         setPriceData(null);
         return;
       }
-      
+
       try {
         const res = await fetch(
           `${import.meta.env.VITE_BACKEND_URL}/api/order/preview`,
@@ -174,7 +173,7 @@ const Cart = () => {
             }),
           }
         );
-        
+
         const data = await res.json();
         if (data.success) {
           setPriceData(data);
@@ -183,10 +182,10 @@ const Cart = () => {
         console.log("Cart preview failed", err);
       }
     };
-    
+
     loadPreview();
   }, [cartItems, products]);
-  
+
   // -------- CONFIRM DELETE ----------
   const confirmDelete = () => {
     if (deleteItem) {
@@ -195,15 +194,15 @@ const Cart = () => {
       setDeleteItem(null);
     }
   };
-  
+
   // ---- TOTAL FOR BOTTOM BAR ----
   const computeFinalTotal = () => {
     let discountedTotal = 0;
-    
+
     for (const productId in cartItems) {
       const product = products.find((p) => p._id === productId);
       if (!product) continue;
-      
+
       for (const size in cartItems[productId]) {
         const qty = cartItems[productId][size];
         if (qty > 0) {
@@ -211,41 +210,41 @@ const Cart = () => {
         }
       }
     }
-    
+
     const FREE_LIMIT = 1000;
     const shippingFee = discountedTotal >= FREE_LIMIT ? 0 : delivery_fee;
-    
+
     return discountedTotal + shippingFee;
   };
-  
+
   const finalTotal = computeFinalTotal();
-  
+
   const QuantityInput = ({ item }) => {
     const { updateQuantity } = useContext(ShopContext);
-    
+
     const [value, setValue] = useState(String(item.quantity));
-    
+
     // 🔄 sync when cart updates externally
     useEffect(() => {
       setValue(String(item.quantity));
     }, [item.quantity]);
-    
+
     // 🔽 Commit final value safely
     const commitValue = () => {
       const num = Number(value);
-      
+
       if (!num || num < 1) {
         // fallback to 1
         updateQuantity(item._id, item.size, 1);
         setValue("1");
         return;
       }
-      
+
       if (num !== item.quantity) {
         updateQuantity(item._id, item.size, num);
       }
     };
-    
+
     return (
       <div className="flex items-center gap-2">
         {/* MINUS */}
@@ -258,7 +257,7 @@ const Cart = () => {
             setValue(String(newQty));
           }}
           className="w-8 h-8 flex items-center justify-center rounded-md bg-white/10 hover:bg-white/20 transition cursor-pointer"
-          >
+        >
           −
         </button>
 
@@ -274,7 +273,7 @@ const Cart = () => {
           onBlur={commitValue}
           onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
           className="w-12 sm:w-14 h-9 bg-black border border-white/20 rounded-md text-white text-center text-sm outline-none focus:border-white/40"
-          />
+        />
 
         {/* PLUS */}
         <button
@@ -286,22 +285,22 @@ const Cart = () => {
             setValue(String(newQty));
           }}
           className="w-8 h-8 flex items-center justify-center rounded-md bg-white/10 hover:bg-white/20 transition cursor-pointer"
-          >
+        >
           +
         </button>
       </div>
     );
   };
-  
+
   const hasCartItems = cartData.length > 0;
-  
+
   const isCartLoading =
-  !isOnline || loading || !products.length || (hasCartItems && !priceData);
-  
+    !isOnline || loading || !products.length || (hasCartItems && !priceData);
+
   if (isCartLoading) {
     return <CartPageSkeleton />;
   }
-  
+
   return (
     <>
       <section className="min-h-screen bg-black text-white pt-[64px] pb-28">
@@ -313,7 +312,7 @@ const Cart = () => {
               onClick={safeCartBack}
               className="p-2 rounded-lg hover:bg-white/10 cursor-pointer"
               aria-label="Go back"
-              >
+            >
               <FaArrowLeft />
             </button>
 
@@ -327,7 +326,7 @@ const Cart = () => {
               onClick={() => navigate("/")}
               className="p-2 rounded-lg hover:bg-white/10 cursor-pointer"
               aria-label="Close cart"
-              >
+            >
               <FaTimes />
             </button>
           </div>
@@ -340,7 +339,7 @@ const Cart = () => {
               src={assets.bin_icon}
               className="w-16 opacity-70 mb-5"
               alt="Empty cart"
-              />
+            />
 
             <p className="text-2xl font-semibold">No products in your cart</p>
 
@@ -363,7 +362,7 @@ const Cart = () => {
               border border-black
               hover:border-white
               "
-              >
+            >
               Browse Products →
             </button>
           </div>
@@ -379,17 +378,17 @@ const Cart = () => {
                   (product) => product._id === item._id
                 );
                 if (!productData) return null;
-                
+
                 const discountPercent = Math.round(
                   ((productData.actualPrice - productData.discountedPrice) /
-                  productData.actualPrice) *
-                  100
+                    productData.actualPrice) *
+                    100
                 );
-                
+
                 return (
                   <div
-                  key={index}
-                  className="relative bg-[#1a1a1a] border border-white/10 rounded-xl p-4 space-y-4 hover:border-white/40 transition cursor-pointer"
+                    key={index}
+                    className="relative bg-[#1a1a1a] border border-white/10 rounded-xl p-4 space-y-4 hover:border-white/40 transition cursor-pointer"
                   >
                     {/* TOP RIGHT ACTIONS — COLUMN (sm+) */}
                     <div
@@ -400,7 +399,7 @@ const Cart = () => {
                       items-end
                       gap-3
                       "
-                      >
+                    >
                       {/* REMOVE */}
                       <button
                         onClick={(e) => {
@@ -415,7 +414,7 @@ const Cart = () => {
                         cursor-pointer
                         group sm:pb-10 lg:pb-12
                         "
-                        >
+                      >
                         <FaTrash className="group-hover:scale-110 transition" />
                         <span className="text-sm font-medium">Remove</span>
                       </button>
@@ -428,12 +427,12 @@ const Cart = () => {
                     <div
                       onClick={() => navigate(`/product/${item._id}`)}
                       className="flex gap-4 cursor-pointer"
-                      >
+                    >
                       <img
                         src={productData.image[0]}
                         alt={productData.name}
                         className="w-20 h-24 object-cover rounded-lg"
-                        />
+                      />
 
                       <div className="flex-1">
                         <p className="text-lg font-semibold">
@@ -472,7 +471,7 @@ const Cart = () => {
                           setConfirmOpen(true);
                         }}
                         className="flex items-center gap-2 text-red-400 hover:text-red-500 transition cursor-pointer group"
-                        >
+                      >
                         <FaTrash className="group-hover:scale-110 transition" />
                         <span className="text-sm font-medium">Remove</span>
                       </button>
@@ -488,7 +487,7 @@ const Cart = () => {
                           saveForLater(item);
                         }}
                         className="py-2 rounded-lg border border-white/20 text-sm text-gray-300 hover:bg-white/5 transition cursor-pointer"
-                        >
+                      >
                         Save for later
                       </button>
 
@@ -496,20 +495,20 @@ const Cart = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          
+
                           setBuyNowSafe({
                             productId: item._id,
                             size: item.size,
                             quantity: item.quantity,
                             source: "cart",
                           });
-                          
+
                           navigate("/order-preview", {
                             state: { from: "cart" },
                           });
                         }}
                         className="py-2 rounded-lg bg-yellow-400 text-black font-semibold hover:bg-yellow-300 transition cursor-pointer"
-                        >
+                      >
                         Buy this now
                       </button>
 
@@ -517,7 +516,7 @@ const Cart = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          
+
                           if (isFavorited) {
                             removeFromFavorites(item._id);
                           } else {
@@ -529,12 +528,12 @@ const Cart = () => {
                           border
                           ${
                             isFavorited
-                            ? "bg-pink-500/20 text-pink-400 border-pink-400 hover:bg-pink-500/30"
-                            : "border-white/20 text-pink-400 hover:bg-pink-500/10 hover:border-pink-400"
+                              ? "bg-pink-500/20 text-pink-400 border-pink-400 hover:bg-pink-500/30"
+                              : "border-white/20 text-pink-400 hover:bg-pink-500/10 hover:border-pink-400"
                           }
                           cursor-pointer
                           `}
-                          >
+                      >
                         {isFavorited
                           ? "Remove from Favorites 💔"
                           : "Add to Favorites ❤️"}
@@ -566,13 +565,13 @@ const Cart = () => {
                         const product = products.find(
                           (p) => p._id === item.productId
                         );
-                        
+
                         if (!product) return null;
-                        
+
                         return (
                           <div
-                          key={idx}
-                          className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+                            key={idx}
+                            className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
                           >
                             {/* LEFT */}
                             <div className="flex gap-4">
@@ -580,7 +579,7 @@ const Cart = () => {
                                 src={product.image[0]}
                                 alt={product.name}
                                 className="w-20 h-24 object-cover rounded-lg"
-                                />
+                              />
 
                               <div>
                                 <p className="font-semibold text-white">
@@ -617,7 +616,7 @@ const Cart = () => {
                               <button
                                 onClick={() => moveSavedToCart(item)}
                                 className="px-4 py-2 bg-white text-black rounded-lg font-semibold hover:bg-gray-200 transition cursor-pointer"
-                                >
+                              >
                                 Move to Cart
                               </button>
 
@@ -628,7 +627,7 @@ const Cart = () => {
                                   setConfirmSavedOpen(true);
                                 }}
                                 className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition cursor-pointer"
-                                >
+                              >
                                 Remove
                               </button>
                             </div>
@@ -647,7 +646,7 @@ const Cart = () => {
             <div
               ref={cartTotalRef}
               className="w-full sm:w-[450px] cursor-pointer"
-              >
+            >
               {cartData.length > 0 && (
                 <CartTotal forceOpenKey={cartOpenKey} priceData={priceData} />
               )}
@@ -672,7 +671,7 @@ const Cart = () => {
                 cursor-pointer
                 group
                 "
-                >
+              >
                 <p className="text-xs text-green-400 flex items-center gap-1">
                   Total Amount
                   <span className="transition-transform duration-200 group-hover:translate-x-1">
@@ -691,7 +690,7 @@ const Cart = () => {
                     group-hover:text-white
                     group-hover:translate-x-1
                     "
-                    />
+                  />
                 </p>
               </div>
 
@@ -699,10 +698,11 @@ const Cart = () => {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  
+
                   // 🔥 IMPORTANT: Cart checkout must clear Buy Now
                   setBuyNowSafe(null);
-                  
+
+                  sessionStorage.setItem("checkout_source", "cart");
                   navigate("/order-preview", {
                     state: { from: "cart-checkout" },
                   });
@@ -710,7 +710,7 @@ const Cart = () => {
                 className=" bg-white text-black px-6 py-3 rounded-lg font-semibold
                 border border-black transition-all duration-200 hover:bg-black
                 hover:text-white cursor-pointer whitespace-nowrap "
-                >
+              >
                 {" "}
                 Proceed to Checkout →
               </button>
@@ -734,7 +734,7 @@ const Cart = () => {
                         setConfirmOpen(false);
                       }}
                       className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 cursor-pointer"
-                      >
+                    >
                       Cancel
                     </button>
                     <button
@@ -743,7 +743,7 @@ const Cart = () => {
                         confirmDelete();
                       }}
                       className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 cursor-pointer"
-                      >
+                    >
                       Remove
                     </button>
                   </div>
@@ -757,7 +757,7 @@ const Cart = () => {
             <div
               className="bg-[#1a1a1a] p-6 rounded-xl w-[90%] max-w-sm
               border border-white/10 shadow-xl"
-              >
+            >
               <p className="text-lg font-semibold text-white">Remove item?</p>
 
               <p className="text-sm text-gray-400 mt-2">
@@ -773,7 +773,7 @@ const Cart = () => {
                   }}
                   className="px-4 py-2 rounded-lg bg-white/10 text-white
                   hover:bg-white/20 transition cursor-pointer"
-                  >
+                >
                   Cancel
                 </button>
 
@@ -789,7 +789,7 @@ const Cart = () => {
                   }}
                   className="px-4 py-2 rounded-lg bg-red-500 text-white
                   hover:bg-red-600 transition cursor-pointer"
-                  >
+                >
                   Yes, Remove
                 </button>
               </div>

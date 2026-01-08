@@ -56,7 +56,7 @@ const ProductItem = ({
             navigate(`/product/${_id}`);
           }}
           className="relative w-full overflow-hidden rounded-xl bg-gray-100"
-          >
+        >
           {/* <img
             src={Array.isArray(image) ? image[0] : image}
             alt={name}
@@ -75,7 +75,7 @@ const ProductItem = ({
               transition-transform
               group-hover:scale-105
               "
-              />
+            />
           </div>
 
           {/* SHARE BUTTON */}
@@ -84,7 +84,7 @@ const ProductItem = ({
             onClick={(e) => {
               e.stopPropagation();
               const shareUrl = `${window.location.origin}/product/${_id}`;
-              
+
               if (navigator.share) {
                 navigator.share({ title: name, url: shareUrl });
               } else {
@@ -92,7 +92,7 @@ const ProductItem = ({
                 alert("Link copied!");
               }
             }}
-            >
+          >
             <FaShareAlt size={14} />
           </button>
 
@@ -107,11 +107,11 @@ const ProductItem = ({
               isFav ? removeFromFavorites(_id) : addToFavorites(_id);
             }}
             className="absolute bottom-2 right-2 p-2 rounded-full bg-black/60 cursor-pointer"
-            >
+          >
             <FaHeart
               size={15}
               className={isFav ? "text-red-600" : "text-white/80"}
-              />
+            />
           </button>
 
           {/* RATING BOX */}
@@ -168,12 +168,12 @@ const ProductItem = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                
+
                 if (!token) {
                   navigate(`/login?redirect=/product/${_id}`);
                   return;
                 }
-                
+
                 // 🔥 always open size selector
                 setActionType("add");
                 setShowSizeModal(true);
@@ -192,7 +192,7 @@ const ProductItem = ({
               cursor-pointer
               "
               title="Add to Cart"
-              >
+            >
               <FaShoppingCart size={16} />
             </button>
 
@@ -208,7 +208,7 @@ const ProductItem = ({
                 setShowSizeModal(true);
               }}
               className="flex-1 bg-white text-black py-2 rounded-lg text-sm font-semibold hover:bg-black hover:text-white transition cursor-pointer"
-              >
+            >
               Buy Now
             </button>
           </div>
@@ -226,19 +226,19 @@ const ProductItem = ({
           // 🛒 ADD TO CART FLOW
           if (actionType === "add") {
             addToCart(_id, selectedSize);
-            
+
             toast.success("Smile Added to cart 🛒", {
               position: "top-center",
               autoClose: 1500,
               hideProgressBar: true,
               theme: "dark",
             });
-            
+
             setShowSizeModal(false);
             setActionType(null);
             return;
           }
-          
+
           // 🚀 BUY NOW FLOW (NEW)
           if (actionType === "buy") {
             setBuyNowSafe({
@@ -247,23 +247,26 @@ const ProductItem = ({
               quantity: 1,
               source: "product",
             });
-            
+
+            // 🔑 SAVE CHECKOUT SOURCE
+            sessionStorage.setItem("checkout_source", "buynow");
+
             setShowSizeModal(false);
             setActionType(null);
-            
+
             toast.success("Great choice! Let’s checkout 🚀", {
               position: "top-center",
               autoClose: 1200,
               hideProgressBar: true,
               theme: "dark",
             });
-            
+
             setTimeout(() => {
               navigate("/order-preview");
             }, 400);
           }
         }}
-        />
+      />
     </>
   );
 };

@@ -255,12 +255,14 @@ const MerchantStore = () => {
               <div className="flex flex-wrap gap-x-4 gap-y-2.5 mt-2 text-[11px] text-gray-500">
                 <span className="flex items-center gap-1.5">
                   📍
-                  <span className="truncate max-w-[200px]">
+                  <span className="break-words max-w-full">
                     {merchant.address
                       ? `${merchant.address.line1}, ${merchant.address.city}, ${merchant.address.state} - ${merchant.address.pincode}`
                       : "India"}
                   </span>
                 </span>
+
+
 
                 <span className="flex items-center gap-1.5">
                   🛍 <span>{merchantProducts.length} Products</span>

@@ -370,11 +370,14 @@ const Product = () => {
       quantity: 1,
     });
 
+    // ✅ SAVE CHECKOUT SOURCE
+    sessionStorage.setItem("checkout_source", "buynow");
+
     showCartToast("Item ready • Taking you to checkout ⚡");
 
     setTimeout(() => {
       navigate("/order-preview");
-    }, 600); // 👈 toast feel aane do
+    }, 600);
   };
 
   /* ---------------- UI ---------------- */
@@ -389,7 +392,7 @@ const Product = () => {
           px-[6px] py-[6px]
           md:px-[5px] md:py-[5px]
           "
-          >
+        >
           {/* MAIN GRID */}
           <div className="flex flex-col lg:flex-row gap-5">
             {/* ============== LEFT IMAGE SECTION ============== */}
@@ -404,29 +407,33 @@ const Product = () => {
               xl:max-w-[720px]
               2xl:max-w-[760px]
               "
-              >
+            >
               {/* ⭐ MOBILE THUMBNAILS (Horizontal Scroll) */}
               <div className="flex sm:hidden gap-3 overflow-x-auto px-1">
                 {images.map((img, idx) => (
                   <button
-                  key={idx}
-                  ref={(el) => (thumbRefs.current[idx] = el)}
-                  onClick={() => {
-                    setCurrentIndex(idx);
+                    key={idx}
+                    ref={(el) => (thumbRefs.current[idx] = el)}
+                    onClick={() => {
+                      setCurrentIndex(idx);
                       setImage(img);
                       scrollToThumb(idx);
                     }}
                     className={`
                       w-14 aspect-square rounded-xl overflow-hidden
                       border transition cursor-pointer
-                      ${image === img ? "border-white scale-105" : "border-gray-500"}
+                      ${
+                        image === img
+                          ? "border-white scale-105"
+                          : "border-gray-500"
+                      }
                       `}
-                      >
+                  >
                     <img
                       src={img}
                       alt=""
                       className="w-full h-full object-cover"
-                      />
+                    />
                   </button>
                 ))}
               </div>
@@ -436,10 +443,10 @@ const Product = () => {
                 <div className="flex flex-col gap-3 overflow-y-auto custom-scrollbar w-full px-1">
                   {images.map((img, idx) => (
                     <button
-                    key={idx}
-                    ref={(el) => (thumbRefs.current[idx] = el)}
-                    onMouseEnter={() => {
-                      setCurrentIndex(idx);
+                      key={idx}
+                      ref={(el) => (thumbRefs.current[idx] = el)}
+                      onMouseEnter={() => {
+                        setCurrentIndex(idx);
                         setImage(img);
                         scrollToThumb(idx);
                       }}
@@ -453,16 +460,16 @@ const Product = () => {
                         overflow-hidden border transition
                         ${
                           image === img
-              ? "border-white scale-105"
-              : "border-gray-400 hover:border-white/70"
-          }
+                            ? "border-white scale-105"
+                            : "border-gray-400 hover:border-white/70"
+                        }
           `}
-          >
+                    >
                       <img
                         src={img}
                         alt=""
                         className="w-full h-full object-cover"
-                        />
+                      />
                     </button>
                   ))}
                 </div>
@@ -501,14 +508,14 @@ const Product = () => {
                     if (diff > 50) goPrev();
                     if (diff < -50) goNext();
                   }}
-                  >
+                >
                   {/* IMAGE */}
                   <div
                     className="relative w-full cursor-pointer"
                     onMouseEnter={() => isDesktop && setIsHovering(true)}
                     onMouseLeave={() => isDesktop && setIsHovering(false)}
                     onMouseMove={handleMouseMove}
-                    >
+                  >
                     {/* IMAGE – MOBILE & TABLET */}
                     <img
                       src={image}
@@ -519,7 +526,7 @@ const Product = () => {
                       object-cover
                       bg-[#0e0e0e]
                       "
-                      />
+                    />
 
                     {/* IMAGE – DESKTOP (hover zoom enabled) */}
                     <div
@@ -527,25 +534,25 @@ const Product = () => {
                       onMouseEnter={() => setShowZoom(true)}
                       onMouseLeave={() => setShowZoom(false)}
                       onMouseMove={handleMouseMove}
-                      >
+                    >
                       <img
                         src={image}
                         alt={productData.name}
                         className={`w-full h-full object-contain transition ${
                           showZoom ? "scale-[1.02] opacity-80" : ""
                         }`}
-                        />
+                      />
 
                       {/* LENS */}
                       {showZoom && (
                         <div
-                        className="absolute border border-white rounded-lg bg-white/10 pointer-events-none"
-                        style={{
-                          width: 120,
-                          height: 120,
-                          left: lens.x,
-                          top: lens.y,
-                        }}
+                          className="absolute border border-white rounded-lg bg-white/10 pointer-events-none"
+                          style={{
+                            width: 120,
+                            height: 120,
+                            left: lens.x,
+                            top: lens.y,
+                          }}
                         />
                       )}
                     </div>
@@ -564,7 +571,7 @@ const Product = () => {
                     z-20
                     cursor-pointer
                     "
-                    >
+                  >
                     ⛶
                   </button>
 
@@ -577,7 +584,7 @@ const Product = () => {
                     hover:bg-black/80 hover:scale-110
                     transition z-10 cursor-pointer
                     "
-                    >
+                  >
                     <FaShareAlt />
                   </button>
 
@@ -600,11 +607,11 @@ const Product = () => {
                     hover:scale-110 transition z-10
                     cursor-pointer
                     "
-                    >
+                  >
                     <FaHeart
                       size={18}
                       className={isFav ? "text-red-500" : "text-white"}
-                      />
+                    />
                   </button>
 
                   {/* RATING */}
@@ -1051,6 +1058,7 @@ const Product = () => {
           }
 
           if (actionType === "buy") {
+            sessionStorage.setItem("checkout_source", "buynow");
             setTimeout(() => navigate("/order-preview"), 600);
           }
 
