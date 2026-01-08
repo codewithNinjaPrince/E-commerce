@@ -1,4 +1,4 @@
-import { createPickupLocation, updatePickupLocation } from "./shipRocketPickup.js";
+import { createPickupLocation, updatePickupLocation } from "./shiprocketPickup.js";
 import merchantModel from "../models/merchantModel.js";
 
 export const syncMerchantPickup = async (merchant) => {
