@@ -11,6 +11,8 @@ import {
   FaTimes,
 } from "react-icons/fa";
 
+
+
 const Navbar = ({ showNavbar }) => {
   const navigate = useNavigate();
   const { getCartCount, token, getFavoriteCount } = useContext(ShopContext);
@@ -46,6 +48,29 @@ const Navbar = ({ showNavbar }) => {
       setOpen(false); // 👉 swipe right → close
     }
   };
+
+  const handleGoHome = () => {
+  const isAlreadyHome = window.location.pathname === "/";
+  const ref = window.__APP_SCROLL_CONTAINER__;
+
+  if (isAlreadyHome) {
+    if (ref?.current) {
+      ref.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  } else {
+    navigate("/");
+
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const r = window.__APP_SCROLL_CONTAINER__;
+        if (r?.current) {
+          r.current.scrollTo({ top: 0, behavior: "smooth" });
+        }
+      }, 120);
+    });
+  }
+};
+
 
   const DrawerLink = ({ to, label, setOpen }) => {
     const navigate = useNavigate();
@@ -102,18 +127,18 @@ const Navbar = ({ showNavbar }) => {
       >
         {/* LEFT */}
         <div className="flex items-center gap-3">
-          <IconButton onClick={() => navigate("/")}>
+          <IconButton onClick={handleGoHome}>
             <FaHome />
           </IconButton>
 
-          <Link
-            to="/"
+          <button
+            onClick={handleGoHome}
             className="text-lg font-semibold tracking-wide
               bg-gradient-to-r from-white to-gray-400
               bg-clip-text text-transparent"
           >
             Brawvly
-          </Link>
+          </button>
         </div>
 
         {/* RIGHT ICONS */}

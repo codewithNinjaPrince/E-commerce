@@ -66,7 +66,11 @@ const App = () => {
   const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
   const { appLoading } = useContext(ShopContext);
 
-  const scrollRef=useRef(null);
+  const scrollRef = useRef(null);
+
+  useEffect(() => {
+    window.__APP_SCROLL_CONTAINER__ = scrollRef;
+  }, []);
 
   useEffect(() => {
     setIsMobileOrTablet(window.innerWidth < 1024);
@@ -105,7 +109,7 @@ const App = () => {
     pathname === "/order-success";
 
   // Orders list pages
-  const isOrdersListPage = pathname === "/orders"
+  const isOrdersListPage = pathname === "/orders";
 
   // Order details page
   const isOrderDetailsPage =
@@ -116,21 +120,27 @@ const App = () => {
     "/search",
     "/user",
     "/cart",
-    "/placeorder",
+    "/orders",
+    "/favorites",
+
+    // checkout flow
     "/address",
     "/order-preview",
     "/payment",
-    "/favorites",
-    "/order-success",
     "/payment-success-loading",
-    "/orders",
+    "/order-success",
+
+    // auth
+    "/login",
+    "/verify",
+    "/forgot-password",
   ];
 
   const isOrdersPage =
     pathname === "/orders" || pathname.startsWith("/orders/");
 
   const showFooter = !hideFooterRoutes.some((route) =>
-    pathname.startsWith(route)
+    pathname.startsWith(route),
   );
 
   /* ================= STOP LOADER ================= */
@@ -141,43 +151,45 @@ const App = () => {
   }, [products]);
 
   /* ================= NAVBAR HIDE ON SCROLL ================= */
-useEffect(() => {
-  if (window.innerWidth >= 1024) return;
+  useEffect(() => {
+    if (window.innerWidth >= 1024) return;
 
-  let lastY = window.scrollY;
-  let accumulated = 0;
-  let lastDirection = null;
-  const THRESHOLD = 24;
+    const container = scrollRef.current;
+    if (!container) return;
 
-  const onScroll = () => {
-    const currentY = window.scrollY;
-    const delta = currentY - lastY;
-    const direction = delta > 0 ? "down" : "up";
+    let lastY = 0;
+    let accumulated = 0;
+    let lastDirection = null;
+    const THRESHOLD = 24;
 
-    if (direction !== lastDirection) {
-      accumulated = 0;
-      lastDirection = direction;
-    }
+    const onScroll = () => {
+      const currentY = container.scrollTop;
+      const delta = currentY - lastY;
+      const direction = delta > 0 ? "down" : "up";
 
-    accumulated += Math.abs(delta);
+      if (direction !== lastDirection) {
+        accumulated = 0;
+        lastDirection = direction;
+      }
 
-    if (direction === "down" && accumulated >= THRESHOLD && currentY > 40) {
-      setShowNavbar(false);
-      accumulated = 0;
-    }
+      accumulated += Math.abs(delta);
 
-    if (direction === "up" && accumulated >= THRESHOLD) {
-      setShowNavbar(true);
-      accumulated = 0;
-    }
+      if (direction === "down" && accumulated >= THRESHOLD && currentY > 40) {
+        setShowNavbar(false);
+        accumulated = 0;
+      }
 
-    lastY = currentY;
-  };
+      if (direction === "up" && accumulated >= THRESHOLD) {
+        setShowNavbar(true);
+        accumulated = 0;
+      }
 
-  window.addEventListener("scroll", onScroll, { passive: true });
-  return () => window.removeEventListener("scroll", onScroll);
-}, []);
+      lastY = currentY;
+    };
 
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => container.removeEventListener("scroll", onScroll);
+  }, []);
 
   /* ================= RESPONSIVE ================= */
   useEffect(() => {
@@ -284,7 +296,7 @@ useEffect(() => {
           path="*"
           element={
             <div
-            ref={scrollRef}
+              ref={scrollRef}
               className={`
               ${isSearchPage ? "no-navbar-offset" : "page-wrapper"}
               page-container

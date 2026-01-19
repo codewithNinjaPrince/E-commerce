@@ -1,5 +1,6 @@
 import React, { useLayoutEffect, useContext } from "react";
 import Hero from "../components/Hero";
+import { useLocation } from "react-router-dom"; 
 import LatestCollection from "../components/LatestCollection";
 import BestSeller from "../components/BestSeller";
 import OurPolicy from "../components/OurPolicy";
@@ -44,11 +45,19 @@ const HomeSkeleton = () => {
 };
 
 const Home = () => {
+  
+  const location = useLocation();
+
   useLayoutEffect(() => {
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-    window.scrollTo(0, 0);
-  }, []);
+  const ref = window.__APP_SCROLL_CONTAINER__;
+  if (ref?.current) {
+    ref.current.scrollTo({
+      top: 0,
+      behavior: "auto",
+    });
+  }
+}, [location.pathname]);
+
 
   const { products } = useContext(ShopContext);
 
@@ -106,15 +115,14 @@ const Home = () => {
             Subscribe for Offers and Updates
           </h2>
           <NewsLetter />
-         <div className="flex justify-center mt-6">
-  <a
-    href="/about"
-    className="text-sm text-gray-400 hover:text-white transition"
-  >
-    Learn more about Brawvly
-  </a>
-</div>
-
+          <div className="flex justify-center mt-6">
+            <a
+              href="/about"
+              className="text-sm text-gray-400 hover:text-white transition"
+            >
+              Learn more about Brawvly
+            </a>
+          </div>
         </section>
       </main>
     </>

@@ -583,23 +583,24 @@ const Login = () => {
       {/* TOGGLE */}
       {/* TOGGLE */}
       <p
-        className="text-center text-8px text-gray-200 cursor-pointer hover:text-blue-400 transition"
-        onClick={() => {
-          const nextMode = mode === "Login" ? "Sign Up" : "Login";
+  className="text-center text-8px text-blue-500 font-medium cursor-pointer underline hover:text-blue-600 transition"
+  onClick={() => {
+    const nextMode = mode === "Login" ? "Sign Up" : "Login";
 
-          setMode(nextMode);
-          setAgreeTerms(false);
+    setMode(nextMode);
+    setAgreeTerms(false);
 
-          // 🔥 Clear signup draft if switching back to Login
-          if (nextMode === "Login") {
-            sessionStorage.removeItem(SIGNUP_STORAGE_KEY);
-          }
-        }}
-      >
-        {mode === "Login"
-          ? "Don’t have an account? Register"
-          : "Already have an account? Login"}
-      </p>
+    // 🔥 Clear signup draft if switching back to Login
+    if (nextMode === "Login") {
+      sessionStorage.removeItem(SIGNUP_STORAGE_KEY);
+    }
+  }}
+>
+  {mode === "Login"
+    ? "Don’t have an account? Register"
+    : "Already have an account? Login"}
+</p>
+
 
       {/* STYLES */}
       <style>{`

@@ -3,13 +3,13 @@ import { ShopContext } from "../context/ShopContext";
 import Title from "./Title";
 import ProductItem from "./ProductItem";
 import ProductItemSkeleton from "./ProductItemSkeleton";
-import { useLayoutEffect } from "react";
 
 const RelatedProducts = ({ category, subCategory, excludeId }) => {
   const { products } = useContext(ShopContext);
 
   const [related, setRelated] = useState([]);
-  const [visible, setVisible] = useState(5);
+  const [visible, setVisible] = useState(4);
+  const [defaultVisible, setDefaultVisible] = useState(4);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   /* 🌐 Online / Offline handling */
@@ -40,8 +40,32 @@ const RelatedProducts = ({ category, subCategory, excludeId }) => {
     setRelated(filtered);
   }, [products, category, subCategory]);
 
+  useEffect(() => {
+    const updateVisible = () => {
+      if (window.innerWidth < 640) {
+        setVisible(4);
+        setDefaultVisible(4);
+      } else if (window.innerWidth < 1024) {
+        setVisible(6);
+        setDefaultVisible(6);
+      } else {
+        setVisible(5);
+        setDefaultVisible(5);
+      }
+    };
+
+    updateVisible();
+    window.addEventListener("resize", updateVisible);
+    return () => window.removeEventListener("resize", updateVisible);
+  }, []);
+
   /* 🦴 Skeleton condition */
   const showSkeleton = !isOnline || !products?.length;
+
+  useEffect(() => {
+  setVisible(defaultVisible);
+}, [defaultVisible, category, subCategory]);
+
 
   // 🚫 No related products → don't render section
   if (!showSkeleton && related.length === 0) {
@@ -62,7 +86,7 @@ const RelatedProducts = ({ category, subCategory, excludeId }) => {
       {/* GRID */}
       <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-5">
         {showSkeleton
-          ? Array.from({ length: 5 }).map((_, i) => (
+          ? Array.from({ length: defaultVisible }).map((_, i) => (
               <ProductItemSkeleton key={i} />
             ))
           : related.slice(0, visible).map((item) => (
@@ -88,16 +112,16 @@ const RelatedProducts = ({ category, subCategory, excludeId }) => {
         <div className="flex justify-center gap-4 mt-10">
           {visible < related.length && (
             <button
-              onClick={() => setVisible((v) => v + 5)}
+              onClick={() => setVisible((v) => v + defaultVisible)}
               className="text-white border border-white/30 px-6 py-2 rounded-lg hover:bg-white hover:text-black transition cursor-pointer"
             >
               Show More
             </button>
           )}
 
-          {visible > 5 && (
+          {visible > defaultVisible && (
             <button
-              onClick={() => setVisible(5)}
+              onClick={() => setVisible(defaultVisible)}
               className="text-red-400 border border-red-400 px-6 py-2 rounded-lg hover:bg-red-400 hover:text-black transition cursor-pointer"
             >
               Hide
